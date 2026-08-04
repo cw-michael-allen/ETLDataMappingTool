@@ -52,6 +52,14 @@ Deliberate scope limits (see the chat record / commit message for the reasoning)
 
 Colors and font tokens follow the `caseworthy-brand-visual-identity` skill (canonical source — check there before changing any color/font in `styles.css`). Poppins and Source Sans 3 are now actually loaded via Google Fonts in `index.html` (previously only referenced by name, silently falling back to system fonts — verified via `document.fonts.check(...)` that they load). Headline copy is Title Case per the skill's "never sentence-case headlines" rule.
 
+**The bundled logo files (`static/assets/logos/*.jpg`) are JPEGs with a solid black background baked into the pixels — not transparent PNGs, despite the `.png` extension they originally came with.** JPEG can't have an alpha channel at all, so this isn't fixable in CSS by "making the background transparent." Per the brand skill's rule against recoloring/distorting logos, the fix here is a `.brand-logo-plate` wrapper with a fixed `var(--cw-nav-dark)` background behind the logo — in light mode it reads as an intentional dark chip; in dark mode it's set to the same color as the card background, so it blends in seamlessly instead of showing a stray black box. If cleaner source logo files (real transparent PNG/SVG) become available from the brand portal (see the skill's SharePoint links), swap them in and this plate treatment can likely be simplified or dropped.
+
+## Dark / light mode
+
+A "Light Mode" / "Dark Mode" toggle button is fixed to the top-right corner of every step. Defaults to the OS/browser's `prefers-color-scheme`, and the explicit choice persists across reloads via `localStorage` (`cw-etl-fieldmap-theme`). Implemented as a `data-theme="dark"|"light"` attribute on `<html>`, with semantic CSS variables (`--surface-page`, `--surface-card`, `--surface-border`, `--surface-text`, `--surface-heading`, ...) that get remapped per theme in `styles.css` — the underlying brand hex values (`--cw-blue`, `--cw-teal`, etc.) never change between themes, only which of them get used for headings/text on a dark surface, per the brand skill's approved-pairings matrix (e.g. headings switch from `--cw-blue` to white in dark mode, since plain blue-on-dark isn't in the approved pairing list).
+
+Note: don't add `transition` on any property whose value comes from one of these theme-swapped CSS variables (e.g. `background`) — that was tried on `body`/`.card` and reproducibly caused the property to get stuck on its pre-toggle value in this browser, even though the underlying CSS variable updated correctly. Theme switches are instant (no fade) as a result.
+
 ## Known gaps (tracked in `docs/PHASE_PLAN.md`, not fixed here)
 
 - No auth, no SOC2/HIPAA controls — explicitly deferred to Phase 2.
@@ -59,4 +67,5 @@ Colors and font tokens follow the `caseworthy-brand-visual-identity` skill (cano
 - `field_matcher.py`'s alias table is a curated, non-exhaustive list of common abbreviations — an unusual source-system naming convention it doesn't recognize will still fall through to the LLM (or "no confident match" without a key).
 - ServTracker has no schema yet — see above.
 - The Google Fonts import requires internet access at demo time; falls back gracefully to system fonts if unavailable.
+- The bundled logo JPEGs have a baked-in black background — see Branding above.
 - ~~Extracted schema rules haven't had a human spot-check yet~~ — spot-checked and confirmed correct by Russ (validation script owner) on 2026-08-04.

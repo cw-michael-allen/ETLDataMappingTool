@@ -1,7 +1,40 @@
 const TARGET_DB_META = {
-  CaseWorthy: { label: "CaseWorthy", logo: "/assets/logos/caseworthy-corporate.png" },
-  ServTracker: { label: "ServTracker", logo: "/assets/logos/servtracker.png" },
+  CaseWorthy: { label: "CaseWorthy", logo: "/assets/logos/caseworthy-corporate.jpg" },
+  ServTracker: { label: "ServTracker", logo: "/assets/logos/servtracker.jpg" },
 };
+
+const THEME_STORAGE_KEY = "cw-etl-fieldmap-theme";
+
+function getTheme() {
+  return document.documentElement.dataset.theme
+    || (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+}
+
+function setTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  localStorage.setItem(THEME_STORAGE_KEY, theme);
+}
+
+function initTheme() {
+  const stored = localStorage.getItem(THEME_STORAGE_KEY);
+  if (stored) document.documentElement.dataset.theme = stored;
+}
+
+function renderThemeToggle() {
+  const nextLabel = getTheme() === "dark" ? "Light Mode" : "Dark Mode";
+  return `<button class="theme-toggle" id="theme-toggle-btn">${nextLabel}</button>`;
+}
+
+// Delegated on document (survives every innerHTML re-render) rather than
+// rewired after each render call.
+document.addEventListener("click", (e) => {
+  if (e.target && e.target.id === "theme-toggle-btn") {
+    setTheme(getTheme() === "dark" ? "light" : "dark");
+    e.target.textContent = getTheme() === "dark" ? "Light Mode" : "Dark Mode";
+  }
+});
+
+initTheme();
 
 let state = {
   step: 1,
@@ -26,12 +59,13 @@ const app = document.getElementById("app");
 function renderHeader() {
   const meta = TARGET_DB_META[state.targetDatabase] || TARGET_DB_META.CaseWorthy;
   return `
+    ${renderThemeToggle()}
     <div class="header-row">
       <div>
-        <img class="brand-logo" src="${meta.logo}" alt="${meta.label}">
+        <span class="brand-logo-plate"><img class="brand-logo" src="${meta.logo}" alt="${meta.label}"></span>
         <div class="eyebrow">${meta.label} • ETL Onboarding</div>
         <h1>Field Mapping Assistant</h1>
-        <div style="color:#666;font-size:13px;">Phase 0 POC — tells you where each of your fields lives in ${meta.label} today, and flags mappings that would break ${meta.label}'s import rules.</div>
+        <div style="color:var(--surface-text-muted);font-size:13px;">Phase 0 POC — tells you where each of your fields lives in ${meta.label} today, and flags mappings that would break ${meta.label}'s import rules.</div>
       </div>
       <div class="lib-stat" id="lib-stat">
         <div class="num">…</div>
@@ -86,7 +120,7 @@ async function renderStep1() {
       <div class="target-db-row">
         <label for="dialect">Source database SQL dialect</label>
         <select id="dialect">${dialectOptions}</select>
-        <div style="color:#666;font-size:12px;margin-top:4px;">Used to generate the SQL export a technical data person runs against your source system (see Advanced options, Step 2 and the Summary step).</div>
+        <div style="color:var(--surface-text-muted);font-size:12px;margin-top:4px;">Used to generate the SQL export a technical data person runs against your source system (see Advanced options, Step 2 and the Summary step).</div>
       </div>`;
   }
 
@@ -106,7 +140,7 @@ async function renderStep1() {
           <input type="checkbox" id="advanced-toggle" ${state.advancedMode ? "checked" : ""} style="width:auto;">
           Advanced options
         </label>
-        <div style="color:#666;font-size:12px;">Also collect each field's source table name, so a SQL export (per target table) can be generated for a technical data person to pull your live data.</div>
+        <div style="color:var(--surface-text-muted);font-size:12px;">Also collect each field's source table name, so a SQL export (per target table) can be generated for a technical data person to pull your live data.</div>
       </div>
       ${dialectRow}
       <div class="step-nav">
@@ -152,7 +186,7 @@ function renderStep2() {
     ${renderHeader()}
     <div class="card">
       <h3>List the Fields From ${state.sourceSystem}</h3>
-      <div style="color:#666;font-size:13px;margin-bottom:14px;">Add each field name from your export. A short description helps but isn't required.${state.advancedMode ? " Advanced mode is on — also enter each field's source table name so a SQL export can be generated later." : ""}</div>
+      <div style="color:var(--surface-text-muted);font-size:13px;margin-bottom:14px;">Add each field name from your export. A short description helps but isn't required.${state.advancedMode ? " Advanced mode is on — also enter each field's source table name so a SQL export can be generated later." : ""}</div>
       <div id="field-rows">${rows}</div>
       <button class="secondary" id="add-field">+ Add another field</button>
       <div class="step-nav">
@@ -234,7 +268,7 @@ function renderStep3Results() {
     const options = state.schema.map(t => `<option value="${t.table}::${t.field}" ${s.confirmedTable===t.table && s.confirmedField===t.field ? "selected" : ""}>${t.table} → ${t.field}${t.required ? " (required)" : ""}</option>`).join("");
     return `
       <div class="suggestion-card" data-idx="${i}">
-        <div class="src">${s.source}${s.desc ? ` <span style="font-weight:400;color:#888;">— ${s.desc}</span>` : ""}</div>
+        <div class="src">${s.source}${s.desc ? ` <span style="font-weight:400;color:var(--surface-text-muted);">— ${s.desc}</span>` : ""}</div>
         ${hasMatch ? `<div class="target">${s.confirmedTable} → ${s.confirmedField}</div>` : `<div class="target" style="color:var(--cw-orange);">No confident match</div>`}
         <span class="pill ${pillClass}">${pillLabel}</span>
         <div class="reason" style="margin-top:6px;">${s.suggestion.reasoning || ""}</div>
@@ -242,7 +276,7 @@ function renderStep3Results() {
         <div class="actions">
           <button class="secondary confirm-btn">${s.confirmed ? "Confirmed ✓" : "Confirm this mapping"}</button>
           <button class="ghost override-btn">Choose different field</button>
-          <button class="ghost flag-btn" style="border-color:#999;color:#666;">Flag for consultant review</button>
+          <button class="ghost flag-btn" style="border-color:var(--surface-text-muted);color:var(--surface-text-muted);">Flag for consultant review</button>
         </div>
         <div class="override-row">
           <select class="override-select">${options}</select>
@@ -256,7 +290,7 @@ function renderStep3Results() {
     ${renderHeader()}
     <div class="card">
       <h3>Mapping Suggestions for ${state.sourceSystem}</h3>
-      <div style="color:#666;font-size:13px;margin-bottom:14px;">Confirm each mapping, pick a different target field, or flag anything ambiguous for manual review. Confirmed mappings are saved so the next customer on ${state.sourceSystem} sees them instantly.</div>
+      <div style="color:var(--surface-text-muted);font-size:13px;margin-bottom:14px;">Confirm each mapping, pick a different target field, or flag anything ambiguous for manual review. Confirmed mappings are saved so the next customer on ${state.sourceSystem} sees them instantly.</div>
       ${cards || '<div class="empty">No fields to show.</div>'}
       <div class="step-nav">
         <button class="secondary" id="back-3">← Back</button>
@@ -344,8 +378,8 @@ function renderSqlExportSection(exportResult) {
   if (!exportResult) return "";
   const blocks = exportResult.statements.map(s => `
     <div style="margin-bottom:14px;">
-      <div style="font-family:var(--font-heading);font-weight:600;color:var(--cw-blue);margin-bottom:4px;">${s.targetTable} <span style="color:#888;font-weight:400;">(source: ${s.sourceTable})</span></div>
-      <pre style="background:#F7F8F9;border:1px solid var(--cw-gray);border-radius:6px;padding:12px;font-size:12px;overflow-x:auto;white-space:pre-wrap;">${s.sql.replace(/</g, "&lt;")}</pre>
+      <div style="font-family:var(--font-heading);font-weight:600;color:var(--cw-blue);margin-bottom:4px;">${s.targetTable} <span style="color:var(--surface-text-muted);font-weight:400;">(source: ${s.sourceTable})</span></div>
+      <pre style="background:var(--surface-page);border:1px solid var(--surface-border);color:var(--surface-text);border-radius:6px;padding:12px;font-size:12px;overflow-x:auto;white-space:pre-wrap;">${s.sql.replace(/</g, "&lt;")}</pre>
     </div>`).join("");
 
   const conflicts = exportResult.conflicts.length ? `
@@ -355,12 +389,12 @@ function renderSqlExportSection(exportResult) {
     </div>` : "";
 
   const skipped = exportResult.skipped.length ? `
-    <div style="color:#888;font-size:12px;margin-top:8px;">${exportResult.skipped.length} field(s) excluded from the SQL export (${[...new Set(exportResult.skipped.map(s => s.reason))].join("; ")}).</div>` : "";
+    <div style="color:var(--surface-text-muted);font-size:12px;margin-top:8px;">${exportResult.skipped.length} field(s) excluded from the SQL export (${[...new Set(exportResult.skipped.map(s => s.reason))].join("; ")}).</div>` : "";
 
   return `
     <div class="card">
       <h3>SQL Export (${state.dialect})</h3>
-      <div style="color:#666;font-size:13px;margin-bottom:14px;">One SELECT statement per target table, aliased to match ${TARGET_DB_META[state.targetDatabase].label}'s field names — for a technical data person to run against your source system. Comments call out required/decode constraints to double-check; this does not transform values for you.</div>
+      <div style="color:var(--surface-text-muted);font-size:13px;margin-bottom:14px;">One SELECT statement per target table, aliased to match ${TARGET_DB_META[state.targetDatabase].label}'s field names — for a technical data person to run against your source system. Comments call out required/decode constraints to double-check; this does not transform values for you.</div>
       ${conflicts}
       ${blocks || '<div class="empty">No SQL to generate yet — confirm mappings with a source table name in Step 2.</div>'}
       ${skipped}
