@@ -38,6 +38,14 @@ def _quote_qualified(dialect, name):
     return ".".join(quote(part) for part in name.split(".") if part)
 
 
+def _normalize_table_name(name):
+    """Grouping key for "same table, different casing" (e.g. dbo.ClientExport
+    vs dbo.clientexport). Only case differences are folded — anything else
+    (extra whitespace already stripped by the caller, a different schema
+    prefix, an actual typo) still counts as a different table."""
+    return name.lower()
+
+
 def build_export(mappings, schema, dialect=DEFAULT_DIALECT):
     """
     mappings: list of {"sourceTable":str, "sourceField":str, "desc":str,
@@ -58,7 +66,8 @@ def build_export(mappings, schema, dialect=DEFAULT_DIALECT):
 
     by_table_field = {(f["table"], f["field"]): f for f in schema}
 
-    usable = defaultdict(list)  # (target_table, source_table) -> [mapping,...]
+    usable = defaultdict(list)  # (target_table, normalized_source_table) -> [mapping,...]
+    source_table_display = {}  # (target_table, normalized_source_table) -> first-seen casing
     skipped = []
     for m in mappings:
         if not (m.get("table") and m.get("field")):
@@ -68,11 +77,14 @@ def build_export(mappings, schema, dialect=DEFAULT_DIALECT):
         if not source_table:
             skipped.append({"sourceField": m.get("sourceField", ""), "reason": "no source table specified"})
             continue
-        usable[(m["table"], source_table)].append(m)
+        key = (m["table"], _normalize_table_name(source_table))
+        usable[key].append(m)
+        source_table_display.setdefault(key, source_table)
 
     statements = []
     tables_by_target = defaultdict(set)
-    for (target_table, source_table), entries in usable.items():
+    for (target_table, norm_source), entries in usable.items():
+        source_table = source_table_display[(target_table, norm_source)]
         tables_by_target[target_table].add(source_table)
 
         lines = [f"-- Target table: {target_table}  (source: {source_table})"]
