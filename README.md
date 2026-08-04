@@ -21,10 +21,17 @@ A prior session produced **Tier 0 / Option B**: a no-dev-team, customer-facing p
 | `HANDOFF_ETL_Field_Mapping_POC.md` | Handoff notes from the POC build: mechanics, learning/storage design, known limitations, next steps. |
 | `etl-schema-mapping-poc.html` | The working POC itself (client-side only, calls `api.anthropic.com` directly, uses Claude-artifact `window.storage` for persistence — not reusable as-is by Engineering). |
 
-## Schema coverage so far
+## Schema coverage
 
-The POC's `TARGET_SCHEMA` covers 5 of the script's 28 tables: **Client, Program, Enrollment, ServiceType, Users** (~70 fields). The other 23 tables in the validation script (Organization, Provider, Client Race, Address History, Entity Veteran Era/Info, Enrollment Service Plan, Case Manager Assignment, Case Notes, Entity Contact, Service, Issue, Goal, Credential, Provider Referral, File Document, Work History, Assessment + 4 sub-assessment tables, Outcome) are not yet extracted into structured target-schema data.
+**Full 28-table coverage extracted.** [`reference/target_schema_full.json`](reference/target_schema_full.json) holds structured metadata (required/optional, type, ListID, decode values, FK relationships) for all 282 fields across all 28 tables in the validation script — the original POC's 5 tables (Client, Program, Enrollment, ServiceType, Users) plus the 23 extracted afterward (Organization, Provider, ClientRace, AddressHistory, EntityVeteranEra, EntityVeteranInfo, EnrollmentServicePlan, CaseManagerAssignment, CaseNotes, EntityContact, Service, Issue, Goal, Credential, ProviderReferral, FileDocument, WorkHistory, Assessment, AssessFinancialItem, AssessEmploymentPlacement, AssessHUDRHY, AssessDVS, Outcome).
+
+This extraction was done by independent passes over the validation script and has not yet had a human spot-check against someone who knows the script well (e.g. Russ) — see the risk noted in the phase plan before treating every ListID/decode value as gospel.
+
+## Planning docs (`/docs`)
+
+- [`PHASE_PLAN.md`](docs/PHASE_PLAN.md) — the phased development plan (POC → leadership approval → engineering build → production hosting), including locked-in decisions, explicit non-goals per phase, and open risks.
+- [`JIRA_OUTLINE.md`](docs/JIRA_OUTLINE.md) — epic/story outline per phase, for manual creation in Jira once the plan is approved.
 
 ## Next
 
-Phased development plan — to be defined. See open questions raised in chat before any phase scope is finalized.
+Human review of the phase plan and the extracted schema, then Phase 0 build (local web app + full mapping/rule-warning flow) per `docs/PHASE_PLAN.md`.
