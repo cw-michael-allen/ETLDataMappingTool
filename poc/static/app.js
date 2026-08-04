@@ -256,11 +256,11 @@ function renderReadinessPanel(check) {
         <ul>${check.duplicates.map(d => `<li>${d.table} → ${d.field} claimed by: ${d.sourceFields.join(", ")}</li>`).join("")}</ul>
       </div>`);
   }
-  if (check.decodeHints.length) {
+  if (check.formatHints.length) {
     groups.push(`
       <div class="readiness-group">
         <h4>Possible value/format mismatches</h4>
-        <ul>${check.decodeHints.map(h => `<li>${h.sourceField}: ${h.hint}</li>`).join("")}</ul>
+        <ul>${check.formatHints.map(h => `<li>${h.sourceField}: ${h.hint}</li>`).join("")}</ul>
       </div>`);
   }
   if (!groups.length) {
@@ -302,8 +302,8 @@ async function renderStep4() {
   if (check.requiredMissing.length) summaryLines.push("Required fields with no mapping: " + check.requiredMissing.map(r => `${r.table}.${r.field}`).join(", "));
   if (check.fkWarnings.length) summaryLines.push("Missing dependent tables: " + check.fkWarnings.map(w => `${w.table} needs ${w.dependsOn}`).join(", "));
   if (check.duplicates.length) summaryLines.push("Duplicate target mappings: " + check.duplicates.map(d => `${d.table}.${d.field}`).join(", "));
-  if (check.decodeHints.length) summaryLines.push("Possible value/format mismatches: " + check.decodeHints.map(h => h.sourceField).join(", "));
-  if (!check.requiredMissing.length && !check.fkWarnings.length && !check.duplicates.length && !check.decodeHints.length) {
+  if (check.formatHints.length) summaryLines.push("Possible value/format mismatches: " + check.formatHints.map(h => h.sourceField).join(", "));
+  if (!check.requiredMissing.length && !check.fkWarnings.length && !check.duplicates.length && !check.formatHints.length) {
     summaryLines.push("No rule violations detected.");
   }
   const summaryText = summaryLines.join("\n");
