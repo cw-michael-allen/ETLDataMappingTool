@@ -138,8 +138,12 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     port = int(os.environ.get("PORT", "8000"))
-    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
-    print(f"CW-ETL-FIELDMAP POC running at http://127.0.0.1:{port}")
+    host = os.environ.get("HOST", "127.0.0.1")
+    server = ThreadingHTTPServer((host, port), Handler)
+    display_host = host if host != "0.0.0.0" else "127.0.0.1 (also reachable on your LAN IP)"
+    print(f"CW-ETL-FIELDMAP POC running at http://{display_host}:{port}")
+    if host == "0.0.0.0":
+        print("WARNING: bound to 0.0.0.0 — reachable by anyone on your network. There is no auth on this POC (by design, see docs/PHASE_PLAN.md) — anyone who can reach it can view and edit the shared mapping library.")
     if not os.environ.get("ANTHROPIC_API_KEY"):
         print("WARNING: ANTHROPIC_API_KEY not set — suggestions will come back as 'no confident match'.")
     try:
