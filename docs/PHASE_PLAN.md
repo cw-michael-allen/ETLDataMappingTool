@@ -22,7 +22,7 @@ CaseWorthy's ETL data migration process for new customers takes 9–12 months ag
 **Locked-in decisions for this phase:**
 - Runs entirely locally (developer machine), not deployed anywhere.
 - Small local web app — a lightweight backend plus a real local datastore (e.g. SQLite) — not a browser-only artifact, so the learned-mapping library actually persists across restarts and the build is a closer preview of what Engineering will extend.
-- **Full 28-table target schema** extracted from the validation script (up from the prior POC's 5 tables), including required/optional, ListID, decode values, and FK relationships per field. *(Extraction in progress as of this writing — see `reference/target_schema_full.json` once merged.)*
+- **Full 28-table target schema** extracted from the validation script (up from the prior POC's 5 tables), including required/optional, ListID, decode values, and FK relationships per field — see `reference/target_schema_full.json`. Spot-checked and confirmed correct by Russ (validation script owner) on 2026-08-04.
 - **No authentication.** Auth is explicitly deferred to Phase 2 as a hard engineering requirement, not something the POC needs to demonstrate.
 - LLM calls continue to hit the Anthropic API directly, but behind a small internal interface/config (e.g. a single `suggestMapping()` call site) so swapping in a real internal cost-control gateway later is a contained change — not a rewrite. **No internal gateway exists yet to target for the POC itself.**
 - Mapping-rule violations (required/list/decode/FK mismatches detected from the extracted schema) surface as warnings during the interview/mapping flow — this is new scope beyond the original artifact POC, per the "prevent a customer from breaking the rules" requirement.
@@ -66,6 +66,6 @@ This is where the tool moves from a local proof of concept to a real, compliance
 
 ## 7. Risks / dependencies to track
 
-- Full 28-table rule extraction is a manual/semi-automated read of a 2,921-line SQL script — accuracy of required/list/FK rules directly determines how trustworthy the "prevent rule-breaking" warnings are. Recommend a spot-check pass by someone who knows the validation script well (e.g. Russ) before Phase 1 demo.
+- ~~Full 28-table rule extraction accuracy~~ — **Resolved 2026-08-04.** Russ (owner of the validation script) spot-checked the extracted schema and confirmed it's correct; the judgment calls flagged during extraction (e.g. `Provider.ProviderTypeCategoryTypeID`, `Credential.CredentialTypeID`/`SkillTypeID`, `FileDocument.DocumentTypeID`) are known/expected behavior, not extraction errors.
 - No internal LLM gateway identified yet — Phase 2 cannot fully close out cost-control requirements until that's resolved.
 - Final hosting environment for Phase 2/3 is unknown, which limits how specific the compliance design can get until it's picked.

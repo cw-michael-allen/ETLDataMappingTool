@@ -25,7 +25,7 @@ A prior session produced **Tier 0 / Option B**: a no-dev-team, customer-facing p
 
 **Full 28-table coverage extracted.** [`reference/target_schema_full.json`](reference/target_schema_full.json) holds structured metadata (required/optional, type, ListID, decode values, FK relationships) for all 282 fields across all 28 tables in the validation script — the original POC's 5 tables (Client, Program, Enrollment, ServiceType, Users) plus the 23 extracted afterward (Organization, Provider, ClientRace, AddressHistory, EntityVeteranEra, EntityVeteranInfo, EnrollmentServicePlan, CaseManagerAssignment, CaseNotes, EntityContact, Service, Issue, Goal, Credential, ProviderReferral, FileDocument, WorkHistory, Assessment, AssessFinancialItem, AssessEmploymentPlacement, AssessHUDRHY, AssessDVS, Outcome).
 
-This extraction was done by independent passes over the validation script and has not yet had a human spot-check against someone who knows the script well (e.g. Russ) — see the risk noted in the phase plan before treating every ListID/decode value as gospel.
+This extraction was done by independent passes over the validation script and was spot-checked and confirmed correct by Russ (owner of the validation script) on 2026-08-04.
 
 ## Planning docs (`/docs`)
 

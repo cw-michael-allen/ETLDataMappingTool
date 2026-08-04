@@ -28,4 +28,4 @@ Optional env vars:
 
 - No auth, no SOC2/HIPAA controls — explicitly deferred to Phase 2.
 - Decode/format mismatch detection is a soft heuristic (looks for numbers in the source description that don't appear in the target's decode list) — not a real data validator.
-- Extracted schema rules haven't had a human spot-check yet against someone who knows the validation script well.
+- ~~Extracted schema rules haven't had a human spot-check yet~~ — spot-checked and confirmed correct by Russ (validation script owner) on 2026-08-04.
