@@ -6,9 +6,10 @@ and a small JSON API backed by a local SQLite datastore. Run with:
 
     python app.py
 
-Then open http://127.0.0.1:8000 . Set ANTHROPIC_API_KEY in the environment
-to enable live mapping suggestions; without it, suggestions come back as
-"no confident match" so the flag-for-review path still works end to end.
+Then open http://127.0.0.1:8000 . Mapping suggestions come first from a
+rule-based matcher grounded in the extracted validation-script schema
+(field_matcher.py) and only fall back to the Anthropic API (if
+ANTHROPIC_API_KEY is set) for names the rules can't confidently resolve.
 """
 
 import json
@@ -19,6 +20,7 @@ from urllib.parse import urlparse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import db  # noqa: E402
+import field_matcher  # noqa: E402
 import llm_gateway  # noqa: E402
 import schema_rules  # noqa: E402
 
@@ -119,8 +121,24 @@ class Handler(BaseHTTPRequestHandler):
                 "reasoning": f"Confirmed {learned['confirm_count']} time(s) before for {source_system}.",
             }
 
+        # Rule-based match against the validation-script-derived schema comes
+        # first: it's free, instant, and doesn't need an API key. A high-
+        # confidence rule match is used outright; anything softer still gets
+        # a second opinion from the LLM (if configured) before deciding.
+        rule_sug = field_matcher.match(field_name, SCHEMA)
+
+        if rule_sug and rule_sug["confidence"] == "high":
+            sug = rule_sug
+        else:
+            llm_sug = llm_gateway.suggest_mapping(source_system, field_name, desc, CANDIDATES)
+            if llm_sug.get("confidence") in (None, "none") and rule_sug:
+                sug = rule_sug
+            else:
+                sug = llm_sug
+                if rule_sug and rule_sug["table"] == sug.get("table") and rule_sug["field"] == sug.get("field"):
+                    sug["reasoning"] = (sug.get("reasoning") or "") + " Also matches by field-name pattern."
+
         cross = db.get_field_index(field_name)
-        sug = llm_gateway.suggest_mapping(source_system, field_name, desc, CANDIDATES)
         if cross and sug.get("confidence") not in (None, "none"):
             match = next(
                 (c for c in cross if c["target_table"] == sug.get("table") and c["target_field"] == sug.get("field")),
