@@ -1,9 +1,16 @@
+const TARGET_DB_META = {
+  CaseWorthy: { label: "CaseWorthy", logo: "/assets/logos/caseworthy-corporate.png" },
+  ServTracker: { label: "ServTracker", logo: "/assets/logos/servtracker.png" },
+};
+
 let state = {
   step: 1,
+  targetDatabase: "CaseWorthy",
   sourceSystem: "",
   fields: [{ name: "", desc: "" }],
   suggestions: [],
   schema: null,
+  schemaForDb: null,
 };
 
 async function api(path, opts) {
@@ -14,12 +21,14 @@ async function api(path, opts) {
 const app = document.getElementById("app");
 
 function renderHeader() {
+  const meta = TARGET_DB_META[state.targetDatabase] || TARGET_DB_META.CaseWorthy;
   return `
     <div class="header-row">
       <div>
-        <div class="eyebrow">CaseWorthy • ETL Onboarding</div>
+        <img class="brand-logo" src="${meta.logo}" alt="${meta.label}">
+        <div class="eyebrow">${meta.label} • ETL Onboarding</div>
         <h1>Field Mapping Assistant</h1>
-        <div style="color:#666;font-size:13px;">Phase 0 POC — tells you where each of your fields lives in CaseWorthy today, and flags mappings that would break CaseWorthy's import rules.</div>
+        <div style="color:#666;font-size:13px;">Phase 0 POC — tells you where each of your fields lives in ${meta.label} today, and flags mappings that would break ${meta.label}'s import rules.</div>
       </div>
       <div class="lib-stat" id="lib-stat">
         <div class="num">…</div>
@@ -33,7 +42,7 @@ function renderHeader() {
 }
 
 async function refreshLibStat() {
-  const stats = await api("/api/stats");
+  const stats = await api(`/api/stats?targetDatabase=${encodeURIComponent(state.targetDatabase)}`);
   const el = document.getElementById("lib-stat");
   if (el) {
     el.innerHTML = `<div class="num">${stats.total}</div><div class="lbl">Learned mappings · ${stats.systems} source system${stats.systems === 1 ? "" : "s"}</div>`;
@@ -41,26 +50,48 @@ async function refreshLibStat() {
 }
 
 async function ensureSchema() {
-  if (!state.schema) state.schema = await api("/api/schema");
+  if (state.schemaForDb !== state.targetDatabase) {
+    state.schema = await api(`/api/schema?targetDatabase=${encodeURIComponent(state.targetDatabase)}`);
+    state.schemaForDb = state.targetDatabase;
+  }
   return state.schema;
 }
 
 function renderStep1() {
+  const dbOptions = Object.entries(TARGET_DB_META)
+    .map(([key, meta]) => `<option value="${key}" ${state.targetDatabase === key ? "selected" : ""}>${meta.label}</option>`)
+    .join("");
+  const unavailable = state.targetDatabase !== "CaseWorthy";
+  const warning = unavailable
+    ? `<div class="db-warning">${(TARGET_DB_META[state.targetDatabase] || {}).label} rules aren't loaded in this POC yet — CaseWorthy is fully supported today. Check back once that schema is added.</div>`
+    : "";
+
   app.innerHTML = `
     ${renderHeader()}
     <div class="card">
-      <h3>What system are you migrating from?</h3>
+      <h3>What System Are You Migrating From?</h3>
+      <div class="target-db-row">
+        <label for="target-db">Target database</label>
+        <select id="target-db">${dbOptions}</select>
+        ${warning}
+      </div>
       <label for="src-sys">Source system name</label>
       <input type="text" id="src-sys" placeholder="e.g. Bonterra Case Manager, Apricot, a homegrown Access database" value="${state.sourceSystem}">
       <div class="step-nav">
         <span></span>
-        <button class="primary" id="next-1">Next: list your fields →</button>
+        <button class="primary" id="next-1" ${unavailable ? "disabled" : ""}>Next: List Your Fields →</button>
       </div>
     </div>
     <footer>Internal POC · CaseWorthy Technical Consulting</footer>
   `;
   refreshLibStat();
+
+  document.getElementById("target-db").onchange = (e) => {
+    state.targetDatabase = e.target.value;
+    renderStep1();
+  };
   document.getElementById("next-1").onclick = () => {
+    if (unavailable) return;
     const val = document.getElementById("src-sys").value.trim();
     if (!val) { alert("Enter the source system name to continue."); return; }
     state.sourceSystem = val;
@@ -81,13 +112,13 @@ function renderStep2() {
   app.innerHTML = `
     ${renderHeader()}
     <div class="card">
-      <h3>List the fields from ${state.sourceSystem}</h3>
+      <h3>List the Fields From ${state.sourceSystem}</h3>
       <div style="color:#666;font-size:13px;margin-bottom:14px;">Add each field name from your export. A short description helps but isn't required.</div>
       <div id="field-rows">${rows}</div>
       <button class="secondary" id="add-field">+ Add another field</button>
       <div class="step-nav">
         <button class="secondary" id="back-2">← Back</button>
-        <button class="primary" id="next-2">Get mapping suggestions →</button>
+        <button class="primary" id="next-2">Get Mapping Suggestions →</button>
       </div>
     </div>
     <footer>Internal POC · CaseWorthy Technical Consulting</footer>
@@ -131,7 +162,7 @@ async function renderStep3() {
   app.innerHTML = `
     ${renderHeader()}
     <div class="card">
-      <h3>Mapping suggestions</h3>
+      <h3>Mapping Suggestions</h3>
       <div class="loading">Checking the mapping library and asking Claude for suggestions on new fields…</div>
     </div>
   `;
@@ -143,7 +174,7 @@ async function renderStep3() {
     const sug = await api("/api/suggest", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sourceSystem: state.sourceSystem, fieldName: f.name, desc: f.desc }),
+      body: JSON.stringify({ targetDatabase: state.targetDatabase, sourceSystem: state.sourceSystem, fieldName: f.name, desc: f.desc }),
     });
     const targetMeta = state.schema.find(t => t.table === sug.table && t.field === sug.field);
     state.suggestions.push({ source: f.name, desc: f.desc, suggestion: sug, targetMeta, confirmedTable: sug.table, confirmedField: sug.field });
@@ -159,7 +190,7 @@ function renderStep3Results() {
     const hasMatch = s.suggestion.table && s.suggestion.field;
     const decode = s.targetMeta && s.targetMeta.decode ? `<div class="decode">Valid values: ${s.targetMeta.decode}</div>` : "";
     const note = s.targetMeta && s.targetMeta.note ? `<div class="decode">${s.targetMeta.note}</div>` : "";
-    const requiredNote = s.targetMeta && s.targetMeta.required ? `<div class="decode">This target field is <strong>required</strong> by CaseWorthy's import rules.</div>` : "";
+    const requiredNote = s.targetMeta && s.targetMeta.required ? `<div class="decode">This target field is <strong>required</strong> by ${TARGET_DB_META[state.targetDatabase].label}'s import rules.</div>` : "";
     const options = state.schema.map(t => `<option value="${t.table}::${t.field}" ${s.confirmedTable===t.table && s.confirmedField===t.field ? "selected" : ""}>${t.table} → ${t.field}${t.required ? " (required)" : ""}</option>`).join("");
     return `
       <div class="suggestion-card" data-idx="${i}">
@@ -184,12 +215,12 @@ function renderStep3Results() {
   app.innerHTML = `
     ${renderHeader()}
     <div class="card">
-      <h3>Mapping suggestions for ${state.sourceSystem}</h3>
+      <h3>Mapping Suggestions for ${state.sourceSystem}</h3>
       <div style="color:#666;font-size:13px;margin-bottom:14px;">Confirm each mapping, pick a different target field, or flag anything ambiguous for manual review. Confirmed mappings are saved so the next customer on ${state.sourceSystem} sees them instantly.</div>
       ${cards || '<div class="empty">No fields to show.</div>'}
       <div class="step-nav">
         <button class="secondary" id="back-3">← Back</button>
-        <button class="primary" id="next-3">Go to summary →</button>
+        <button class="primary" id="next-3">Go to Summary →</button>
       </div>
     </div>
     <footer>Internal POC · CaseWorthy Technical Consulting</footer>
@@ -204,7 +235,7 @@ function renderStep3Results() {
       await api("/api/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sourceSystem: state.sourceSystem, fieldName: s.source, table: s.confirmedTable, field: s.confirmedField }),
+        body: JSON.stringify({ targetDatabase: state.targetDatabase, sourceSystem: state.sourceSystem, fieldName: s.source, table: s.confirmedTable, field: s.confirmedField }),
       });
       s.confirmed = true;
       s.flagged = false;
@@ -264,7 +295,7 @@ function renderReadinessPanel(check) {
       </div>`);
   }
   if (!groups.length) {
-    return `<div class="readiness-panel"><div class="readiness-clean">✓ No rule violations detected against CaseWorthy's import requirements.</div></div>`;
+    return `<div class="readiness-panel"><div class="readiness-clean">✓ No rule violations detected against ${TARGET_DB_META[state.targetDatabase].label}'s import requirements.</div></div>`;
   }
   return `<div class="readiness-panel">${groups.join("")}</div>`;
 }
@@ -274,7 +305,7 @@ async function renderStep4() {
     ${renderHeader()}
     <div class="card">
       <h3>Summary — ${state.sourceSystem}</h3>
-      <div class="loading">Checking mappings against CaseWorthy's import rules…</div>
+      <div class="loading">Checking mappings against ${TARGET_DB_META[state.targetDatabase].label}'s import rules…</div>
     </div>
   `;
   refreshLibStat();
@@ -285,7 +316,7 @@ async function renderStep4() {
   const check = await api("/api/rulecheck", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ mappings }),
+    body: JSON.stringify({ targetDatabase: state.targetDatabase, mappings }),
   });
 
   const rows = state.suggestions.map(s => {
@@ -295,7 +326,7 @@ async function renderStep4() {
     return `<tr class="${rowClass}"><td>${s.source}</td><td>${target}</td><td>${status}</td></tr>`;
   }).join("");
 
-  const summaryLines = [`ETL Field Mapping — Source: ${state.sourceSystem}`, ""].concat(
+  const summaryLines = [`ETL Field Mapping — Target Database: ${TARGET_DB_META[state.targetDatabase].label} — Source: ${state.sourceSystem}`, ""].concat(
     state.suggestions.map(s => `${s.source} -> ${s.confirmedTable ? s.confirmedTable + "." + s.confirmedField : "UNMAPPED"} [${s.flagged ? "FLAGGED" : (s.confirmed ? "CONFIRMED" : "SUGGESTED")}]`)
   );
   summaryLines.push("", "-- Import readiness --");
@@ -314,12 +345,12 @@ async function renderStep4() {
       <h3>Summary — ${state.sourceSystem}</h3>
       ${renderReadinessPanel(check)}
       <table class="summary">
-        <thead><tr><th>Your field</th><th>CaseWorthy target</th><th>Status</th></tr></thead>
+        <thead><tr><th>Your field</th><th>${TARGET_DB_META[state.targetDatabase].label} target</th><th>Status</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
       <div class="step-nav">
-        <button class="secondary" id="back-4">← Back to mappings</button>
-        <button class="primary" id="download-btn">Download summary (.txt)</button>
+        <button class="secondary" id="back-4">← Back to Mappings</button>
+        <button class="primary" id="download-btn">Download Summary (.txt)</button>
       </div>
     </div>
     <footer>Internal POC · CaseWorthy Technical Consulting — not for use with real client data</footer>

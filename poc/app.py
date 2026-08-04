@@ -10,13 +10,17 @@ Then open http://127.0.0.1:8000 . Mapping suggestions come first from a
 rule-based matcher grounded in the extracted validation-script schema
 (field_matcher.py) and only fall back to the Anthropic API (if
 ANTHROPIC_API_KEY is set) for names the rules can't confidently resolve.
+
+Supports multiple target databases (schema_rules.TARGET_DATABASES) — today
+that's CaseWorthy (fully populated) and ServTracker (listed for the UI, but
+with no schema loaded yet; see schema_rules.py).
 """
 
 import json
 import os
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import db  # noqa: E402
@@ -27,23 +31,36 @@ import schema_rules  # noqa: E402
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 
-SCHEMA = schema_rules.load_schema()
-CANDIDATES = [
-    {
-        "table": f["table"],
-        "field": f["field"],
-        "required": f.get("required", False),
-        "type": f.get("type"),
-        "listId": f.get("listId"),
-        "decode": f.get("decode"),
-    }
-    for f in SCHEMA
-]
+DEFAULT_TARGET_DATABASE = schema_rules.DEFAULT_TARGET_DATABASE
+_SCHEMA_CACHE = {}
+
+
+def get_schema(target_db):
+    if target_db not in _SCHEMA_CACHE:
+        _SCHEMA_CACHE[target_db] = schema_rules.load_schema(target_db)
+    return _SCHEMA_CACHE[target_db]
+
+
+def get_candidates(target_db):
+    return [
+        {
+            "table": f["table"],
+            "field": f["field"],
+            "required": f.get("required", False),
+            "type": f.get("type"),
+            "listId": f.get("listId"),
+            "decode": f.get("decode"),
+        }
+        for f in get_schema(target_db)
+    ]
+
 
 CONTENT_TYPES = {
     ".html": "text/html; charset=utf-8",
     ".js": "application/javascript; charset=utf-8",
     ".css": "text/css; charset=utf-8",
+    ".png": "image/png",
+    ".svg": "image/svg+xml",
 }
 
 
@@ -62,12 +79,19 @@ class Handler(BaseHTTPRequestHandler):
         return json.loads(raw or b"{}")
 
     def do_GET(self):
-        path = urlparse(self.path).path
-        if path == "/api/schema":
-            return self._send_json(SCHEMA)
-        if path == "/api/stats":
-            return self._send_json(db.get_stats())
-        self._serve_static(path)
+        parsed = urlparse(self.path)
+        query = parse_qs(parsed.query)
+        target_db = (query.get("targetDatabase") or [DEFAULT_TARGET_DATABASE])[0]
+
+        if parsed.path == "/api/target-databases":
+            return self._send_json(
+                {"targetDatabases": sorted(schema_rules.TARGET_DATABASES.keys()), "default": DEFAULT_TARGET_DATABASE}
+            )
+        if parsed.path == "/api/schema":
+            return self._send_json(get_schema(target_db))
+        if parsed.path == "/api/stats":
+            return self._send_json(db.get_stats(target_db))
+        self._serve_static(parsed.path)
 
     def _serve_static(self, path):
         rel = path.lstrip("/") or "index.html"
@@ -95,24 +119,29 @@ class Handler(BaseHTTPRequestHandler):
         except json.JSONDecodeError:
             return self._send_json({"error": "invalid JSON body"}, 400)
 
+        target_db = payload.get("targetDatabase") or DEFAULT_TARGET_DATABASE
+
         if path == "/api/suggest":
-            return self._send_json(self._handle_suggest(payload))
+            return self._send_json(self._handle_suggest(payload, target_db))
         if path == "/api/confirm":
             try:
-                db.save_mapping(payload["sourceSystem"], payload["fieldName"], payload["table"], payload["field"])
+                db.save_mapping(
+                    payload["sourceSystem"], payload["fieldName"], payload["table"], payload["field"], target_db
+                )
             except KeyError as e:
                 return self._send_json({"error": f"missing field: {e}"}, 400)
             return self._send_json({"ok": True})
         if path == "/api/rulecheck":
-            return self._send_json(schema_rules.check_batch(payload.get("mappings", []), SCHEMA))
+            return self._send_json(schema_rules.check_batch(payload.get("mappings", []), get_schema(target_db)))
         return self._send_json({"error": "not found"}, 404)
 
-    def _handle_suggest(self, payload):
+    def _handle_suggest(self, payload, target_db):
         source_system = payload.get("sourceSystem", "")
         field_name = payload.get("fieldName", "")
         desc = payload.get("desc", "")
+        schema = get_schema(target_db)
 
-        learned = db.get_mapping(source_system, field_name)
+        learned = db.get_mapping(source_system, field_name, target_db)
         if learned:
             return {
                 "table": learned["target_table"],
@@ -121,16 +150,24 @@ class Handler(BaseHTTPRequestHandler):
                 "reasoning": f"Confirmed {learned['confirm_count']} time(s) before for {source_system}.",
             }
 
+        if not schema:
+            return {
+                "table": None,
+                "field": None,
+                "confidence": "none",
+                "reasoning": f"No target schema loaded for {target_db} yet.",
+            }
+
         # Rule-based match against the validation-script-derived schema comes
         # first: it's free, instant, and doesn't need an API key. A high-
         # confidence rule match is used outright; anything softer still gets
         # a second opinion from the LLM (if configured) before deciding.
-        rule_sug = field_matcher.match(field_name, SCHEMA)
+        rule_sug = field_matcher.match(field_name, schema)
 
         if rule_sug and rule_sug["confidence"] == "high":
             sug = rule_sug
         else:
-            llm_sug = llm_gateway.suggest_mapping(source_system, field_name, desc, CANDIDATES)
+            llm_sug = llm_gateway.suggest_mapping(source_system, field_name, desc, get_candidates(target_db))
             if llm_sug.get("confidence") in (None, "none") and rule_sug:
                 sug = rule_sug
             else:
@@ -138,7 +175,7 @@ class Handler(BaseHTTPRequestHandler):
                 if rule_sug and rule_sug["table"] == sug.get("table") and rule_sug["field"] == sug.get("field"):
                     sug["reasoning"] = (sug.get("reasoning") or "") + " Also matches by field-name pattern."
 
-        cross = db.get_field_index(field_name)
+        cross = db.get_field_index(field_name, target_db)
         if cross and sug.get("confidence") not in (None, "none"):
             match = next(
                 (c for c in cross if c["target_table"] == sug.get("table") and c["target_field"] == sug.get("field")),

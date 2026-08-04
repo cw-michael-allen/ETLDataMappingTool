@@ -1,8 +1,9 @@
 """
-Rule engine that knows the CaseWorthy target-schema constraints (required
-fields, FK relationships, decode values) extracted from the validation
-script, and flags a customer's proposed mappings that would violate them —
-without ever validating real data values. See docs/PHASE_PLAN.md section 2.
+Rule engine that knows a target application's schema constraints (required
+fields, FK relationships, decode values) extracted from that application's
+validation script, and flags a customer's proposed mappings that would
+violate them — without ever validating real data values. See
+docs/PHASE_PLAN.md section 2.
 """
 
 import json
@@ -10,13 +11,28 @@ import os
 import re
 from collections import defaultdict
 
-SCHEMA_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "..", "reference", "target_schema_full.json"
-)
+REFERENCE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "reference")
+
+# Registry of target applications this tool can map against. CaseWorthy is
+# the only one with a real, spot-checked schema today (see
+# reference/target_schema_full.json, extracted from and confirmed against
+# 00_Staging_EXCEL_Validation_Script_v3.sql). ServTracker is a distinct
+# CaseWorthy application with its own validation rules and data templates —
+# listed here so the UI can offer it, but its schema hasn't been extracted
+# yet. We do not fabricate ServTracker rules; None means "not yet available."
+TARGET_DATABASES = {
+    "CaseWorthy": os.path.join(REFERENCE_DIR, "target_schema_full.json"),
+    "ServTracker": None,
+}
+
+DEFAULT_TARGET_DATABASE = "CaseWorthy"
 
 
-def load_schema():
-    with open(SCHEMA_PATH, encoding="utf-8") as f:
+def load_schema(target_database=DEFAULT_TARGET_DATABASE):
+    path = TARGET_DATABASES.get(target_database)
+    if not path:
+        return []
+    with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 
