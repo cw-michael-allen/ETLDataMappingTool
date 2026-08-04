@@ -1,0 +1,152 @@
+"""
+CW-ETL-FIELDMAP Phase 0 POC server.
+
+Pure standard library (no pip installs required). Serves the static frontend
+and a small JSON API backed by a local SQLite datastore. Run with:
+
+    python app.py
+
+Then open http://127.0.0.1:8000 . Set ANTHROPIC_API_KEY in the environment
+to enable live mapping suggestions; without it, suggestions come back as
+"no confident match" so the flag-for-review path still works end to end.
+"""
+
+import json
+import os
+import sys
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import urlparse
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db  # noqa: E402
+import llm_gateway  # noqa: E402
+import schema_rules  # noqa: E402
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_DIR = os.path.join(BASE_DIR, "static")
+
+SCHEMA = schema_rules.load_schema()
+CANDIDATES = [
+    {
+        "table": f["table"],
+        "field": f["field"],
+        "required": f.get("required", False),
+        "type": f.get("type"),
+        "listId": f.get("listId"),
+        "decode": f.get("decode"),
+    }
+    for f in SCHEMA
+]
+
+CONTENT_TYPES = {
+    ".html": "text/html; charset=utf-8",
+    ".js": "application/javascript; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+}
+
+
+class Handler(BaseHTTPRequestHandler):
+    def _send_json(self, obj, status=200):
+        body = json.dumps(obj).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _read_json(self):
+        length = int(self.headers.get("Content-Length", 0) or 0)
+        raw = self.rfile.read(length) if length else b"{}"
+        return json.loads(raw or b"{}")
+
+    def do_GET(self):
+        path = urlparse(self.path).path
+        if path == "/api/schema":
+            return self._send_json(SCHEMA)
+        if path == "/api/stats":
+            return self._send_json(db.get_stats())
+        self._serve_static(path)
+
+    def _serve_static(self, path):
+        rel = path.lstrip("/") or "index.html"
+        file_path = os.path.normpath(os.path.join(STATIC_DIR, rel))
+        if not file_path.startswith(os.path.normpath(STATIC_DIR)):
+            return self._send_json({"error": "forbidden"}, 403)
+        if os.path.isdir(file_path):
+            file_path = os.path.join(file_path, "index.html")
+        if not os.path.isfile(file_path):
+            return self._send_json({"error": "not found"}, 404)
+        ext = os.path.splitext(file_path)[1]
+        ctype = CONTENT_TYPES.get(ext, "application/octet-stream")
+        with open(file_path, "rb") as f:
+            body = f.read()
+        self.send_response(200)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_POST(self):
+        path = urlparse(self.path).path
+        try:
+            payload = self._read_json()
+        except json.JSONDecodeError:
+            return self._send_json({"error": "invalid JSON body"}, 400)
+
+        if path == "/api/suggest":
+            return self._send_json(self._handle_suggest(payload))
+        if path == "/api/confirm":
+            try:
+                db.save_mapping(payload["sourceSystem"], payload["fieldName"], payload["table"], payload["field"])
+            except KeyError as e:
+                return self._send_json({"error": f"missing field: {e}"}, 400)
+            return self._send_json({"ok": True})
+        if path == "/api/rulecheck":
+            return self._send_json(schema_rules.check_batch(payload.get("mappings", []), SCHEMA))
+        return self._send_json({"error": "not found"}, 404)
+
+    def _handle_suggest(self, payload):
+        source_system = payload.get("sourceSystem", "")
+        field_name = payload.get("fieldName", "")
+        desc = payload.get("desc", "")
+
+        learned = db.get_mapping(source_system, field_name)
+        if learned:
+            return {
+                "table": learned["target_table"],
+                "field": learned["target_field"],
+                "confidence": "learned",
+                "reasoning": f"Confirmed {learned['confirm_count']} time(s) before for {source_system}.",
+            }
+
+        cross = db.get_field_index(field_name)
+        sug = llm_gateway.suggest_mapping(source_system, field_name, desc, CANDIDATES)
+        if cross and sug.get("confidence") not in (None, "none"):
+            match = next(
+                (c for c in cross if c["target_table"] == sug.get("table") and c["target_field"] == sug.get("field")),
+                None,
+            )
+            if match:
+                sug["reasoning"] = (sug.get("reasoning") or "") + (
+                    f" Also mapped this way {match['count']} time(s) across other customers."
+                )
+        return sug
+
+    def log_message(self, format, *args):  # noqa: A002
+        sys.stderr.write("%s - %s\n" % (self.address_string(), format % args))
+
+
+def main():
+    port = int(os.environ.get("PORT", "8000"))
+    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    print(f"CW-ETL-FIELDMAP POC running at http://127.0.0.1:{port}")
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        print("WARNING: ANTHROPIC_API_KEY not set — suggestions will come back as 'no confident match'.")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        server.shutdown()
+
+
+if __name__ == "__main__":
+    main()
