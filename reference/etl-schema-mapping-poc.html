@@ -1,0 +1,517 @@
+<style>
+  :root {
+    --cw-blue: #003594;
+    --cw-blue-hover: #809ACA;
+    --cw-blue-active: #002A76;
+    --cw-teal: #009ABE;
+    --cw-teal-light: #80CDDF;
+    --cw-gold: #EDB400;
+    --cw-black: #333333;
+    --cw-gray: #CED1D4;
+    --cw-green: #0E9987;
+    --cw-green-light: #87CCC3;
+    --cw-orange: #DA623E;
+    --cw-nav-dark: #24282B;
+    --cw-text-input: #4A4A4A;
+    --font-heading: 'Poppins', 'Helvetica Neue', Arial, sans-serif;
+    --font-body: 'Source Sans 3', 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: var(--font-body);
+    color: var(--cw-black);
+    background: #F7F8F9;
+    margin: 0;
+    padding: 24px;
+  }
+  #app { max-width: 880px; margin: 0 auto; }
+  h1, h2, h3 { font-family: var(--font-heading); color: var(--cw-blue); margin: 0 0 4px 0; }
+  .eyebrow {
+    font-family: var(--font-heading); font-weight: 600; font-size: 12px;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--cw-teal); margin-bottom: 6px;
+  }
+  .card {
+    background: #fff; border: 1px solid var(--cw-gray); border-radius: 10px;
+    padding: 20px 24px; margin-bottom: 16px;
+  }
+  .header-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  .lib-stat {
+    background: var(--cw-nav-dark); color: #fff; border-radius: 10px; padding: 12px 18px;
+    font-family: var(--font-heading); min-width: 220px;
+  }
+  .lib-stat .num { font-size: 26px; font-weight: 700; color: var(--cw-teal-light); }
+  .lib-stat .lbl { font-size: 11px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.06em; }
+  .safety-note {
+    background: #FFF8E1; border: 1px solid var(--cw-gold); border-radius: 8px;
+    padding: 10px 14px; font-size: 13px; color: var(--cw-black); margin-bottom: 16px;
+  }
+  label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 6px; color: var(--cw-black); }
+  input[type=text], select {
+    width: 100%; padding: 9px 11px; border: 1px solid var(--cw-gray); border-radius: 6px;
+    font-size: 14px; color: var(--cw-text-input); font-family: var(--font-body);
+  }
+  input::placeholder { color: var(--cw-gray); }
+  .row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; margin-bottom: 10px; }
+  button {
+    font-family: var(--font-heading); font-weight: 600; font-size: 13px; border-radius: 6px;
+    padding: 10px 16px; border: none; cursor: pointer; transition: background 0.15s;
+  }
+  button.primary { background: var(--cw-blue); color: #fff; }
+  button.primary:hover { background: var(--cw-blue-active); }
+  button.secondary { background: #fff; color: var(--cw-blue); border: 1px solid var(--cw-blue); }
+  button.secondary:hover { background: #EEF2FA; }
+  button.ghost { background: none; color: var(--cw-orange); border: 1px solid var(--cw-orange); padding: 6px 10px; font-size: 12px; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .field-row { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+  .field-row input { flex: 1; }
+  .pill {
+    display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+  }
+  .pill.high { background: #E2F4F1; color: var(--cw-green); }
+  .pill.medium { background: #FFF3D6; color: #A87700; }
+  .pill.low { background: #FDEAE3; color: var(--cw-orange); }
+  .pill.none { background: #EEE; color: #777; }
+  .pill.learned { background: #E4E9F5; color: var(--cw-blue); }
+  .suggestion-card { border: 1px solid var(--cw-gray); border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; }
+  .suggestion-card .src { font-weight: 700; color: var(--cw-black); }
+  .suggestion-card .target { font-family: var(--font-heading); font-weight: 600; color: var(--cw-blue); margin: 6px 0; }
+  .suggestion-card .reason { font-size: 13px; color: #666; margin-bottom: 8px; }
+  .suggestion-card .decode { font-size: 12px; color: var(--cw-teal); margin-bottom: 8px; }
+  .suggestion-card .actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .override-row { display: none; margin-top: 10px; gap: 8px; }
+  .override-row.show { display: flex; }
+  table.summary { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.summary th { text-align: left; background: #EEF2FA; color: var(--cw-blue); padding: 8px 10px; font-family: var(--font-heading); }
+  table.summary td { padding: 8px 10px; border-bottom: 1px solid var(--cw-gray); }
+  .flagged-row td { background: #FDEAE3; }
+  .step-nav { display: flex; justify-content: space-between; margin-top: 18px; }
+  .loading { color: var(--cw-teal); font-size: 13px; font-style: italic; }
+  .empty { color: #888; font-size: 13px; padding: 12px 0; }
+  footer { text-align: center; font-size: 11px; color: #999; margin-top: 24px; }
+</style>
+
+<div id="app"></div>
+
+<script>
+const TARGET_SCHEMA = [
+  {table:"Client", field:"ClientID", required:true, type:"Unique ID", note:"Unique identifier for the client record. Used by Enrollment and every other client-linked table."},
+  {table:"Client", field:"FirstName", required:true, type:"Text (max 50)"},
+  {table:"Client", field:"MiddleName", required:false, type:"Text (max 50)"},
+  {table:"Client", field:"LastName", required:true, type:"Text (max 50)"},
+  {table:"Client", field:"HoHClientID", required:true, type:"Self-reference to ClientID", note:"Head of Household. If the client has no family, set this equal to their own ClientID."},
+  {table:"Client", field:"RelationToHoH", required:true, type:"List", listId:4, decode:"1=Self, 2=Spouse, 3=Child"},
+  {table:"Client", field:"OrganizationID", required:true, type:"FK \u2192 Organization"},
+  {table:"Client", field:"BirthDate", required:false, type:"Date"},
+  {table:"Client", field:"DOBDataQuality", required:false, type:"List", listId:620},
+  {table:"Client", field:"Suffix", required:false, type:"List", listId:714, decode:"1=Jr, 2=Sr, 3=II, 4=III, 5=IV"},
+  {table:"Client", field:"Gender", required:false, type:"List", listId:1},
+  {table:"Client", field:"Pronouns", required:false, type:"Free text / list"},
+  {table:"Client", field:"SexualOrientation", required:false, type:"List", listId:2910},
+  {table:"Client", field:"PrimaryLanguage", required:false, type:"List", listId:133},
+  {table:"Client", field:"EnglishProficiency", required:false, type:"List", listId:627},
+  {table:"Client", field:"Race", required:false, type:"List", listId:6},
+  {table:"Client", field:"Ethnicity", required:false, type:"List", listId:7},
+  {table:"Client", field:"SSN", required:false, type:"Text", note:"4, 9, or 11 characters, dashes allowed."},
+  {table:"Client", field:"SSNDataQuality", required:false, type:"List", listId:587},
+  {table:"Client", field:"HomePhone", required:false, type:"Text"},
+  {table:"Client", field:"HomePhoneType", required:false, type:"List", listId:4073, decode:"1=Primary, 2=Secondary, 3=Tertiary"},
+  {table:"Client", field:"WorkPhone", required:false, type:"Text"},
+  {table:"Client", field:"WorkPhoneType", required:false, type:"List", listId:4073, decode:"1=Primary, 2=Secondary, 3=Tertiary"},
+  {table:"Client", field:"CellPhone", required:false, type:"Text"},
+  {table:"Client", field:"CellPhoneType", required:false, type:"List", listId:4073, decode:"1=Primary, 2=Secondary, 3=Tertiary"},
+  {table:"Client", field:"PhoneVoiceOptIn", required:false, type:"List", listId:100, decode:"1=Yes, 2=No"},
+  {table:"Client", field:"PhoneTextOptIn", required:false, type:"List", listId:100, decode:"1=Yes, 2=No"},
+  {table:"Client", field:"EmailOptIn", required:false, type:"List", listId:100, decode:"1=Yes, 2=No"},
+  {table:"Client", field:"Restriction", required:false, type:"List", listId:25, decode:"1=Shared, 2=Not Shared"},
+  {table:"Client", field:"CitizenshipStatusID", required:false, type:"List", listId:127},
+  {table:"Client", field:"Email", required:false, type:"Text"},
+  {table:"Client", field:"Address", required:false, type:"Text (max 100)"},
+  {table:"Client", field:"Address2", required:false, type:"Text (max 100)"},
+  {table:"Client", field:"City", required:false, type:"Text (max 25)"},
+  {table:"Client", field:"StateCode", required:false, type:"2-letter state code"},
+  {table:"Client", field:"County", required:false, type:"Text (max 100)"},
+  {table:"Client", field:"Zip", required:false, type:"Text"},
+  {table:"Client", field:"VeteranStatus", required:false, type:"List", listId:37},
+  {table:"Client", field:"MaritalStatus", required:false, type:"List", listId:128},
+  {table:"Program", field:"ProgramID", required:true, type:"Unique ID"},
+  {table:"Program", field:"ProgramName", required:true, type:"Text (max 50)"},
+  {table:"Program", field:"BeginDate", required:false, type:"Date"},
+  {table:"Program", field:"EndDate", required:false, type:"Date"},
+  {table:"Program", field:"EnrollmentsEnabled", required:false, type:"Boolean (0/1)"},
+  {table:"Program", field:"NotifyOnAutoExit", required:false, type:"List", listId:2893},
+  {table:"Enrollment", field:"MemberID", required:true, type:"Unique ID"},
+  {table:"Enrollment", field:"EnrollmentID", required:true, type:"ID"},
+  {table:"Enrollment", field:"ProgramID", required:true, type:"FK \u2192 Program"},
+  {table:"Enrollment", field:"ClientID", required:true, type:"FK \u2192 Client"},
+  {table:"Enrollment", field:"ProviderID", required:true, type:"FK \u2192 Provider"},
+  {table:"Enrollment", field:"Status", required:true, type:"List", listId:52, decode:"100=Enrolled, 200=Exited"},
+  {table:"Enrollment", field:"BeginDate", required:true, type:"Date"},
+  {table:"Enrollment", field:"ExitDate", required:false, type:"Date"},
+  {table:"Enrollment", field:"Restriction", required:false, type:"List", listId:25, decode:"1=Shared, 2=Not Shared"},
+  {table:"ServiceType", field:"ServiceTypeID", required:true, type:"Unique ID (numeric)"},
+  {table:"ServiceType", field:"Description", required:true, type:"Text"},
+  {table:"ServiceType", field:"UnitOfMeasure", required:true, type:"List", listId:2, decode:"1=Days, 2=Hours, 3=Minutes, 4=Each, 5=Dollar, 6=Mileage"},
+  {table:"ServiceType", field:"UnitValue", required:true, type:"Decimal"},
+  {table:"ServiceType", field:"DuplicateMinutes", required:false, type:"Integer", note:"Use 0 for no limit."},
+  {table:"ServiceType", field:"CreatedBy", required:false, type:"FK \u2192 Users"},
+  {table:"ServiceType", field:"CreatedDate", required:false, type:"Date"},
+  {table:"ServiceType", field:"EffectiveDate", required:false, type:"Date"},
+  {table:"Users", field:"UserID", required:true, type:"Unique ID"},
+  {table:"Users", field:"UserName", required:true, type:"Text"},
+  {table:"Users", field:"FirstName", required:true, type:"Text"},
+  {table:"Users", field:"LastName", required:true, type:"Text"},
+  {table:"Users", field:"EmailAddress", required:false, type:"Text"},
+  {table:"Users", field:"OrganizationID", required:true, type:"FK \u2192 Organization"},
+  {table:"Users", field:"ProviderID", required:false, type:"FK \u2192 Provider"},
+  {table:"Users", field:"UserTypeID", required:false, type:"List", listId:8, decode:"2=Authenticated Users, 3=Alter Own Role, 4=Alter Any Role"},
+  {table:"Users", field:"SupervisorUserID", required:false, type:"Self-reference to UserID"},
+  {table:"Users", field:"isSupervisor", required:false, type:"Boolean (0/1)"},
+  {table:"Users", field:"isActive", required:false, type:"Boolean (0/1)"},
+];
+
+// ---- state ----
+let state = {
+  step: 1,
+  sourceSystem: "",
+  fields: [{ name: "", desc: "" }],
+  suggestions: [], // {source, desc, suggestion:{table,field,confidence,reasoning,decode}|null, learned:false, confirmed:null}
+};
+
+function normalize(s) { return (s || "").trim().toLowerCase().replace(/[^a-z0-9]/g, ""); }
+
+// ---- storage helpers ----
+async function getMapping(sourceSystem, fieldName) {
+  try {
+    const key = `mapping:${normalize(sourceSystem)}:${normalize(fieldName)}`;
+    const res = await window.storage.get(key, true);
+    return res ? JSON.parse(res.value) : null;
+  } catch (e) { return null; }
+}
+async function getFieldIndex(fieldName) {
+  try {
+    const key = `fieldindex:${normalize(fieldName)}`;
+    const res = await window.storage.get(key, true);
+    return res ? JSON.parse(res.value) : [];
+  } catch (e) { return []; }
+}
+async function saveMapping(sourceSystem, fieldName, table, field) {
+  const mapKey = `mapping:${normalize(sourceSystem)}:${normalize(fieldName)}`;
+  let existing = await getMapping(sourceSystem, fieldName);
+  const record = existing && existing.table === table && existing.field === field
+    ? { ...existing, confirmCount: (existing.confirmCount || 1) + 1, lastConfirmedAt: new Date().toISOString() }
+    : { table, field, confirmCount: 1, lastConfirmedAt: new Date().toISOString(), sourceSystem, fieldName };
+  try { await window.storage.set(mapKey, JSON.stringify(record), true); } catch (e) {}
+
+  // update cross-source-system field index
+  const idxKey = `fieldindex:${normalize(fieldName)}`;
+  let idx = await getFieldIndex(fieldName);
+  const existingEntry = idx.find(e => e.table === table && e.field === field);
+  if (existingEntry) { existingEntry.count += 1; }
+  else { idx.push({ table, field, count: 1 }); }
+  try { await window.storage.set(idxKey, JSON.stringify(idx), true); } catch (e) {}
+}
+async function getLibraryStats() {
+  try {
+    const res = await window.storage.list("mapping:", true);
+    const keys = (res && res.keys) || [];
+    const systems = new Set(keys.map(k => k.split(":")[1]));
+    return { total: keys.length, systems: systems.size };
+  } catch (e) { return { total: 0, systems: 0 }; }
+}
+
+// ---- Claude API suggestion ----
+async function suggestMapping(sourceSystem, fieldName, desc) {
+  const candidates = TARGET_SCHEMA.map(f => ({
+    table: f.table, field: f.field, required: f.required, type: f.type,
+    listId: f.listId || null, decode: f.decode || null
+  }));
+  const sys = `You are helping a CaseWorthy data migration specialist map a customer's source system field to CaseWorthy's target ETL schema. You will be given a source field name/description and a list of valid target candidates. Respond with ONLY valid JSON, no markdown fences, no preamble, in this exact shape:
+{"table": "<candidate table or null>", "field": "<candidate field or null>", "confidence": "high"|"medium"|"low"|"none", "reasoning": "<one short sentence>"}
+Rules:
+- Only choose table/field values that appear in the candidate list. Never invent a field.
+- If the source field looks like a custom/organization-specific field with no reasonable match, set table and field to null and confidence to "none".
+- Prefer exact or near-exact name matches, then semantic matches (e.g. "DOB" -> BirthDate).
+- Keep reasoning under 20 words.`;
+  const userMsg = JSON.stringify({ sourceSystem, sourceField: fieldName, sourceDescription: desc || "", candidates });
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1000,
+        system: sys,
+        messages: [{ role: "user", content: userMsg }]
+      })
+    });
+    const data = await response.json();
+    const textBlock = (data.content || []).find(b => b.type === "text");
+    const clean = (textBlock?.text || "").replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(clean);
+    return parsed;
+  } catch (e) {
+    return { table: null, field: null, confidence: "none", reasoning: "Could not reach the mapping service — please assign manually." };
+  }
+}
+
+// ---- rendering ----
+const app = document.getElementById("app");
+
+function renderHeader(activeStep) {
+  return `
+    <div class="header-row">
+      <div>
+        <div class="eyebrow">CaseWorthy \u2022 ETL Onboarding</div>
+        <h1>Field Mapping Assistant</h1>
+        <div style="color:#666;font-size:13px;">Proof of concept \u2014 tells you where each of your fields lives in CaseWorthy today.</div>
+      </div>
+      <div class="lib-stat" id="lib-stat">
+        <div class="num">\u2026</div>
+        <div class="lbl">Learned mappings</div>
+      </div>
+    </div>
+    <div class="safety-note">
+      \u26A0\uFE0F Sample-data POC. Only enter <strong>field names and formats</strong> below \u2014 never real client names, SSNs, or other personal data.
+    </div>
+  `;
+}
+
+async function refreshLibStat() {
+  const stats = await getLibraryStats();
+  const el = document.getElementById("lib-stat");
+  if (el) {
+    el.innerHTML = `<div class="num">${stats.total}</div><div class="lbl">Learned mappings \u00b7 ${stats.systems} source system${stats.systems === 1 ? "" : "s"}</div>`;
+  }
+}
+
+function renderStep1() {
+  app.innerHTML = `
+    ${renderHeader(1)}
+    <div class="card">
+      <h3>What system are you migrating from?</h3>
+      <label for="src-sys">Source system name</label>
+      <input type="text" id="src-sys" placeholder="e.g. Bonterra Case Manager, Apricot, a homegrown Access database" value="${state.sourceSystem}">
+      <div class="step-nav">
+        <span></span>
+        <button class="primary" id="next-1">Next: list your fields \u2192</button>
+      </div>
+    </div>
+    <footer>Internal POC \u00b7 CaseWorthy Technical Consulting</footer>
+  `;
+  refreshLibStat();
+  document.getElementById("next-1").onclick = () => {
+    const val = document.getElementById("src-sys").value.trim();
+    if (!val) { alert("Enter the source system name to continue."); return; }
+    state.sourceSystem = val;
+    state.step = 2;
+    renderStep2();
+  };
+}
+
+function renderStep2() {
+  const rows = state.fields.map((f, i) => `
+    <div class="field-row" data-idx="${i}">
+      <input type="text" class="fname" placeholder="Source field name (e.g. Client_DOB)" value="${f.name}">
+      <input type="text" class="fdesc" placeholder="Optional: short description or format (e.g. MM/DD/YYYY)" value="${f.desc}">
+      <button class="ghost remove-field">Remove</button>
+    </div>
+  `).join("");
+
+  app.innerHTML = `
+    ${renderHeader(2)}
+    <div class="card">
+      <h3>List the fields from ${state.sourceSystem}</h3>
+      <div style="color:#666;font-size:13px;margin-bottom:14px;">Add each field name from your export. A short description helps but isn't required.</div>
+      <div id="field-rows">${rows}</div>
+      <button class="secondary" id="add-field">+ Add another field</button>
+      <div class="step-nav">
+        <button class="secondary" id="back-2">\u2190 Back</button>
+        <button class="primary" id="next-2">Get mapping suggestions \u2192</button>
+      </div>
+    </div>
+    <footer>Internal POC \u00b7 CaseWorthy Technical Consulting</footer>
+  `;
+  refreshLibStat();
+
+  function syncFieldsFromDOM() {
+    const rowEls = [...document.querySelectorAll("#field-rows .field-row")];
+    state.fields = rowEls.map(r => ({
+      name: r.querySelector(".fname").value.trim(),
+      desc: r.querySelector(".fdesc").value.trim()
+    }));
+  }
+
+  document.getElementById("add-field").onclick = () => {
+    syncFieldsFromDOM();
+    state.fields.push({ name: "", desc: "" });
+    renderStep2();
+  };
+  document.querySelectorAll(".remove-field").forEach(btn => {
+    btn.onclick = () => {
+      syncFieldsFromDOM();
+      const idx = parseInt(btn.closest(".field-row").dataset.idx, 10);
+      state.fields.splice(idx, 1);
+      if (state.fields.length === 0) state.fields.push({ name: "", desc: "" });
+      renderStep2();
+    };
+  });
+  document.getElementById("back-2").onclick = () => { syncFieldsFromDOM(); state.step = 1; renderStep1(); };
+  document.getElementById("next-2").onclick = async () => {
+    syncFieldsFromDOM();
+    const valid = state.fields.filter(f => f.name);
+    if (valid.length === 0) { alert("Add at least one field name."); return; }
+    state.fields = valid;
+    state.step = 3;
+    await renderStep3();
+  };
+}
+
+async function renderStep3() {
+  app.innerHTML = `
+    ${renderHeader(3)}
+    <div class="card">
+      <h3>Mapping suggestions</h3>
+      <div class="loading">Checking the mapping library and asking Claude for suggestions on new fields\u2026</div>
+    </div>
+  `;
+  refreshLibStat();
+
+  state.suggestions = [];
+  for (const f of state.fields) {
+    const learned = await getMapping(state.sourceSystem, f.name);
+    let sug;
+    if (learned) {
+      sug = { table: learned.table, field: learned.field, confidence: "learned", reasoning: `Confirmed ${learned.confirmCount} time${learned.confirmCount === 1 ? "" : "s"} before for ${state.sourceSystem}.` };
+    } else {
+      const crossIdx = await getFieldIndex(f.name);
+      sug = await suggestMapping(state.sourceSystem, f.name, f.desc);
+      if (crossIdx.length && sug.confidence !== "none") {
+        const match = crossIdx.find(e => e.table === sug.table && e.field === sug.field);
+        if (match) sug.reasoning += ` Also mapped this way ${match.count} time${match.count === 1 ? "" : "s"} across other customers.`;
+      }
+    }
+    const targetMeta = TARGET_SCHEMA.find(t => t.table === sug.table && t.field === sug.field);
+    state.suggestions.push({ source: f.name, desc: f.desc, suggestion: sug, targetMeta, confirmedTable: sug.table, confirmedField: sug.field });
+  }
+  renderStep3Results();
+}
+
+function renderStep3Results() {
+  const cards = state.suggestions.map((s, i) => {
+    const conf = s.suggestion.confidence;
+    const pillClass = conf === "learned" ? "learned" : conf;
+    const pillLabel = conf === "learned" ? "Learned" : conf.charAt(0).toUpperCase() + conf.slice(1);
+    const hasMatch = s.suggestion.table && s.suggestion.field;
+    const decode = s.targetMeta && s.targetMeta.decode ? `<div class="decode">Valid values: ${s.targetMeta.decode}</div>` : "";
+    const note = s.targetMeta && s.targetMeta.note ? `<div class="decode">${s.targetMeta.note}</div>` : "";
+    const options = TARGET_SCHEMA.map(t => `<option value="${t.table}::${t.field}" ${s.confirmedTable===t.table && s.confirmedField===t.field ? "selected" : ""}>${t.table} \u2192 ${t.field}${t.required ? " (required)" : ""}</option>`).join("");
+    return `
+      <div class="suggestion-card" data-idx="${i}">
+        <div class="src">${s.source}${s.desc ? ` <span style="font-weight:400;color:#888;">\u2014 ${s.desc}</span>` : ""}</div>
+        ${hasMatch ? `<div class="target">${s.confirmedTable} \u2192 ${s.confirmedField}</div>` : `<div class="target" style="color:var(--cw-orange);">No confident match</div>`}
+        <span class="pill ${pillClass}">${pillLabel}</span>
+        <div class="reason" style="margin-top:6px;">${s.suggestion.reasoning || ""}</div>
+        ${decode}${note}
+        <div class="actions">
+          <button class="secondary confirm-btn">${s.confirmed ? "Confirmed \u2713" : "Confirm this mapping"}</button>
+          <button class="ghost override-btn">Choose different field</button>
+          <button class="ghost flag-btn" style="border-color:#999;color:#666;">Flag for consultant review</button>
+        </div>
+        <div class="override-row">
+          <select class="override-select">${options}</select>
+          <button class="primary override-save">Use this</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  app.innerHTML = `
+    ${renderHeader(3)}
+    <div class="card">
+      <h3>Mapping suggestions for ${state.sourceSystem}</h3>
+      <div style="color:#666;font-size:13px;margin-bottom:14px;">Confirm each mapping, pick a different target field, or flag anything ambiguous for manual review. Confirmed mappings are saved so the next customer on ${state.sourceSystem} sees them instantly.</div>
+      ${cards || '<div class="empty">No fields to show.</div>'}
+      <div class="step-nav">
+        <button class="secondary" id="back-3">\u2190 Back</button>
+        <button class="primary" id="next-3">Go to summary \u2192</button>
+      </div>
+    </div>
+    <footer>Internal POC \u00b7 CaseWorthy Technical Consulting</footer>
+  `;
+  refreshLibStat();
+
+  document.querySelectorAll(".suggestion-card").forEach(card => {
+    const idx = parseInt(card.dataset.idx, 10);
+    const s = state.suggestions[idx];
+    card.querySelector(".confirm-btn").onclick = async () => {
+      if (!s.confirmedTable || !s.confirmedField) { alert("Choose a target field first."); return; }
+      await saveMapping(state.sourceSystem, s.source, s.confirmedTable, s.confirmedField);
+      s.confirmed = true;
+      s.flagged = false;
+      renderStep3Results();
+    };
+    card.querySelector(".override-btn").onclick = () => {
+      card.querySelector(".override-row").classList.toggle("show");
+    };
+    card.querySelector(".override-save").onclick = () => {
+      const val = card.querySelector(".override-select").value;
+      const [table, field] = val.split("::");
+      s.confirmedTable = table; s.confirmedField = field;
+      s.suggestion = { table, field, confidence: "medium", reasoning: "Manually selected by consultant." };
+      s.targetMeta = TARGET_SCHEMA.find(t => t.table === table && t.field === field);
+      s.confirmed = false;
+      renderStep3Results();
+    };
+    card.querySelector(".flag-btn").onclick = () => {
+      s.flagged = true;
+      s.confirmed = false;
+      s.confirmedTable = null; s.confirmedField = null;
+      renderStep3Results();
+    };
+  });
+  document.getElementById("back-3").onclick = () => { state.step = 2; renderStep2(); };
+  document.getElementById("next-3").onclick = () => { state.step = 4; renderStep4(); };
+}
+
+function renderStep4() {
+  const rows = state.suggestions.map(s => {
+    const status = s.flagged ? "Flagged for review" : (s.confirmed ? "Confirmed" : (s.confirmedTable ? "Suggested (not confirmed)" : "Unmapped"));
+    const target = s.confirmedTable ? `${s.confirmedTable} \u2192 ${s.confirmedField}` : "\u2014";
+    const rowClass = s.flagged || (!s.confirmedTable && !s.flagged) ? "flagged-row" : "";
+    return `<tr class="${rowClass}"><td>${s.source}</td><td>${target}</td><td>${status}</td></tr>`;
+  }).join("");
+
+  const summaryText = [`ETL Field Mapping \u2014 Source: ${state.sourceSystem}`, ""].concat(
+    state.suggestions.map(s => `${s.source} -> ${s.confirmedTable ? s.confirmedTable + "." + s.confirmedField : "UNMAPPED"} [${s.flagged ? "FLAGGED" : (s.confirmed ? "CONFIRMED" : "SUGGESTED")}]`)
+  ).join("\n");
+
+  app.innerHTML = `
+    ${renderHeader(4)}
+    <div class="card">
+      <h3>Summary \u2014 ${state.sourceSystem}</h3>
+      <table class="summary">
+        <thead><tr><th>Your field</th><th>CaseWorthy target</th><th>Status</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="step-nav">
+        <button class="secondary" id="back-4">\u2190 Back to mappings</button>
+        <button class="primary" id="download-btn">Download summary (.txt)</button>
+      </div>
+    </div>
+    <footer>Internal POC \u00b7 CaseWorthy Technical Consulting \u2014 not for use with real client data</footer>
+  `;
+  refreshLibStat();
+  document.getElementById("back-4").onclick = () => { state.step = 3; renderStep3Results(); };
+  document.getElementById("download-btn").onclick = () => {
+    const blob = new Blob([summaryText], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `${state.sourceSystem.replace(/[^a-z0-9]+/gi, "_")}_field_mapping.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+}
+
+renderStep1();
+</script>
