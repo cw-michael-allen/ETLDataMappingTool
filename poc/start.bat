@@ -1,12 +1,37 @@
 @echo off
 cd /d "%~dp0"
-set PYEXE=C:\Users\MichaelAllen\AppData\Local\Programs\Python\Python314\python.exe
-if not exist "%PYEXE%" set PYEXE=python
+
+if not exist "..\reference\target_schema_full.json" (
+    echo ERROR: Can't find ..\reference\target_schema_full.json
+    echo This "poc" folder must stay inside the full ETLGetProject checkout -
+    echo copy/share the WHOLE project folder, not just "poc" on its own.
+    pause
+    exit /b 1
+)
+
+where py >nul 2>nul
+if %ERRORLEVEL%==0 (
+    set "PYCMD=py"
+) else (
+    where python >nul 2>nul
+    if %ERRORLEVEL%==0 (
+        set "PYCMD=python"
+    ) else (
+        echo ERROR: Python was not found on this machine.
+        echo Install it from https://www.python.org/downloads/ and check
+        echo "Add python.exe to PATH" during setup, then run this again.
+        pause
+        exit /b 1
+    )
+)
+
 set CHROME_EXE=C:\Program Files\Google\Chrome\Application\chrome.exe
+if not exist "%CHROME_EXE%" set "CHROME_EXE=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+if not exist "%CHROME_EXE%" set "CHROME_EXE=%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"
 if not defined PORT set PORT=8000
 
 echo Starting CW-ETL-FIELDMAP server...
-start "CW-ETL-FIELDMAP server" /min "%PYEXE%" app.py
+start "CW-ETL-FIELDMAP server" /min %PYCMD% app.py
 
 timeout /t 2 /nobreak >nul
 
