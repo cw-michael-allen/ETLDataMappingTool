@@ -6,8 +6,11 @@ const TARGET_DB_META = {
 let state = {
   step: 1,
   targetDatabase: "CaseWorthy",
+  advancedMode: false,
+  dialect: "SQL Server",
+  dialects: null,
   sourceSystem: "",
-  fields: [{ name: "", desc: "" }],
+  fields: [{ name: "", desc: "", sourceTable: "" }],
   suggestions: [],
   schema: null,
   schemaForDb: null,
@@ -57,7 +60,16 @@ async function ensureSchema() {
   return state.schema;
 }
 
-function renderStep1() {
+async function ensureDialects() {
+  if (!state.dialects) {
+    const res = await api("/api/dialects");
+    state.dialects = res.dialects;
+    if (!state.dialects.includes(state.dialect)) state.dialect = res.default;
+  }
+  return state.dialects;
+}
+
+async function renderStep1() {
   const dbOptions = Object.entries(TARGET_DB_META)
     .map(([key, meta]) => `<option value="${key}" ${state.targetDatabase === key ? "selected" : ""}>${meta.label}</option>`)
     .join("");
@@ -65,6 +77,18 @@ function renderStep1() {
   const warning = unavailable
     ? `<div class="db-warning">${(TARGET_DB_META[state.targetDatabase] || {}).label} rules aren't loaded in this POC yet — CaseWorthy is fully supported today. Check back once that schema is added.</div>`
     : "";
+
+  let dialectRow = "";
+  if (state.advancedMode) {
+    await ensureDialects();
+    const dialectOptions = state.dialects.map(d => `<option value="${d}" ${state.dialect === d ? "selected" : ""}>${d}</option>`).join("");
+    dialectRow = `
+      <div class="target-db-row">
+        <label for="dialect">Source database SQL dialect</label>
+        <select id="dialect">${dialectOptions}</select>
+        <div style="color:#666;font-size:12px;margin-top:4px;">Used to generate the SQL export a technical data person runs against your source system (see Advanced options, Step 2 and the Summary step).</div>
+      </div>`;
+  }
 
   app.innerHTML = `
     ${renderHeader()}
@@ -77,6 +101,14 @@ function renderStep1() {
       </div>
       <label for="src-sys">Source system name</label>
       <input type="text" id="src-sys" placeholder="e.g. Bonterra Case Manager, Apricot, a homegrown Access database" value="${state.sourceSystem}">
+      <div class="target-db-row" style="margin-top:14px;">
+        <label style="display:flex;align-items:center;gap:8px;font-weight:600;">
+          <input type="checkbox" id="advanced-toggle" ${state.advancedMode ? "checked" : ""} style="width:auto;">
+          Advanced options
+        </label>
+        <div style="color:#666;font-size:12px;">Also collect each field's source table name, so a SQL export (per target table) can be generated for a technical data person to pull your live data.</div>
+      </div>
+      ${dialectRow}
       <div class="step-nav">
         <span></span>
         <button class="primary" id="next-1" ${unavailable ? "disabled" : ""}>Next: List Your Fields →</button>
@@ -90,6 +122,12 @@ function renderStep1() {
     state.targetDatabase = e.target.value;
     renderStep1();
   };
+  document.getElementById("advanced-toggle").onchange = (e) => {
+    state.advancedMode = e.target.checked;
+    renderStep1();
+  };
+  const dialectEl = document.getElementById("dialect");
+  if (dialectEl) dialectEl.onchange = (e) => { state.dialect = e.target.value; };
   document.getElementById("next-1").onclick = () => {
     if (unavailable) return;
     const val = document.getElementById("src-sys").value.trim();
@@ -103,6 +141,7 @@ function renderStep1() {
 function renderStep2() {
   const rows = state.fields.map((f, i) => `
     <div class="field-row" data-idx="${i}">
+      ${state.advancedMode ? `<input type="text" class="fsrctable" placeholder="Source table name (e.g. dbo.ClientExport)" value="${f.sourceTable || ""}">` : ""}
       <input type="text" class="fname" placeholder="Source field name (e.g. Client_DOB)" value="${f.name}">
       <input type="text" class="fdesc" placeholder="Optional: short description or format (e.g. MM/DD/YYYY, 1=Yes/2=No)" value="${f.desc}">
       <button class="ghost remove-field">Remove</button>
@@ -113,7 +152,7 @@ function renderStep2() {
     ${renderHeader()}
     <div class="card">
       <h3>List the Fields From ${state.sourceSystem}</h3>
-      <div style="color:#666;font-size:13px;margin-bottom:14px;">Add each field name from your export. A short description helps but isn't required.</div>
+      <div style="color:#666;font-size:13px;margin-bottom:14px;">Add each field name from your export. A short description helps but isn't required.${state.advancedMode ? " Advanced mode is on — also enter each field's source table name so a SQL export can be generated later." : ""}</div>
       <div id="field-rows">${rows}</div>
       <button class="secondary" id="add-field">+ Add another field</button>
       <div class="step-nav">
@@ -129,13 +168,14 @@ function renderStep2() {
     const rowEls = [...document.querySelectorAll("#field-rows .field-row")];
     state.fields = rowEls.map(r => ({
       name: r.querySelector(".fname").value.trim(),
-      desc: r.querySelector(".fdesc").value.trim()
+      desc: r.querySelector(".fdesc").value.trim(),
+      sourceTable: state.advancedMode ? r.querySelector(".fsrctable").value.trim() : ""
     }));
   }
 
   document.getElementById("add-field").onclick = () => {
     syncFieldsFromDOM();
-    state.fields.push({ name: "", desc: "" });
+    state.fields.push({ name: "", desc: "", sourceTable: "" });
     renderStep2();
   };
   document.querySelectorAll(".remove-field").forEach(btn => {
@@ -143,7 +183,7 @@ function renderStep2() {
       syncFieldsFromDOM();
       const idx = parseInt(btn.closest(".field-row").dataset.idx, 10);
       state.fields.splice(idx, 1);
-      if (state.fields.length === 0) state.fields.push({ name: "", desc: "" });
+      if (state.fields.length === 0) state.fields.push({ name: "", desc: "", sourceTable: "" });
       renderStep2();
     };
   });
@@ -177,7 +217,7 @@ async function renderStep3() {
       body: JSON.stringify({ targetDatabase: state.targetDatabase, sourceSystem: state.sourceSystem, fieldName: f.name, desc: f.desc }),
     });
     const targetMeta = state.schema.find(t => t.table === sug.table && t.field === sug.field);
-    state.suggestions.push({ source: f.name, desc: f.desc, suggestion: sug, targetMeta, confirmedTable: sug.table, confirmedField: sug.field });
+    state.suggestions.push({ source: f.name, desc: f.desc, sourceTable: f.sourceTable || "", suggestion: sug, targetMeta, confirmedTable: sug.table, confirmedField: sug.field });
   }
   renderStep3Results();
 }
@@ -300,6 +340,37 @@ function renderReadinessPanel(check) {
   return `<div class="readiness-panel">${groups.join("")}</div>`;
 }
 
+function renderSqlExportSection(exportResult) {
+  if (!exportResult) return "";
+  const blocks = exportResult.statements.map(s => `
+    <div style="margin-bottom:14px;">
+      <div style="font-family:var(--font-heading);font-weight:600;color:var(--cw-blue);margin-bottom:4px;">${s.targetTable} <span style="color:#888;font-weight:400;">(source: ${s.sourceTable})</span></div>
+      <pre style="background:#F7F8F9;border:1px solid var(--cw-gray);border-radius:6px;padding:12px;font-size:12px;overflow-x:auto;white-space:pre-wrap;">${s.sql.replace(/</g, "&lt;")}</pre>
+    </div>`).join("");
+
+  const conflicts = exportResult.conflicts.length ? `
+    <div class="db-warning">
+      <strong>Can't generate SQL for these target tables</strong> — their fields point at more than one source table, which would need a JOIN (out of scope for this tool today):
+      <ul style="margin:6px 0 0 0;">${exportResult.conflicts.map(c => `<li>${c.targetTable}: ${c.sourceTables.join(", ")}</li>`).join("")}</ul>
+    </div>` : "";
+
+  const skipped = exportResult.skipped.length ? `
+    <div style="color:#888;font-size:12px;margin-top:8px;">${exportResult.skipped.length} field(s) excluded from the SQL export (${[...new Set(exportResult.skipped.map(s => s.reason))].join("; ")}).</div>` : "";
+
+  return `
+    <div class="card">
+      <h3>SQL Export (${state.dialect})</h3>
+      <div style="color:#666;font-size:13px;margin-bottom:14px;">One SELECT statement per target table, aliased to match ${TARGET_DB_META[state.targetDatabase].label}'s field names — for a technical data person to run against your source system. Comments call out required/decode constraints to double-check; this does not transform values for you.</div>
+      ${conflicts}
+      ${blocks || '<div class="empty">No SQL to generate yet — confirm mappings with a source table name in Step 2.</div>'}
+      ${skipped}
+      <div class="step-nav">
+        <span></span>
+        <button class="primary" id="download-sql-btn" ${exportResult.statements.length ? "" : "disabled"}>Download SQL (.sql)</button>
+      </div>
+    </div>`;
+}
+
 async function renderStep4() {
   app.innerHTML = `
     ${renderHeader()}
@@ -311,13 +382,22 @@ async function renderStep4() {
   refreshLibStat();
 
   const mappings = state.suggestions.map(s => ({
-    sourceField: s.source, desc: s.desc, table: s.confirmedTable, field: s.confirmedField,
+    sourceField: s.source, desc: s.desc, sourceTable: s.sourceTable || "", table: s.confirmedTable, field: s.confirmedField,
   }));
   const check = await api("/api/rulecheck", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ targetDatabase: state.targetDatabase, mappings }),
   });
+
+  let exportResult = null;
+  if (state.advancedMode) {
+    exportResult = await api("/api/sql-export", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ targetDatabase: state.targetDatabase, dialect: state.dialect, mappings }),
+    });
+  }
 
   const rows = state.suggestions.map(s => {
     const status = s.flagged ? "Flagged for review" : (s.confirmed ? "Confirmed" : (s.confirmedTable ? "Suggested (not confirmed)" : "Unmapped"));
@@ -353,6 +433,7 @@ async function renderStep4() {
         <button class="primary" id="download-btn">Download Summary (.txt)</button>
       </div>
     </div>
+    ${renderSqlExportSection(exportResult)}
     <footer>Internal POC · CaseWorthy Technical Consulting — not for use with real client data</footer>
   `;
   refreshLibStat();
@@ -365,6 +446,18 @@ async function renderStep4() {
     a.click();
     URL.revokeObjectURL(url);
   };
+  const downloadSqlBtn = document.getElementById("download-sql-btn");
+  if (downloadSqlBtn) {
+    downloadSqlBtn.onclick = () => {
+      const sqlText = exportResult.statements.map(s => s.sql).join("\n\n");
+      const blob = new Blob([sqlText], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `${state.sourceSystem.replace(/[^a-z0-9]+/gi, "_")}_export.sql`;
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+  }
 }
 
 renderStep1();

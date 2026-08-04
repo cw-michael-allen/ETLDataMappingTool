@@ -27,6 +27,7 @@ import db  # noqa: E402
 import field_matcher  # noqa: E402
 import llm_gateway  # noqa: E402
 import schema_rules  # noqa: E402
+import sql_export  # noqa: E402
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
@@ -87,6 +88,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._send_json(
                 {"targetDatabases": sorted(schema_rules.TARGET_DATABASES.keys()), "default": DEFAULT_TARGET_DATABASE}
             )
+        if parsed.path == "/api/dialects":
+            return self._send_json(
+                {"dialects": sorted(sql_export.DIALECTS.keys()), "default": sql_export.DEFAULT_DIALECT}
+            )
         if parsed.path == "/api/schema":
             return self._send_json(get_schema(target_db))
         if parsed.path == "/api/stats":
@@ -133,6 +138,11 @@ class Handler(BaseHTTPRequestHandler):
             return self._send_json({"ok": True})
         if path == "/api/rulecheck":
             return self._send_json(schema_rules.check_batch(payload.get("mappings", []), get_schema(target_db)))
+        if path == "/api/sql-export":
+            dialect = payload.get("dialect") or sql_export.DEFAULT_DIALECT
+            return self._send_json(
+                sql_export.build_export(payload.get("mappings", []), get_schema(target_db), dialect)
+            )
         return self._send_json({"error": "not found"}, 404)
 
     def _handle_suggest(self, payload, target_db):
