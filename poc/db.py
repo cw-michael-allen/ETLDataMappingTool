@@ -91,7 +91,7 @@ def get_field_index(field_name, target_db=DEFAULT_TARGET_DATABASE):
 def save_mapping(source_system, field_name, target_table, target_field, target_db=DEFAULT_TARGET_DATABASE):
     conn = get_conn()
     try:
-        now = datetime.datetime.utcnow().isoformat()
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
         ss_norm, fn_norm = normalize(source_system), normalize(field_name)
         existing = conn.execute(
             "SELECT * FROM mappings WHERE target_db=? AND source_system_norm=? AND field_name_norm=?",

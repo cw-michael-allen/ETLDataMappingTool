@@ -15,6 +15,16 @@ Optional env vars:
 - `PORT` — defaults to 8000.
 - `ANTHROPIC_MODEL` — defaults to `claude-sonnet-5`.
 
+## Python version compatibility
+
+The running app (everything except the one-off `_make_transparent.py` asset-prep script, which needs Pillow) uses only long-stable standard-library features — no walrus operator, no `match`/`case`, no PEP 604 `X | Y` type hints, no `str.removeprefix`/`removesuffix`, nothing that depends on the 3.12+ f-string parser. Checked directly with a project-wide grep, not just by memory.
+
+Two spots were tightened further for broader version support, both verified working (server responds, confirm/stats round-trip correctly, 5 concurrent requests handled) after the change:
+- `app.py` no longer imports `http.server.ThreadingHTTPServer` (only exists from Python 3.7 onward) — it's built by hand from `socketserver.ThreadingMixIn` + `http.server.HTTPServer`, both available in every Python 3 release.
+- `db.py` uses `datetime.datetime.now(datetime.timezone.utc)` instead of the deprecated (since 3.12, slated for eventual removal) `datetime.datetime.utcnow()`.
+
+Practical floor: any Python 3.x anyone would realistically still have installed today. This doesn't extend to Python 2 (f-strings alone rule that out, and there'd be no real reason to support it in 2026).
+
 ## What's here
 
 - `app.py` — HTTP server (stdlib `http.server`), serves the static frontend and the JSON API. Every endpoint is scoped by `targetDatabase` (see below).

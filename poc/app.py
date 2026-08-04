@@ -18,8 +18,9 @@ with no schema loaded yet; see schema_rules.py).
 
 import json
 import os
+import socketserver
 import sys
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, parse_qs
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -201,6 +202,15 @@ class Handler(BaseHTTPRequestHandler):
 
     def log_message(self, format, *args):  # noqa: A002
         sys.stderr.write("%s - %s\n" % (self.address_string(), format % args))
+
+
+class ThreadingHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
+    """Equivalent to http.server.ThreadingHTTPServer, built by hand instead
+    of imported — that class only exists from Python 3.7 onward, while
+    ThreadingMixIn and HTTPServer themselves are available in every Python 3
+    release, so this runs on older interpreters too."""
+
+    daemon_threads = True
 
 
 def main():
