@@ -1,6 +1,6 @@
 const TARGET_DB_META = {
-  CaseWorthy: { label: "CaseWorthy", logo: "/assets/logos/caseworthy-corporate.jpg" },
-  ServTracker: { label: "ServTracker", logo: "/assets/logos/servtracker.jpg" },
+  CaseWorthy: { label: "CaseWorthy", logo: "/assets/logos/caseworthy-corporate.png" },
+  ServTracker: { label: "ServTracker", logo: "/assets/logos/servtracker.png" },
 };
 
 const THEME_STORAGE_KEY = "cw-etl-fieldmap-theme";
@@ -62,7 +62,7 @@ function renderHeader() {
     ${renderThemeToggle()}
     <div class="header-row">
       <div>
-        <span class="brand-logo-plate"><img class="brand-logo" src="${meta.logo}" alt="${meta.label}"></span>
+        <img class="brand-logo" src="${meta.logo}" alt="${meta.label}">
         <div class="eyebrow">${meta.label} • ETL Onboarding</div>
         <h1>Field Mapping Assistant</h1>
         <div style="color:var(--surface-text-muted);font-size:13px;">Phase 0 POC — tells you where each of your fields lives in ${meta.label} today, and flags mappings that would break ${meta.label}'s import rules.</div>
@@ -378,14 +378,14 @@ function renderSqlExportSection(exportResult) {
   if (!exportResult) return "";
   const blocks = exportResult.statements.map(s => `
     <div style="margin-bottom:14px;">
-      <div style="font-family:var(--font-heading);font-weight:600;color:var(--cw-blue);margin-bottom:4px;">${s.targetTable} <span style="color:var(--surface-text-muted);font-weight:400;">(source: ${s.sourceTable})</span></div>
+      <div style="font-family:var(--font-heading);font-weight:600;color:var(--surface-heading);margin-bottom:4px;">${s.targetTable} <span style="color:var(--surface-text-muted);font-weight:400;">(source: ${s.sourceTable})</span></div>
       <pre style="background:var(--surface-page);border:1px solid var(--surface-border);color:var(--surface-text);border-radius:6px;padding:12px;font-size:12px;overflow-x:auto;white-space:pre-wrap;">${s.sql.replace(/</g, "&lt;")}</pre>
     </div>`).join("");
 
-  const conflicts = exportResult.conflicts.length ? `
+  const multiSource = exportResult.multiSourceTables.length ? `
     <div class="db-warning">
-      <strong>Can't generate SQL for these target tables</strong> — their fields point at more than one source table, which would need a JOIN (out of scope for this tool today):
-      <ul style="margin:6px 0 0 0;">${exportResult.conflicts.map(c => `<li>${c.targetTable}: ${c.sourceTables.join(", ")}</li>`).join("")}</ul>
+      <strong>These target tables are split across more than one source table</strong> — no JOIN is generated, so you'll get one SELECT per source table below and need to merge the results yourself:
+      <ul style="margin:6px 0 0 0;">${exportResult.multiSourceTables.map(m => `<li>${m.targetTable}: ${m.sourceTables.join(", ")}</li>`).join("")}</ul>
     </div>` : "";
 
   const skipped = exportResult.skipped.length ? `
@@ -394,8 +394,8 @@ function renderSqlExportSection(exportResult) {
   return `
     <div class="card">
       <h3>SQL Export (${state.dialect})</h3>
-      <div style="color:var(--surface-text-muted);font-size:13px;margin-bottom:14px;">One SELECT statement per target table, aliased to match ${TARGET_DB_META[state.targetDatabase].label}'s field names — for a technical data person to run against your source system. Comments call out required/decode constraints to double-check; this does not transform values for you.</div>
-      ${conflicts}
+      <div style="color:var(--surface-text-muted);font-size:13px;margin-bottom:14px;">One SELECT statement per target table per source table, aliased to match ${TARGET_DB_META[state.targetDatabase].label}'s field names — for a technical data person to run against your source system. Comments call out required/decode constraints to double-check; this does not transform values for you.</div>
+      ${multiSource}
       ${blocks || '<div class="empty">No SQL to generate yet — confirm mappings with a source table name in Step 2.</div>'}
       ${skipped}
       <div class="step-nav">
