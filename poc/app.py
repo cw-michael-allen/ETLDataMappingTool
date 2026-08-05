@@ -52,6 +52,9 @@ def get_candidates(target_db):
             "type": f.get("type"),
             "listId": f.get("listId"),
             "decode": f.get("decode"),
+            # ServTracker's allowed values are bare labels rather than
+            # code=label pairs, so `decode` alone under-describes them.
+            "decodeValues": f.get("decodeValues"),
         }
         for f in get_schema(target_db)
     ]
@@ -223,6 +226,25 @@ def main():
         print("WARNING: bound to 0.0.0.0 — reachable by anyone on your network. There is no auth on this POC (by design, see docs/PHASE_PLAN.md) — anyone who can reach it can view and edit the shared mapping library.")
     if not os.environ.get("ANTHROPIC_API_KEY"):
         print("WARNING: ANTHROPIC_API_KEY not set — suggestions will come back as 'no confident match'.")
+
+    # Load every registered schema up front so unrecognised `type` strings are
+    # reported at startup. Those fields silently skip all format checks, which
+    # the UI would otherwise render as "no rule violations detected" — the one
+    # failure mode of this rule engine that looks identical to success.
+    for target_db in sorted(schema_rules.TARGET_DATABASES):
+        schema = get_schema(target_db)
+        if not schema:
+            print("NOTE: no schema loaded for %s." % target_db)
+            continue
+        unknown = schema_rules.SCHEMA_WARNINGS.get(target_db) or []
+        if unknown:
+            print(
+                "WARNING: %s has %d field(s) whose 'type' no format check recognises — "
+                "they are NOT rule-checked (see reference/SCHEMA_FORMAT.md):" % (target_db, len(unknown))
+            )
+            for u in unknown:
+                flag = "  <-- reads like a constraint but enforces nothing" if u["misleading"] else ""
+                print("         %s.%s = %r%s" % (u["table"], u["field"], u["type"], flag))
     try:
         server.serve_forever()
     except KeyboardInterrupt:

@@ -2,7 +2,7 @@
 
 **Project keyword:** `CW-ETL-FIELDMAP` — use this as the anchor term in Jira, Confluence, or future sessions.
 
-**Status:** Planning phase. No application code has been written yet — this repo currently holds the source reference material and will accumulate phase plans as they're agreed on.
+**Status:** Phase 0 built. A working local web app lives in [`poc/`](poc/) — see [`poc/README.md`](poc/README.md) to run it. CaseWorthy is fully supported (28 tables, 282 fields, human-verified); ServTracker's schema has been extracted (40 sheets, 612 fields) but is **not yet signed off**, and the app-side module scoping it needs isn't built. See [Target databases](#target-databases) below.
 
 ## Background
 
@@ -21,6 +21,30 @@ A prior session produced **Tier 0 / Option B**: a no-dev-team, customer-facing p
 | `HANDOFF_ETL_Field_Mapping_POC.md` | Handoff notes from the POC build: mechanics, learning/storage design, known limitations, next steps. |
 | `etl-schema-mapping-poc.html` | The working POC itself (client-side only, calls `api.anthropic.com` directly, uses Claude-artifact `window.storage` for persistence — not reusable as-is by Engineering). |
 
+## Target databases
+
+| | CaseWorthy | ServTracker |
+|---|---|---|
+| Target tables | 28 | 33 import tables / 35 sheets |
+| Fields | 282 | 540 (484 with at least one rule) |
+| Source | `00_Staging_EXCEL_Validation_Script_v3.sql` (frozen v3, committed here) | `1 - Master Validation.sql` + 18 Excel templates (live, [not committed](reference/SERVTRACKER_SOURCES.md)) |
+| Validation checks | 328 | 785 (all parsed, 0 unreadable) |
+| Human sign-off | ✅ Russ, 2026-08-04 | 🟡 findings adjudicated 2026-08-05; final review open |
+| Usable in the app | ✅ | ⚠️ schema loads; module scoping not built |
+
+ServTracker's extraction is regenerable via `tools/extract_servtracker_schema.py`
+and produces [`reference/servtracker_extraction_report.md`](reference/servtracker_extraction_report.md),
+which lists every disagreement between the two sources for adjudication rather
+than guessing at a resolution.
+
+**Why ServTracker needs more than a schema drop-in:** it's 18 program-area
+workbooks, not one, and column names repeat heavily across sheets —
+`ClientImportId` appears on 32 of 35, because it's the key the import uses to
+link a client across sheets. Without scoping the candidate set to the modules a
+customer is actually migrating, suggestions tie across dozens of sheets. The
+link key is flagged (`linkKey`) so the UI can *teach* it rather than treat it as
+noise. See [`docs/PHASE_PLAN.md`](docs/PHASE_PLAN.md).
+
 ## Schema coverage
 
 **Full 28-table coverage extracted.** [`reference/target_schema_full.json`](reference/target_schema_full.json) holds structured metadata (required/optional, type, ListID, decode values, FK relationships) for all 282 fields across all 28 tables in the validation script — the original POC's 5 tables (Client, Program, Enrollment, ServiceType, Users) plus the 23 extracted afterward (Organization, Provider, ClientRace, AddressHistory, EntityVeteranEra, EntityVeteranInfo, EnrollmentServicePlan, CaseManagerAssignment, CaseNotes, EntityContact, Service, Issue, Goal, Credential, ProviderReferral, FileDocument, WorkHistory, Assessment, AssessFinancialItem, AssessEmploymentPlacement, AssessHUDRHY, AssessDVS, Outcome).
@@ -34,4 +58,6 @@ This extraction was done by independent passes over the validation script and wa
 
 ## Next
 
-Human review of the phase plan and the extracted schema, then Phase 0 build (local web app + full mapping/rule-warning flow) per `docs/PHASE_PLAN.md`.
+1. **Sign off the ServTracker extraction** — work through the "Needs adjudication" section of [`reference/servtracker_extraction_report.md`](reference/servtracker_extraction_report.md) (Alex Button).
+2. **Build ServTracker module scoping** — a program-area multi-select on Step 1, gated so CaseWorthy's flow is unchanged, plus first-class handling of `ClientImportId` as the documented cross-sheet link key.
+3. Phase 1 leadership approval package per [`docs/PHASE_PLAN.md`](docs/PHASE_PLAN.md).
