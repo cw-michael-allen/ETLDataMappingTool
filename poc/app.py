@@ -43,7 +43,60 @@ def get_schema(target_db):
     return _SCHEMA_CACHE[target_db]
 
 
-def get_candidates(target_db):
+def scoped_schema(target_db, modules):
+    """The active schema for a request, narrowed to the selected modules."""
+    return schema_rules.scope_schema(get_schema(target_db), target_db, modules)
+
+
+def parse_modules(value):
+    """Modules arrive as a JSON list (POST) or a repeated/comma query param."""
+    if not value:
+        return []
+    if isinstance(value, str):
+        return [m.strip() for m in value.split(",") if m.strip()]
+    out = []
+    for item in value:
+        out.extend(m.strip() for m in str(item).split(",") if m.strip())
+    return out
+
+
+def describe_target_databases():
+    """Everything the UI needs to render the target-database picker.
+
+    `available` is derived from whether a schema actually loaded, not from a
+    hardcoded name check -- that check was the reason adding a schema file
+    wouldn't have been enough to enable a database in the UI.
+    """
+    out = []
+    for name in sorted(schema_rules.TARGET_DATABASES):
+        schema = get_schema(name)
+        meta = schema_rules.db_meta(name)
+        out.append(
+            {
+                "name": name,
+                "label": meta["label"],
+                "logo": meta["logo"],
+                "available": bool(schema),
+                "hasModules": bool(meta.get("modules")),
+                "baseModules": meta.get("baseModules") or [],
+                "unitNoun": meta.get("unitNoun", "table"),
+                "fieldCount": len(schema),
+                "modules": schema_rules.list_modules(name, schema),
+                "linkKey": next(
+                    (
+                        {"field": r["field"], "note": r.get("note")}
+                        for r in schema
+                        if r.get("linkKey")
+                    ),
+                    None,
+                ),
+            }
+        )
+    return out
+
+
+def get_candidates(target_db, modules=None):
+    schema = scoped_schema(target_db, modules or [])
     return [
         {
             "table": f["table"],
@@ -55,8 +108,10 @@ def get_candidates(target_db):
             # ServTracker's allowed values are bare labels rather than
             # code=label pairs, so `decode` alone under-describes them.
             "decodeValues": f.get("decodeValues"),
+            # ServTracker: the customer fills in a sheet, not an import table.
+            "sheet": f.get("sheet"),
         }
-        for f in get_schema(target_db)
+        for f in schema
     ]
 
 
@@ -92,14 +147,17 @@ class Handler(BaseHTTPRequestHandler):
 
         if parsed.path == "/api/target-databases":
             return self._send_json(
-                {"targetDatabases": sorted(schema_rules.TARGET_DATABASES.keys()), "default": DEFAULT_TARGET_DATABASE}
+                {
+                    "targetDatabases": describe_target_databases(),
+                    "default": DEFAULT_TARGET_DATABASE,
+                }
             )
         if parsed.path == "/api/dialects":
             return self._send_json(
                 {"dialects": sorted(sql_export.DIALECTS.keys()), "default": sql_export.DEFAULT_DIALECT}
             )
         if parsed.path == "/api/schema":
-            return self._send_json(get_schema(target_db))
+            return self._send_json(scoped_schema(target_db, parse_modules(query.get("modules"))))
         if parsed.path == "/api/stats":
             return self._send_json(db.get_stats(target_db))
         self._serve_static(parsed.path)
@@ -131,9 +189,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._send_json({"error": "invalid JSON body"}, 400)
 
         target_db = payload.get("targetDatabase") or DEFAULT_TARGET_DATABASE
+        modules = parse_modules(payload.get("modules"))
 
         if path == "/api/suggest":
-            return self._send_json(self._handle_suggest(payload, target_db))
+            return self._send_json(self._handle_suggest(payload, target_db, modules))
         if path == "/api/confirm":
             try:
                 db.save_mapping(
@@ -143,19 +202,23 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send_json({"error": f"missing field: {e}"}, 400)
             return self._send_json({"ok": True})
         if path == "/api/rulecheck":
-            return self._send_json(schema_rules.check_batch(payload.get("mappings", []), get_schema(target_db)))
+            return self._send_json(
+                schema_rules.check_batch(payload.get("mappings", []), scoped_schema(target_db, modules))
+            )
         if path == "/api/sql-export":
             dialect = payload.get("dialect") or sql_export.DEFAULT_DIALECT
             return self._send_json(
-                sql_export.build_export(payload.get("mappings", []), get_schema(target_db), dialect)
+                sql_export.build_export(
+                    payload.get("mappings", []), scoped_schema(target_db, modules), dialect
+                )
             )
         return self._send_json({"error": "not found"}, 404)
 
-    def _handle_suggest(self, payload, target_db):
+    def _handle_suggest(self, payload, target_db, modules=None):
         source_system = payload.get("sourceSystem", "")
         field_name = payload.get("fieldName", "")
         desc = payload.get("desc", "")
-        schema = get_schema(target_db)
+        schema = scoped_schema(target_db, modules or [])
 
         learned = db.get_mapping(source_system, field_name, target_db)
         if learned:
@@ -183,7 +246,13 @@ class Handler(BaseHTTPRequestHandler):
         if rule_sug and rule_sug["confidence"] == "high":
             sug = rule_sug
         else:
-            llm_sug = llm_gateway.suggest_mapping(source_system, field_name, desc, get_candidates(target_db))
+            llm_sug = llm_gateway.suggest_mapping(
+                source_system,
+                field_name,
+                desc,
+                get_candidates(target_db, modules),
+                target_label=schema_rules.db_meta(target_db)["label"],
+            )
             if llm_sug.get("confidence") in (None, "none") and rule_sug:
                 sug = rule_sug
             else:

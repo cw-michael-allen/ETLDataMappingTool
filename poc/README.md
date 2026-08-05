@@ -40,11 +40,27 @@ Practical floor: any Python 3.x anyone would realistically still have installed 
 
 ## Target database (CaseWorthy / ServTracker)
 
-Step 1 of the interview now asks which target database this migration is for:
-- **CaseWorthy** — fully supported. Uses the 28-table schema extracted from and spot-checked against `00_Staging_EXCEL_Validation_Script_v3.sql`.
-- **ServTracker** — listed because it's a real, separate CaseWorthy application with its own validation rules and data templates, but **no ServTracker schema has been extracted yet**. Selecting it shows an honest "not loaded yet" notice and disables proceeding, rather than guessing at rules that haven't been sourced from an authoritative ServTracker validation script. Building this out means repeating the same extraction-and-spot-check process used for CaseWorthy (see `docs/PHASE_PLAN.md`), against ServTracker's own validation script, once one is provided.
+Step 1 of the interview asks which target database this migration is for:
+- **CaseWorthy** — 28 tables, 282 fields, extracted from and spot-checked against `00_Staging_EXCEL_Validation_Script_v3.sql` (confirmed by Russ, 2026-08-04).
+- **ServTracker** — 35 sheets, 540 fields, extracted from its own `1 - Master Validation.sql` plus 18 master Excel templates. See `reference/SERVTRACKER_SOURCES.md` for sources, the adjudication log, and sign-off status; regenerate with `tools/extract_servtracker_schema.py`.
 
-To add a second real target database: add its schema file path to `schema_rules.TARGET_DATABASES` and a logo entry to `TARGET_DB_META` in `static/app.js`. Everything else (matching, rule-checking, storage scoping) is already generic per target database.
+Availability is reported by `/api/target-databases`, derived from whether a schema actually loaded. It used to be a hardcoded `targetDatabase !== "CaseWorthy"` check in `static/app.js`, which meant dropping in a schema file could never have enabled a database in the UI.
+
+To add another target database: add its schema path to `schema_rules.TARGET_DATABASES` and an entry to `schema_rules.TARGET_DB_META` (label, logo, whether it has modules). The frontend picks both up automatically. Matching, rule-checking, and storage scoping are already generic per target database.
+
+## Module scoping (ServTracker only)
+
+ServTracker ships as ~18 separate program-area workbooks (Congregate, Homecare, Transportation, …) and a customer migrates only the ones they actually run. Step 1 shows a module multi-select for it; CaseWorthy is a single staging workbook, has no modules, and its flow is **unchanged** — `scope_schema` is a no-op for any database whose `TARGET_DB_META` says `modules: False`, and the picker isn't rendered at all.
+
+Why this exists rather than loading all 540 fields at once: column names repeat heavily across sheets. `Funding` is on 10 sheets, `Site`/`StartDate`/`Provider`/`Mon`–`Sun` on 6 each. Unscoped, `field_matcher` ties across all of them, downgrades to `medium`, and appends an unreadable list of other sheets. Scoped to Congregate, the candidate set drops from 540 fields to 74 and `Site` resolves to an exact high-confidence match.
+
+Scoping narrows but doesn't eliminate collisions — a customer can legitimately pick Congregate + Home Delivered + Case Management, which still share names. So the matcher also caps the "also exists on …" list at four entries instead of listing every sheet.
+
+**`ClientImportId` is deliberately excluded from that ambiguity logic.** It appears on 32 of 35 sheets *because* it's the key the import uses to link a client across them, so a tie is expected rather than suspicious. Fields flagged `linkKey` in the schema keep high confidence and get an explanatory note in the suggestion card and on Step 1, rather than a warning. `ServTrackerClientId` is flagged `mergeOnly` and explained as being for updating clients who already exist in the database.
+
+**Client Master with Demographics is a required base module** — rendered checked and disabled, and always included in the scope sent to the server regardless of what's ticked, because every ServTracker sheet keys off `ClientImportId` from the client sheet (confirmed by Alex Button, 2026-08-05).
+
+Display convention: ServTracker schema rows carry both a `sheet` (what the customer fills in) and a `table` (the import table the validation script uses). The UI shows the sheet everywhere — suggestion cards, the override dropdown, rule warnings, and the summary — while `table::field` stays the stored identity for the mapping library and SQL export. CaseWorthy rows have no `sheet`, so they display the table name exactly as before.
 
 ## Advanced mode (SQL export)
 
@@ -78,7 +94,9 @@ Note: don't add `transition` on any property whose value comes from one of these
 - No auth, no SOC2/HIPAA controls — explicitly deferred to Phase 2.
 - All format-mismatch checks (decode, boolean arity, text length) are soft heuristics run against the customer's typed-in field description — not a real data validator, and they will miss mismatches that aren't spelled out in the description text.
 - `field_matcher.py`'s alias table is a curated, non-exhaustive list of common abbreviations — an unusual source-system naming convention it doesn't recognize will still fall through to the LLM (or "no confident match" without a key).
-- ServTracker has no schema yet — see above.
+- ServTracker's schema is extracted but **not yet signed off**; its open findings are listed in `reference/servtracker_extraction_report.md`.
+- 56 of ServTracker's 540 fields have no validation rule found. That means no rule was found, **not** that the field is unconstrained — they're recorded with `"validated": false`.
+- Five CaseWorthy fields have `type` strings no format check recognises (e.g. `Provider.Phone` is `Text (10 digits)`, which the `Text (max N)` pattern doesn't match), so no length check runs on them. Printed as a warning at startup; not changed, because that schema is signed off. See `reference/SCHEMA_FORMAT.md`.
 - The Google Fonts import requires internet access at demo time; falls back gracefully to system fonts if unavailable.
 - Reprocessing the logos (if new source files are provided) needs Pillow installed one-off — not part of the running app's dependencies.
 - ~~Extracted schema rules haven't had a human spot-check yet~~ — spot-checked and confirmed correct by Russ (validation script owner) on 2026-08-04.

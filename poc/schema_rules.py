@@ -27,6 +27,82 @@ TARGET_DATABASES = {
 
 DEFAULT_TARGET_DATABASE = "CaseWorthy"
 
+# Per-target-database presentation and scoping metadata, served to the UI so the
+# frontend stops hardcoding which databases exist and which are usable.
+#
+# `modules` is the important difference between the two. CaseWorthy is a single
+# staging workbook: every customer gets the same 28 tables, so there is nothing
+# to scope and its flow must stay exactly as it was. ServTracker ships as
+# separate program-area workbooks and a customer migrates only the ones they run
+# -- without scoping, a source field named `Site` or `StartDate` ties across a
+# dozen sheets and no suggestion can reach high confidence.
+#
+# `baseModules` are always included regardless of what the customer picks: every
+# ServTracker sheet keys off ClientImportId from the client sheet, so the client
+# module is a base requirement, not an option (confirmed by Alex Button,
+# 2026-08-05).
+TARGET_DB_META = {
+    "CaseWorthy": {
+        "label": "CaseWorthy",
+        "logo": "/assets/logos/caseworthy-corporate.png",
+        "modules": False,
+        "baseModules": [],
+        "unitNoun": "table",
+    },
+    "ServTracker": {
+        "label": "ServTracker",
+        "logo": "/assets/logos/servtracker.png",
+        "modules": True,
+        "baseModules": ["Client Master with Demographics"],
+        "unitNoun": "sheet",
+    },
+}
+
+
+def db_meta(target_database):
+    return TARGET_DB_META.get(target_database, TARGET_DB_META[DEFAULT_TARGET_DATABASE])
+
+
+def list_modules(target_database, schema=None):
+    """Modules available for a target database, derived from the schema itself.
+
+    Returns [] for a database that isn't module-scoped, which is what tells the
+    UI not to render a module picker at all.
+    """
+    meta = db_meta(target_database)
+    if not meta.get("modules"):
+        return []
+    rows = schema if schema is not None else load_schema(target_database)
+    base = set(meta.get("baseModules") or [])
+    grouped = {}
+    for row in rows:
+        for module in row.get("modules") or []:
+            entry = grouped.setdefault(
+                module, {"name": module, "sheets": set(), "fieldCount": 0, "required": module in base}
+            )
+            entry["sheets"].add(row.get("sheet") or row.get("table"))
+            entry["fieldCount"] += 1
+    out = []
+    for entry in grouped.values():
+        entry["sheets"] = sorted(entry["sheets"])
+        out.append(entry)
+    # Base modules first, then alphabetical -- the picker should lead with what
+    # the customer can't opt out of.
+    return sorted(out, key=lambda e: (not e["required"], e["name"]))
+
+
+def scope_schema(schema, target_database, modules):
+    """Narrow a schema to the selected modules, plus any base modules.
+
+    A database without modules, or a request that names none, is returned
+    untouched -- CaseWorthy must behave exactly as it did before scoping existed.
+    """
+    meta = db_meta(target_database)
+    if not meta.get("modules") or not modules:
+        return schema
+    keep = set(modules) | set(meta.get("baseModules") or [])
+    return [r for r in schema if not r.get("modules") or (set(r["modules"]) & keep)]
+
 # The `type` string is a contract: the format checks below regex-match it and an
 # unrecognised value doesn't error, it just skips every check -- which the UI
 # then renders as "no rule violations detected", indistinguishable from a clean
