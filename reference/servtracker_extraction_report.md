@@ -9,7 +9,7 @@ Russ, who confirmed `target_schema_full.json` on 2026-08-04).
 - **Templates** — `C:/Users/AlexanderButton/OneDrive - CaseWorthy/ETL Team/12. ServTracker/ExcelTemplates/Master Templates`
   - SHA-256 `d53917221b3400e61a83926e79aa37542de8cf0af9230099d8b4d54f67092a44`
 - **Validation script** — `C:/Users/AlexanderButton/OneDrive - CaseWorthy/ETL Team/12. ServTracker/Master Scripts/1 - Master Validation.sql`
-  - SHA-256 `24c83eebc784824412904b3b1c6d5c41ad0d0319c081fa02966e4053d66bd772`
+  - SHA-256 `4b009d3c5fb6e60a193d321f7bf9eec293f904a5879f78bbaa96aad383aba76f`
 
 Sources are live maintained documents, deliberately not copied into this repo.
 Re-run the extractor to detect drift against these hashes.
@@ -22,10 +22,10 @@ Re-run the extractor to detect drift against these hashes.
 | Sheets | 35 |
 | Fields extracted | 540 |
 | Validation checks parsed | 785 |
-| Fields with >=1 rule | 484 |
-| Fields with no rule (treated as optional) | 56 |
+| Fields with >=1 rule | 486 |
+| Fields with no rule (treated as optional) | 54 |
 | Required fields | 118 |
-| Fields with an allowed-value list | 60 |
+| Fields with an allowed-value list | 62 |
 | Fields validated against a lookup table | 11 |
 
 ## Templates deliberately excluded
@@ -159,14 +159,8 @@ schema; without that, these land bogus rules on the link key.
 
 | Import table | Label says | Actually tests | Used | Message |
 |---|---|---|---|---|
-| `ClientHealthConditionsImport` | `HealthCondition` | `HealthConditions` | **`HealthCondition`** | Health Condition is too long. Health Condition max length is |
-| `ClientSuspensionsImport` | `ClientImportId` | `LongHold` | **`LongHold`** | LongHold value is not a valid value. |
-| `ClientHDMSchedulesImport` | `ClientImportId` | `PrivatePayAmount` | **`PrivatePayAmount`** | Private Pay Amount is not numeric. Private Pay Amount must b |
-| `ClientHDMSchedulesImport` | `ClientImportId` | `DonationPledgeAmount` | **`DonationPledgeAmount`** | Donation Pledge Amount is not numeric. Donation Pledge Amoun |
 | `HomecareTasksImport` | `HomecareTasks` | `ClientImportId` | **`HomecareTasks`** | HomecareTasks is Missing. HomecareTasks is required. |
 | `HomecareTasksImport` | `HomecareTasks` | `ClientImportId` | **`HomecareTasks`** | HomecareTasks is too long. HomecareTasks max length is 50 ch |
-| `ClientRecreationSchImport` | `ClientImportId` | `Site` | **`Site`** | Site is too long. Site max length is 50 characters. |
-| `ClientWaitListImport` | `Comments` | `Comment` | **`Comment`** | Comments is too long. Max 250 Characters. |
 
 ### Fields given two different max lengths
 
@@ -223,11 +217,11 @@ Present in a template but never validated. Recorded as optional
 `Text` with `"validated": false` — absence of a rule is not evidence
 of a rule, so nothing was inferred about them.
 
-56 of 540 fields.
+54 of 540 fields.
 
 - **Case Mgmt Intake** (1): `Comment`
-- **Case Mgmt Service Plans** (2): `Comment`, `DeliveryDate`
-- **Client Demographics** (2): `PercentOfPovertyRange`, `SpecialNotes`
+- **Case Mgmt Service Plans** (1): `Comment`
+- **Client Demographics** (1): `SpecialNotes`
 - **Client Pets** (3): `CatComment`, `DogComment`, `OtherComment`
 - **Destination Options** (5): `DestinationName`, `DestinationAddress`, `DestinationCity`, `DestinationZipCode`, `DestinationPhone`
 - **HDM Schedules** (1): `CreateServicePlan`

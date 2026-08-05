@@ -394,11 +394,22 @@
     "table": "CaseMgmtServicePlanImport",
     "field": "DeliveryDate",
     "required": false,
-    "type": "Text",
+    "type": "List",
     "modules": [
       "Case Management"
     ],
-    "validated": false
+    "validated": true,
+    "decodeValues": [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday",
+      "As Assigned"
+    ],
+    "decode": "Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, As Assigned"
   },
   {
     "sheet": "Case Mgmt Service Plans",
@@ -650,7 +661,7 @@
     "validated": true,
     "unique": true,
     "mergeOnly": true,
-    "note": "Only needed when updating clients who already exist in the ServTracker database. Leave blank for new clients -- use ClientImportId to link instead."
+    "note": "Only needed when updating clients who already exist in the ServTracker database. Leave blank for new clients — use ClientImportId to link instead."
   },
   {
     "sheet": "Client Demographics",
@@ -1293,11 +1304,26 @@
     "table": "ClientMasterImport",
     "field": "PercentOfPovertyRange",
     "required": false,
-    "type": "Text",
+    "type": "List",
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": false
+    "validated": true,
+    "decodeValues": [
+      "Unknown",
+      "0 - 100%",
+      "101 - 120%",
+      "121 - 133%",
+      "134 - 135%",
+      "136 - 150%",
+      "151 - 175%",
+      "176 - 185%",
+      "186 - 200%",
+      "201 - 250%",
+      "251%+",
+      "Refused"
+    ],
+    "decode": "Unknown, 0 - 100%, 101 - 120%, 121 - 133%, 134 - 135%, 136 - 150%, 151 - 175%, 176 - 185%, 186 - 200%, 201 - 250%, 251%+, Refused"
   },
   {
     "sheet": "Client Demographics",

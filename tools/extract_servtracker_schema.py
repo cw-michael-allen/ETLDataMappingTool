@@ -327,7 +327,14 @@ def _rule_from_message(msg, where, joins=""):
     # unless it's a subquery, in which case the values are rows in another table
     # (e.g. `NOT IN (SELECT [CDESC] FROM [dbo].[Can] WHERE [ENABLED] = 1)`) and
     # only the table can be named here, not the values.
-    if "decodeValues" not in facts and ("not a valid value" in low or "is invalid" in low):
+    # Structural, not phrase-gated. These checks insert an error *when the WHERE
+    # clause is true*, so `col NOT IN (<literals>)` means exactly "error unless
+    # the value is one of these" -- an allowed-value list, whatever the message
+    # happens to say. Gating on wording ("not a valid value" / "is invalid")
+    # dropped real lists whose message was phrased differently: PercentOfPoverty
+    # states 12 allowed ranges but its message reads "Invalid Percent of Poverty
+    # Range", which contains neither phrase.
+    if "decodeValues" not in facts:
         m = NOT_IN_RE.search(where or "")
         if m:
             inner = m.group(1)
@@ -344,7 +351,13 @@ def _rule_from_message(msg, where, joins=""):
     # Otherwise it's validated against a ServTracker lookup table -- we can
     # name the table but the values live in the database, not the script.
     # The join sits in the FROM clause, ahead of WHERE, so search both.
-    if "decodeValues" not in facts and ("not a valid" in low or "is invalid" in low):
+    # Same reasoning, one step weaker: a join to a lookup table plus an
+    # `<alias>.<col> IS NULL` test in the WHERE is the "no matching row" idiom,
+    # i.e. the value must exist in that table. Still requires some hint that the
+    # check is about validity, since joins are also used for plain FK existence.
+    if "decodeValues" not in facts and (
+        "not a valid" in low or "invalid" in low or "not in database" in low
+    ):
         m = LOOKUP_JOIN_RE.search(joins or "") or LOOKUP_JOIN_RE.search(where or "")
         if m:
             facts["lookupTable"] = m.group(1)
@@ -641,7 +654,7 @@ def merge(templates, renames, checks):
                 row["mergeOnly"] = True
                 row["note"] = (
                     "Only needed when updating clients who already exist in the ServTracker "
-                    "database. Leave blank for new clients -- use %s to link instead."
+                    "database. Leave blank for new clients — use %s to link instead."
                     % LINK_KEY_FIELD
                 )
             if used_table and used_table != row["table"]:
