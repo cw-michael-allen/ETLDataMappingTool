@@ -2,7 +2,7 @@
 
 **Project keyword:** `CW-ETL-FIELDMAP` — use this as the anchor term in Jira, Confluence, or future sessions.
 
-**Status:** Phase 0 built. A working local web app lives in [`poc/`](poc/) — see [`poc/README.md`](poc/README.md) to run it. CaseWorthy is fully supported (28 tables, 282 fields, human-verified); ServTracker's schema has been extracted (40 sheets, 612 fields) but is **not yet signed off**, and the app-side module scoping it needs isn't built. See [Target databases](#target-databases) below.
+**Status:** Phase 0 built. A working local web app lives in [`poc/`](poc/) — see [`poc/README.md`](poc/README.md) to run it. Both target databases are supported and human-verified: CaseWorthy (28 tables, 282 fields, confirmed by Russ) and ServTracker (35 sheets, 536 migratable fields, signed off by Alex Button on 2026-08-05), with module scoping for ServTracker's program areas. See [Target databases](#target-databases) below.
 
 ## Background
 
@@ -26,11 +26,11 @@ A prior session produced **Tier 0 / Option B**: a no-dev-team, customer-facing p
 | | CaseWorthy | ServTracker |
 |---|---|---|
 | Target tables | 28 | 33 import tables / 35 sheets |
-| Fields | 282 | 540 (484 with at least one rule) |
+| Fields | 282 | 536 migratable + 34 scratch (492 with at least one rule) |
 | Source | `00_Staging_EXCEL_Validation_Script_v3.sql` (frozen v3, committed here) | `1 - Master Validation.sql` + 18 Excel templates (live, [not committed](reference/SERVTRACKER_SOURCES.md)) |
 | Validation checks | 328 | 785 (all parsed, 0 unreadable) |
-| Human sign-off | ✅ Russ, 2026-08-04 | 🟡 findings adjudicated 2026-08-05; final review open |
-| Usable in the app | ✅ | ⚠️ schema loads; module scoping not built |
+| Human sign-off | ✅ Russ, 2026-08-04 | ✅ Alex Button, 2026-08-05 |
+| Usable in the app | ✅ | ✅ with per-module scoping |
 
 ServTracker's extraction is regenerable via `tools/extract_servtracker_schema.py`
 and produces [`reference/servtracker_extraction_report.md`](reference/servtracker_extraction_report.md),
@@ -58,6 +58,9 @@ This extraction was done by independent passes over the validation script and wa
 
 ## Next
 
-1. **Sign off the ServTracker extraction** — work through the "Needs adjudication" section of [`reference/servtracker_extraction_report.md`](reference/servtracker_extraction_report.md) (Alex Button).
-2. **Build ServTracker module scoping** — a program-area multi-select on Step 1, gated so CaseWorthy's flow is unchanged, plus first-class handling of `ClientImportId` as the documented cross-sheet link key.
-3. Phase 1 leadership approval package per [`docs/PHASE_PLAN.md`](docs/PHASE_PLAN.md).
+~~Sign off the ServTracker extraction~~ — **done, Alex Button 2026-08-05.**
+~~Build ServTracker module scoping~~ — **done.**
+
+1. **Phase 1 leadership approval package** per [`docs/PHASE_PLAN.md`](docs/PHASE_PLAN.md) — demo, one-pager, known limitations, and the ask.
+2. **Fix the source-script defects** found during extraction and listed in [`reference/servtracker_extraction_report.md`](reference/servtracker_extraction_report.md): 21 checks against tables that are never created, and 18 checks whose wording states no machine-readable constraint. These affect the live ServTracker import, not this tool.
+3. **Five CaseWorthy fields enforce nothing** — `Provider.Phone`/`Fax` are typed `Text (10 digits)`, which no format check matches. Flagged at startup; needs Russ to confirm the intended constraint.

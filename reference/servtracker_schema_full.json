@@ -1175,7 +1175,7 @@
       "Work"
     ],
     "decode": "Home, Mobile, Work",
-    "note": "Client's Mobile Phone number in 111-111-1111 format.",
+    "note": "Which phone number to use first. If any phone number field is set, this is required.",
     "noteSource": "data dictionary"
   },
   {

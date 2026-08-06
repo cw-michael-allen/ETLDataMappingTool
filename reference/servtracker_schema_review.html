@@ -106,6 +106,9 @@ tbody tr:hover{background:var(--tint)}
 .b-notes{background:transparent;color:var(--muted);border:1px dashed var(--border)}
 tr.notes-row{opacity:.72}
 
+.signed{margin-top:14px;padding:11px 14px;border-left:4px solid var(--cw-green);
+  background:var(--tint);border-radius:0 6px 6px 0;font-size:13.5px;color:var(--text)}
+.signed strong{color:var(--cw-green)}
 .foot{text-align:center;font-size:12px;color:var(--muted);margin-top:28px}
 tr.hide,.sheet.hide,.module.hide{display:none}
 @media (max-width:640px){
@@ -118,7 +121,8 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <header class="hero">
 <div class="eyebrow">CaseWorthy · CW-ETL-FIELDMAP</div>
 <h1>ServTracker Target Schema</h1>
-<p class="sub">Extracted from <code>1 - Master Validation.sql</code> and the 18 master Excel templates. Every rule below is transcribed from one of those two sources — nothing is inferred. Review and sign off.</p>
+<p class="sub">Extracted from <code>1 - Master Validation.sql</code> and the 18 master Excel templates, with field descriptions from the data dictionary. Every rule below is transcribed from one of those sources — nothing is inferred.</p>
+<div class="signed">✓ <strong>Signed off by Alex Button</strong> · 2026-08-05 — covers the extracted schema. Re-running the extractor after either source changes invalidates this; the extraction report records the source hashes.</div>
 <div class="stats">
 <div class="stat"><div class="n">536</div><div class="l">Migratable fields</div></div>
 <div class="stat"><div class="n">35</div><div class="l">Sheets</div></div>
@@ -129,7 +133,7 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <div class="stat"><div class="n">34</div><div class="l">Scratch columns</div></div>
 </div></header>
 <section class="card callout">
-<h2>What you're signing off on</h2>
+<h2>What this sign-off covers</h2>
 <ul class="check">
 <li><strong>536 migratable fields across 35 sheets</strong> match the columns in the master templates — the templates are the authority on which fields we offer to migrate.</li>
 <li><strong>34 <code>Comments</code> scratch columns</strong> are shown but marked <span class="badge b-notes">scratch — not migrated</span>. They are free space for whoever fills the template in, and are excluded as mapping destinations so no data can be routed into them. <code>Comment</code> (singular) is the real, validated field.</li>
@@ -340,7 +344,7 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <td class="fname"><code>PrimaryPhoneType</code> </td>
 <td class="req"></td>
 <td><span class="type t-list">List</span></td>
-<td class="detail"><span class="vals"><code>Home</code> <code>Mobile</code> <code>Work</code></span><span class="note">Client&#x27;s Mobile Phone number in 111-111-1111 format.</span></td>
+<td class="detail"><span class="vals"><code>Home</code> <code>Mobile</code> <code>Work</code></span><span class="note">Which phone number to use first. If any phone number field is set, this is required.</span></td>
 </tr>
 <tr data-s="hasnophone client demographics client master with demographics list" data-req="0" data-unval="0" data-vals="1" data-flag="0">
 <td class="fname"><code>HasNoPhone</code> </td>

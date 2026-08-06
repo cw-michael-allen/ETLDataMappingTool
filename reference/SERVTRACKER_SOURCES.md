@@ -94,4 +94,14 @@ records the disagreement rather than guessing — see its "Needs adjudication"
 section. Nothing in the schema is inferred beyond what one of the two sources
 states.
 
-**Status: not yet signed off.** The report's adjudication items are open.
+**Status: signed off by Alex Button on 2026-08-05.**
+
+Sign-off covers the extracted schema — the field list, and the rules transcribed
+onto it. It does not close the open findings *about the source script* listed
+above; those are defects in `1 - Master Validation.sql` to fix upstream, and none
+of them changes what this schema says.
+
+Sign-off is tied to the source hashes recorded in
+`servtracker_extraction_report.md`. Re-running the extractor after either source
+changes will produce different hashes, and the schema needs re-confirming before
+those changes are relied on.

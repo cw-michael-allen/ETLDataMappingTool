@@ -91,8 +91,11 @@ def build():
     a('<div class="eyebrow">CaseWorthy · CW-ETL-FIELDMAP</div>')
     a("<h1>ServTracker Target Schema</h1>")
     a('<p class="sub">Extracted from <code>1 - Master Validation.sql</code> and the 18 master Excel '
-      'templates. Every rule below is transcribed from one of those two sources — nothing is inferred. '
-      'Review and sign off.</p>')
+      'templates, with field descriptions from the data dictionary. Every rule below is transcribed '
+      'from one of those sources — nothing is inferred.</p>')
+    a('<div class="signed">✓ <strong>Signed off by Alex Button</strong> · 2026-08-05 — '
+      'covers the extracted schema. Re-running the extractor after either source changes '
+      'invalidates this; the extraction report records the source hashes.</div>')
     a('<div class="stats">')
     for label, value in (
         ("Migratable fields", total), ("Sheets", sheets), ("Required", required),
@@ -104,7 +107,7 @@ def build():
 
     # ---- what sign-off actually covers -------------------------------------
     a('<section class="card callout">')
-    a("<h2>What you're signing off on</h2>")
+    a("<h2>What this sign-off covers</h2>")
     a("<ul class=\"check\">")
     a(f"<li><strong>{total} migratable fields across {sheets} sheets</strong> match the columns in "
       "the master templates — the templates are the authority on which fields we offer to migrate.</li>")
@@ -332,6 +335,9 @@ tbody tr:hover{background:var(--tint)}
 .b-notes{background:transparent;color:var(--muted);border:1px dashed var(--border)}
 tr.notes-row{opacity:.72}
 
+.signed{margin-top:14px;padding:11px 14px;border-left:4px solid var(--cw-green);
+  background:var(--tint);border-radius:0 6px 6px 0;font-size:13.5px;color:var(--text)}
+.signed strong{color:var(--cw-green)}
 .foot{text-align:center;font-size:12px;color:var(--muted);margin-top:28px}
 tr.hide,.sheet.hide,.module.hide{display:none}
 @media (max-width:640px){
