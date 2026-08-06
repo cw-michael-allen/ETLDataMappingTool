@@ -1,0 +1,123 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project
+
+`CW-ETL-FIELDMAP` — an AI-assisted tool that interviews a customer migrating into a CaseWorthy
+application about their source system's field names and tells them where each one lives in the
+target application's ETL schema, learning mappings over time. Currently in Phase 0 (local POC).
+Full context: root `README.md`, `docs/PHASE_PLAN.md`, `poc/README.md`.
+
+**Product boundary, never blur this:** this tool answers "where does field X go," not "is the
+data in field X valid." Never ingests real client data — only field names/formats. Never
+fabricates a target-schema rule, ListID, decode value, or ServTracker/CaseWorthy fact that isn't
+sourced from that application's own validation script/templates and (for anything customer-facing)
+signed off by the field's owner (Russ for CaseWorthy, Alex Button for ServTracker). If a schema
+doesn't exist yet for a target, the UI says so honestly rather than guessing — see
+`schema_rules.TARGET_DATABASES`.
+
+## Running it
+
+```
+cd poc
+python app.py                 # pure stdlib, no pip install needed to run the app itself
+```
+Then open `http://127.0.0.1:8000`, or double-click `poc/start.bat` (also opens a Chrome app
+window for demos). `ANTHROPIC_API_KEY` is optional — the rule-based matcher resolves most common
+field names without it. No test suite, linter, or build step exists in this repo.
+
+Regenerating a target schema (don't hand-edit the generated JSON):
+```
+python tools/extract_servtracker_schema.py [--no-data-dictionary]   # -> reference/servtracker_schema_full.json + extraction_report.md
+python tools/build_signoff_page.py                                  # -> reference/servtracker_schema_review.html
+```
+Reprocessing the logo assets (needs Pillow, one-off, not an app runtime dependency):
+```
+pip install pillow
+python poc/static/assets/logos/_make_transparent.py
+```
+
+## Architecture
+
+**Everything in `poc/` is pure standard-library Python (server) + vanilla JS (frontend, no
+build step, no framework).** `app.py` is a hand-rolled `http.server` app (see the file's own
+docstring for *why* it avoids `http.server.ThreadingHTTPServer` and `datetime.utcnow()` — both
+are Python-version-compatibility fixes, not style choices). It serves `static/` and a small JSON
+API, backed by SQLite (`db.py`).
+
+**Multi-target-database design.** The whole app is generic over "which application's schema am I
+mapping to" — today that's CaseWorthy and ServTracker, but nothing should assume there are only
+two. `schema_rules.py` owns:
+- `TARGET_DATABASES` — name → schema JSON file path (`reference/target_schema_full.json` /
+  `reference/servtracker_schema_full.json`). A database with no schema file loaded is reported
+  as unavailable to the frontend, not hidden or faked.
+- `TARGET_DB_META` — per-database presentation/scoping metadata (label, logo, module-picker
+  copy, whether it defaults to everything selected). Read this dict's comments before changing
+  scoping behavior; CaseWorthy and ServTracker default oppositely on purpose (see below).
+- `reference/SCHEMA_FORMAT.md` — the schema JSON contract. **Read this before touching any
+  schema file or `schema_rules.py`'s parsing.** The `type` string is load-bearing: an
+  unrecognized value silently skips all format checks for that field (not an error), which is
+  why `app.py` prints `SCHEMA_WARNINGS` at startup.
+
+**Module/tab scoping (both databases, different reasons).** ServTracker ships as ~18 program-area
+workbooks with heavy cross-sheet name collisions (`Site`, `Funding`, etc. repeat everywhere), so
+scoping to the modules a customer actually runs is what makes suggestions confident — it defaults
+to *nothing extra selected* beyond the required "Client Master with Demographics" base module.
+CaseWorthy has 28 tables with no collisions, so its "modules" are just its tables (one tab each,
+`modules: [table]` tagged onto every schema row) — purely a convenience, defaulting to
+*everything selected*. `schema_rules.scope_schema` / `list_modules` implement both from the same
+code path; don't special-case one database in the frontend when a `TARGET_DB_META` flag will do.
+
+**Suggestion pipeline (`app.py: _handle_suggest`), in order:**
+1. `db.get_mapping` — an exact-match learned mapping for this source system, scoped per
+   target database (`db.py`'s tables have a `target_db` column specifically so CaseWorthy and
+   ServTracker mappings never collide).
+2. `field_matcher.match` — rule-based, deterministic, no network call. Exact name match → alias
+   table (common ETL abbreviations) → exact substring/token match → generic similarity. A
+   `high`-confidence rule match short-circuits the LLM entirely.
+3. `llm_gateway.suggest_mapping` — only reached when the rule matcher isn't confident. Takes the
+   target application's label as a parameter (never hardcode which application it's mapping to
+   in the prompt — that was a real bug, fixed, see git history).
+4. `db.get_field_index` — cross-source-system boosting ("also mapped this way N times").
+
+**`schema_rules.check_batch`** flags rule violations (missing required fields, unmapped FK
+dependencies, duplicate target assignments, decode/boolean/length format mismatches) against
+whatever the customer has mapped so far — heuristic checks against the typed-in description,
+never against real data.
+
+**`sql_export.py`** (Advanced mode) turns confirmed mappings into SELECT statements a technical
+data person runs against the live source system. Deliberately never generates a JOIN — a target
+table sourced from multiple source tables just gets one SELECT per source table instead of one
+overall (flagged informationally, not blocked). Deliberately never generates value-transform
+`CASE WHEN` logic — that would be fabricating a fact about data the tool has never seen; required/
+decode constraints surface as SQL comments instead. Source table names are matched case-
+insensitively (only casing — nothing else — is treated as "the same table").
+
+**Frontend (`poc/static/app.js`)** is a single-file, hand-rolled state machine (`state` object +
+`renderStepN()` functions that replace `#app`'s `innerHTML` wholesale). No framework, no build
+step. Event handlers are rebound after every re-render except the theme toggle, which is
+delegated on `document` so it survives re-renders without rewiring.
+
+**Branding/theming:** colors and fonts follow the `caseworthy-brand-visual-identity` skill —
+consult it before changing anything in `styles.css`, don't invent a color pairing it doesn't
+list. Dark/light mode is a `data-theme` attribute + semantic CSS variables (`--surface-*`) that
+get remapped per theme; the underlying brand hex values never change, only which one gets used
+where. **Don't add `transition` to any property whose value comes from a theme-swapped CSS
+variable** (e.g. `background`) — this reproducibly gets the property stuck on its pre-toggle
+value in testing, even though the variable itself updates correctly. See `poc/README.md` for the
+theme and logo-transparency details (the bundled logos were JPEGs with a baked-in black
+background mislabeled `.png` — fixed via chroma-keying, not CSS).
+
+## Working conventions specific to this repo
+
+- Commit messages here explain *why*, not just *what* — read recent `git log` output before
+  assuming you understand a design decision; the reasoning is usually in the commit body, not
+  just the diff.
+- When extracting or editing a target schema, cross-check against the source validation
+  script/templates and report disagreements for human sign-off rather than silently picking a
+  winner — this is the pattern both `tools/extract_servtracker_schema.py` and the CaseWorthy
+  extraction followed.
+- Test UI changes by actually driving them (browser tool, or curl against the running server) —
+  computed-style/DOM assertions have caught real bugs (a silently-swallowed `ReferenceError` in
+  an `onclick` handler) that a code read-through missed.
