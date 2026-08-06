@@ -30,6 +30,13 @@ function effectiveModules() {
 }
 
 const THEME_STORAGE_KEY = "cw-etl-fieldmap-theme";
+// Learned mappings are stored per target database (db.py's target_db column),
+// so a fresh page load defaulting back to CaseWorthy made a ServTracker
+// session's confirmed mappings look like they'd vanished -- they hadn't, the
+// footer counter was just showing a different database's count. Persisting
+// the last-used database (same pattern as the theme toggle) means reopening
+// the tool lands back where those confirmations are actually visible.
+const TARGET_DB_STORAGE_KEY = "cw-etl-fieldmap-target-db";
 
 function getTheme() {
   return document.documentElement.dataset.theme
@@ -69,7 +76,7 @@ let lastImportNotice = null;
 
 let state = {
   step: 1,
-  targetDatabase: "CaseWorthy",
+  targetDatabase: localStorage.getItem(TARGET_DB_STORAGE_KEY) || "CaseWorthy",
   targetDbs: null,
   modules: [],
   modulesInitializedFor: null,
@@ -124,7 +131,11 @@ async function refreshLibStat() {
   const stats = await api(`/api/stats?targetDatabase=${encodeURIComponent(state.targetDatabase)}`);
   const el = document.getElementById("lib-stat");
   if (el) {
-    el.innerHTML = `<span class="num">${stats.total}</span> <span class="lbl">learned mapping${stats.total === 1 ? "" : "s"} · ${stats.systems} source system${stats.systems === 1 ? "" : "s"}</span>`;
+    // Names which database this count is scoped to (db.py's target_db column
+    // keeps CaseWorthy and ServTracker mappings separate) -- without this label
+    // switching target databases makes previously-confirmed mappings look like
+    // they disappeared, when they're just filed under the other database.
+    el.innerHTML = `<span class="num">${stats.total}</span> <span class="lbl">learned mapping${stats.total === 1 ? "" : "s"} · ${stats.systems} source system${stats.systems === 1 ? "" : "s"} (${dbLabel()})</span>`;
   }
 }
 
@@ -298,6 +309,7 @@ async function renderStep1() {
   document.getElementById("target-db").onchange = (e) => {
     syncSourceSystem();
     state.targetDatabase = e.target.value;
+    localStorage.setItem(TARGET_DB_STORAGE_KEY, state.targetDatabase);
     // Module selections belong to a database; carrying them across would scope
     // the new one by names it doesn't have. Clearing modulesInitializedFor
     // lets the newly-selected database's own default (all-selected or

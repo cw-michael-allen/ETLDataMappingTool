@@ -74,6 +74,14 @@ Display convention: ServTracker schema rows carry both a `sheet` (what the custo
 
 Moved from a prominent box next to the H1 to a small line at the very bottom of the footer, on every step (`renderFooter()` in `static/app.js`) — still visible, deliberately not competing with the header for attention. Same live-updating element (`#lib-stat`, refreshed by `refreshLibStat()`), just relocated and shrunk (13px/10px vs. the original 26px/11px).
 
+**Scoped per target database, and now labeled as such** (e.g. "8 learned mappings · 1 source
+system (ServTracker)") — `db.py` keeps CaseWorthy and ServTracker mappings in separate rows, so
+confirming mappings under one and then switching (or reopening the tool, which used to always
+reset to CaseWorthy) made a real, saved library look empty. `state.targetDatabase` is now
+persisted to `localStorage` (`cw-etl-fieldmap-target-db`, same pattern as the theme toggle) so a
+fresh page load lands back on whichever database was last used, and the counter always names
+which database its number belongs to.
+
 ## Shared learned-mappings library
 
 By default `data/mappings.db` (`db.py`'s confirmed-mappings and cross-system field-index tables)
