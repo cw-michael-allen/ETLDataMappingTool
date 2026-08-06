@@ -80,6 +80,9 @@ def describe_target_databases():
                 "hasModules": bool(meta.get("modules")),
                 "baseModules": meta.get("baseModules") or [],
                 "unitNoun": meta.get("unitNoun", "table"),
+                "groupNoun": meta.get("groupNoun", "module"),
+                "scopingReason": meta.get("scopingReason", ""),
+                "defaultSelectAll": bool(meta.get("defaultSelectAll")),
                 "fieldCount": len(schema),
                 "modules": schema_rules.list_modules(name, schema),
                 "linkKey": next(

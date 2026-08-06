@@ -30,24 +30,38 @@ DEFAULT_TARGET_DATABASE = "CaseWorthy"
 # Per-target-database presentation and scoping metadata, served to the UI so the
 # frontend stops hardcoding which databases exist and which are usable.
 #
-# `modules` is the important difference between the two. CaseWorthy is a single
-# staging workbook: every customer gets the same 28 tables, so there is nothing
-# to scope and its flow must stay exactly as it was. ServTracker ships as
-# separate program-area workbooks and a customer migrates only the ones they run
-# -- without scoping, a source field named `Site` or `StartDate` ties across a
-# dozen sheets and no suggestion can reach high confidence.
+# Both databases are module-scoped now, but for different reasons, which is why
+# `groupNoun`, `scopingReason`, and `defaultSelectAll` differ between them:
+#
+# - ServTracker ships as ~18 separate program-area workbooks and a customer
+#   migrates only the ones they run. Column names repeat heavily across sheets
+#   (`Site`, `StartDate`, `Funding`), so *narrowing* the selection is the whole
+#   point -- defaulting to "everything" would recreate the exact ambiguity
+#   scoping exists to fix. Its modules are genuine multi-sheet groupings (each
+#   schema row's `modules` list may name a program area with several sheets).
+#
+# - CaseWorthy is one staging workbook with 28 tables and no name collisions
+#   across them, so there's no ambiguity problem to fix. Scoping here is a
+#   convenience for targeting only the tabs a migration actually needs -- each
+#   "module" is just one table (a schema row's `modules` is always
+#   `[table]`), and the sensible default is everything selected, same as its
+#   original unscoped behavior, with an explicit way to narrow down.
 #
 # `baseModules` are always included regardless of what the customer picks: every
 # ServTracker sheet keys off ClientImportId from the client sheet, so the client
 # module is a base requirement, not an option (confirmed by Alex Button,
-# 2026-08-05).
+# 2026-08-05). CaseWorthy has no equivalent -- nothing is forced.
 TARGET_DB_META = {
     "CaseWorthy": {
         "label": "CaseWorthy",
         "logo": "/assets/logos/caseworthy-corporate.png",
-        "modules": False,
+        "modules": True,
         "baseModules": [],
         "unitNoun": "table",
+        "groupNoun": "tab",
+        "scopingReason": "Select which tabs on the staging report this migration actually needs. "
+        "All tabs are selected by default -- narrow it down, or leave everything checked.",
+        "defaultSelectAll": True,
     },
     "ServTracker": {
         "label": "ServTracker",
@@ -55,6 +69,10 @@ TARGET_DB_META = {
         "modules": True,
         "baseModules": ["Client Master with Demographics"],
         "unitNoun": "sheet",
+        "groupNoun": "module",
+        "scopingReason": "Pick only what this customer actually runs -- narrowing improves suggestion "
+        "accuracy, because the same column name (Site, StartDate, Funding) appears on many sheets.",
+        "defaultSelectAll": False,
     },
 }
 

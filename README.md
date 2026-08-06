@@ -30,7 +30,7 @@ A prior session produced **Tier 0 / Option B**: a no-dev-team, customer-facing p
 | Source | `00_Staging_EXCEL_Validation_Script_v3.sql` (frozen v3, committed here) | `1 - Master Validation.sql` + 18 Excel templates (live, [not committed](reference/SERVTRACKER_SOURCES.md)) |
 | Validation checks | 328 | 785 (all parsed, 0 unreadable) |
 | Human sign-off | ✅ Russ, 2026-08-04 | ✅ Alex Button, 2026-08-05 |
-| Usable in the app | ✅ | ✅ with per-module scoping |
+| Usable in the app | ✅ with per-tab scoping (defaults to everything selected) | ✅ with per-module scoping (defaults to nothing extra selected) |
 
 ServTracker's extraction is regenerable via `tools/extract_servtracker_schema.py`
 and produces [`reference/servtracker_extraction_report.md`](reference/servtracker_extraction_report.md),

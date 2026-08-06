@@ -67,6 +67,7 @@ let state = {
   targetDatabase: "CaseWorthy",
   targetDbs: null,
   modules: [],
+  modulesInitializedFor: null,
   advancedMode: false,
   dialect: "SQL Server",
   dialects: null,
@@ -95,10 +96,6 @@ function renderHeader() {
         <h1>Field Mapping Assistant</h1>
         <div style="color:var(--surface-text-muted);font-size:13px;">Phase 0 POC — tells you where each of your fields lives in ${meta.label} today, and flags mappings that would break ${meta.label}'s import rules.</div>
       </div>
-      <div class="lib-stat" id="lib-stat">
-        <div class="num">…</div>
-        <div class="lbl">Learned mappings</div>
-      </div>
     </div>
     <div class="safety-note">
       ⚠️ Local POC. Only enter <strong>field names and formats</strong> below — never real client names, SSNs, or other personal data.
@@ -106,11 +103,23 @@ function renderHeader() {
   `;
 }
 
+// Learned-mappings counter moved here deliberately: still visible on every
+// step, but small and out of the way at the bottom rather than a prominent
+// box next to the H1. refreshLibStat() targets the same #lib-stat id
+// regardless of where it lives in the markup.
+function renderFooter(extra) {
+  return `
+    <footer>
+      ${extra || "Internal POC · CaseWorthy Technical Consulting"}
+      <div class="lib-stat" id="lib-stat"><span class="num">…</span> <span class="lbl">learned mappings</span></div>
+    </footer>`;
+}
+
 async function refreshLibStat() {
   const stats = await api(`/api/stats?targetDatabase=${encodeURIComponent(state.targetDatabase)}`);
   const el = document.getElementById("lib-stat");
   if (el) {
-    el.innerHTML = `<div class="num">${stats.total}</div><div class="lbl">Learned mappings · ${stats.systems} source system${stats.systems === 1 ? "" : "s"}</div>`;
+    el.innerHTML = `<span class="num">${stats.total}</span> <span class="lbl">learned mapping${stats.total === 1 ? "" : "s"} · ${stats.systems} source system${stats.systems === 1 ? "" : "s"}</span>`;
   }
 }
 
@@ -145,25 +154,32 @@ async function ensureDialects() {
   return state.dialects;
 }
 
-// Module picker, rendered only for a target database that actually has modules
-// (ServTracker ships as separate program-area workbooks; CaseWorthy is one
-// staging workbook and never shows this).
+// Module/tab picker, rendered for any target database that has modules --
+// today, both do, for different reasons (see TARGET_DB_META in
+// schema_rules.py): ServTracker uses it to narrow away real name collisions
+// across program-area workbooks; CaseWorthy uses it just to let a migration
+// target only the tabs it needs, defaulting to everything selected.
 //
-// Base modules render checked and disabled: every ServTracker sheet keys off
-// ClientImportId from the client sheet, so the client module isn't optional.
-// Scoping matters for suggestion quality -- unscoped, a field named `Site` or
-// `StartDate` ties across six sheets and can't reach high confidence.
+// Base modules (ServTracker only) render checked and disabled: every
+// ServTracker sheet keys off ClientImportId from the client sheet, so the
+// client module isn't optional. CaseWorthy has no base modules -- nothing
+// is forced, nothing is required to proceed.
 function renderModulePicker(meta) {
   const base = meta.baseModules || [];
+  const groupWord = meta.groupNoun || "module";
+  const groupWordPlural = groupWord + "s";
   const items = (meta.modules || []).map(m => {
     const locked = m.required;
     const checked = locked || state.modules.includes(m.name);
-    const sheetWord = m.sheets.length === 1 ? "sheet" : "sheets";
+    const isSingleton = m.sheets.length === 1 && m.sheets[0] === m.name;
+    const statLine = isSingleton
+      ? `${m.fieldCount} fields`
+      : `${m.sheets.length} ${m.sheets.length === 1 ? "sheet" : "sheets"} · ${m.fieldCount} fields`;
     return `
       <label class="module-item${locked ? " locked" : ""}">
         <input type="checkbox" class="module-cb" value="${m.name}" ${checked ? "checked" : ""} ${locked ? "disabled" : ""}>
         <span class="module-name">${m.name}${locked ? ` <em>— always included</em>` : ""}</span>
-        <span class="module-meta">${m.sheets.length} ${sheetWord} · ${m.fieldCount} fields</span>
+        <span class="module-meta">${statLine}</span>
       </label>`;
   }).join("");
 
@@ -176,21 +192,24 @@ function renderModulePicker(meta) {
       their demographics to their services. It appears on nearly every sheet by design.
     </div>` : "";
 
+  const summary = state.modules.length === 0
+    ? (base.length
+        ? `${base.join(", ")} is included by default — no other ${groupWord} is required. Add more above if this customer runs them.`
+        : `Nothing selected yet.`)
+    : `${selected.length} ${selected.length === 1 ? groupWord : groupWordPlural} in scope${base.length ? ` (including ${base.join(", ")})` : ""}.`;
+
   return `
     <div class="target-db-row module-picker">
-      <label>Which ${meta.label} modules are you migrating?</label>
+      <label>Which ${meta.label} ${groupWordPlural} are you migrating?</label>
       <div style="color:var(--surface-text-muted);font-size:12px;margin-bottom:8px;">
-        Pick only what this customer actually runs. ${meta.label} has ${(meta.modules || []).length} modules
-        across ${meta.fieldCount} fields — narrowing them makes the field suggestions far more accurate,
-        because the same column name (<code>Site</code>, <code>StartDate</code>, <code>Funding</code>)
-        appears on many sheets.
+        ${meta.scopingReason || ""}
+      </div>
+      <div class="module-actions">
+        <button type="button" class="ghost" id="modules-select-all">Select all</button>
+        <button type="button" class="ghost" id="modules-select-none">Select none</button>
       </div>
       <div class="module-list">${items}</div>
-      <div class="module-summary" id="module-summary">
-        ${state.modules.length === 0
-          ? `<span class="module-warn">Select at least one module to continue.</span>`
-          : `${selected.length} module${selected.length === 1 ? "" : "s"} in scope${base.length ? ` (including ${base.join(", ")})` : ""}.`}
-      </div>
+      <div class="module-summary" id="module-summary">${summary}</div>
       ${linkNote}
     </div>`;
 }
@@ -198,17 +217,28 @@ function renderModulePicker(meta) {
 async function renderStep1() {
   await ensureTargetDbs();
   const meta = activeDb();
+  const unavailable = meta.available === false;
+
+  // Apply each database's sensible default exactly once per database
+  // (tracked by modulesInitializedFor), not on every render -- otherwise a
+  // customer unchecking everything on a defaultSelectAll database would just
+  // get overwritten back to "all" on the next render.
+  if (!unavailable && meta.hasModules && state.modulesInitializedFor !== state.targetDatabase) {
+    state.modules = meta.defaultSelectAll
+      ? (meta.modules || []).map(m => m.name).filter(n => !(meta.baseModules || []).includes(n))
+      : [];
+    state.modulesInitializedFor = state.targetDatabase;
+  }
+
   const dbOptions = (state.targetDbs || [])
     .map(d => `<option value="${d.name}" ${state.targetDatabase === d.name ? "selected" : ""}>${d.label}</option>`)
     .join("");
 
-  const unavailable = meta.available === false;
   const warning = unavailable
     ? `<div class="db-warning">${meta.label}'s schema isn't loaded in this POC yet. Nothing has been guessed at in its place — a schema has to be extracted from its own validation rules first.</div>`
     : "";
 
   const moduleBlock = (!unavailable && meta.hasModules) ? renderModulePicker(meta) : "";
-  const needsModules = !unavailable && meta.hasModules && state.modules.length === 0;
 
   let dialectRow = "";
   if (state.advancedMode) {
@@ -244,18 +274,21 @@ async function renderStep1() {
       ${dialectRow}
       <div class="step-nav">
         <span></span>
-        <button class="primary" id="next-1" ${unavailable || needsModules ? "disabled" : ""}>Next: List Your Fields →</button>
+        <button class="primary" id="next-1" ${unavailable ? "disabled" : ""}>Next: List Your Fields →</button>
       </div>
     </div>
-    <footer>Internal POC · CaseWorthy Technical Consulting</footer>
+    ${renderFooter()}
   `;
   refreshLibStat();
 
   document.getElementById("target-db").onchange = (e) => {
     state.targetDatabase = e.target.value;
     // Module selections belong to a database; carrying them across would scope
-    // the new one by names it doesn't have.
+    // the new one by names it doesn't have. Clearing modulesInitializedFor
+    // lets the newly-selected database's own default (all-selected or
+    // nothing-extra) apply fresh on the next render.
     state.modules = [];
+    state.modulesInitializedFor = null;
     state.schemaKey = null;
     renderStep1();
   };
@@ -269,6 +302,18 @@ async function renderStep1() {
       renderStep1();
     };
   });
+  const selectAllBtn = document.getElementById("modules-select-all");
+  if (selectAllBtn) selectAllBtn.onclick = () => {
+    state.modules = (meta.modules || []).map(m => m.name).filter(n => !(meta.baseModules || []).includes(n));
+    state.schemaKey = null;
+    renderStep1();
+  };
+  const selectNoneBtn = document.getElementById("modules-select-none");
+  if (selectNoneBtn) selectNoneBtn.onclick = () => {
+    state.modules = [];
+    state.schemaKey = null;
+    renderStep1();
+  };
   document.getElementById("advanced-toggle").onchange = (e) => {
     state.advancedMode = e.target.checked;
     renderStep1();
@@ -276,7 +321,7 @@ async function renderStep1() {
   const dialectEl = document.getElementById("dialect");
   if (dialectEl) dialectEl.onchange = (e) => { state.dialect = e.target.value; };
   document.getElementById("next-1").onclick = () => {
-    if (unavailable || needsModules) return;
+    if (unavailable) return;
     const val = document.getElementById("src-sys").value.trim();
     if (!val) { alert("Enter the source system name to continue."); return; }
     state.sourceSystem = val;
@@ -307,7 +352,7 @@ function renderStep2() {
         <button class="primary" id="next-2">Get Mapping Suggestions →</button>
       </div>
     </div>
-    <footer>Internal POC · CaseWorthy Technical Consulting</footer>
+    ${renderFooter()}
   `;
   refreshLibStat();
 
@@ -420,7 +465,7 @@ function renderStep3Results() {
         <button class="primary" id="next-3">Go to Summary →</button>
       </div>
     </div>
-    <footer>Internal POC · CaseWorthy Technical Consulting</footer>
+    ${renderFooter()}
   `;
   refreshLibStat();
 
@@ -602,7 +647,7 @@ async function renderStep4() {
       </div>
     </div>
     ${renderSqlExportSection(exportResult)}
-    <footer>Internal POC · CaseWorthy Technical Consulting — not for use with real client data</footer>
+    ${renderFooter("Internal POC · CaseWorthy Technical Consulting — not for use with real client data")}
   `;
   refreshLibStat();
   document.getElementById("back-4").onclick = () => { state.step = 3; renderStep3Results(); };

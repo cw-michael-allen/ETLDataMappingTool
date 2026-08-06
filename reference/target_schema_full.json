@@ -4,32 +4,47 @@
     "field": "ClientID",
     "required": true,
     "type": "Unique ID",
-    "note": "Unique identifier for the client record. Used by Enrollment and every other client-linked table."
+    "note": "Unique identifier for the client record. Used by Enrollment and every other client-linked table.",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "FirstName",
     "required": true,
-    "type": "Text (max 50)"
+    "type": "Text (max 50)",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "MiddleName",
     "required": false,
-    "type": "Text (max 50)"
+    "type": "Text (max 50)",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "LastName",
     "required": true,
-    "type": "Text (max 50)"
+    "type": "Text (max 50)",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "HoHClientID",
     "required": true,
     "type": "Self-reference to ClientID",
-    "note": "Head of Household. If the client has no family, set this equal to their own ClientID."
+    "note": "Head of Household. If the client has no family, set this equal to their own ClientID.",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
@@ -37,26 +52,38 @@
     "required": true,
     "type": "List",
     "listId": 4,
-    "decode": "1=Self, 2=Spouse, 3=Child"
+    "decode": "1=Self, 2=Spouse, 3=Child",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "OrganizationID",
     "required": true,
-    "type": "FK → Organization"
+    "type": "FK → Organization",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "BirthDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "DOBDataQuality",
     "required": false,
     "type": "List",
-    "listId": 620
+    "listId": 620,
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
@@ -64,75 +91,108 @@
     "required": false,
     "type": "List",
     "listId": 714,
-    "decode": "1=Jr, 2=Sr, 3=II, 4=III, 5=IV"
+    "decode": "1=Jr, 2=Sr, 3=II, 4=III, 5=IV",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "Gender",
     "required": false,
     "type": "List",
-    "listId": 1
+    "listId": 1,
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "Pronouns",
     "required": false,
-    "type": "Free text / list"
+    "type": "Free text / list",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "SexualOrientation",
     "required": false,
     "type": "List",
-    "listId": 2910
+    "listId": 2910,
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "PrimaryLanguage",
     "required": false,
     "type": "List",
-    "listId": 133
+    "listId": 133,
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "EnglishProficiency",
     "required": false,
     "type": "List",
-    "listId": 627
+    "listId": 627,
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "Race",
     "required": false,
     "type": "List",
-    "listId": 6
+    "listId": 6,
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "Ethnicity",
     "required": false,
     "type": "List",
-    "listId": 7
+    "listId": 7,
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "SSN",
     "required": false,
     "type": "Text",
-    "note": "4, 9, or 11 characters, dashes allowed."
+    "note": "4, 9, or 11 characters, dashes allowed.",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "SSNDataQuality",
     "required": false,
     "type": "List",
-    "listId": 587
+    "listId": 587,
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "HomePhone",
     "required": false,
-    "type": "Text"
+    "type": "Text",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
@@ -140,13 +200,19 @@
     "required": false,
     "type": "List",
     "listId": 4073,
-    "decode": "1=Primary, 2=Secondary, 3=Tertiary"
+    "decode": "1=Primary, 2=Secondary, 3=Tertiary",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "WorkPhone",
     "required": false,
-    "type": "Text"
+    "type": "Text",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
@@ -154,13 +220,19 @@
     "required": false,
     "type": "List",
     "listId": 4073,
-    "decode": "1=Primary, 2=Secondary, 3=Tertiary"
+    "decode": "1=Primary, 2=Secondary, 3=Tertiary",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "CellPhone",
     "required": false,
-    "type": "Text"
+    "type": "Text",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
@@ -168,7 +240,10 @@
     "required": false,
     "type": "List",
     "listId": 4073,
-    "decode": "1=Primary, 2=Secondary, 3=Tertiary"
+    "decode": "1=Primary, 2=Secondary, 3=Tertiary",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
@@ -176,7 +251,10 @@
     "required": false,
     "type": "List",
     "listId": 100,
-    "decode": "1=Yes, 2=No"
+    "decode": "1=Yes, 2=No",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
@@ -184,7 +262,10 @@
     "required": false,
     "type": "List",
     "listId": 100,
-    "decode": "1=Yes, 2=No"
+    "decode": "1=Yes, 2=No",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
@@ -192,7 +273,10 @@
     "required": false,
     "type": "List",
     "listId": 100,
-    "decode": "1=Yes, 2=No"
+    "decode": "1=Yes, 2=No",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
@@ -200,137 +284,203 @@
     "required": false,
     "type": "List",
     "listId": 25,
-    "decode": "1=Shared, 2=Not Shared"
+    "decode": "1=Shared, 2=Not Shared",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "CitizenshipStatusID",
     "required": false,
     "type": "List",
-    "listId": 127
+    "listId": 127,
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "Email",
     "required": false,
-    "type": "Text"
+    "type": "Text",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "Address",
     "required": false,
-    "type": "Text (max 100)"
+    "type": "Text (max 100)",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "Address2",
     "required": false,
-    "type": "Text (max 100)"
+    "type": "Text (max 100)",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "City",
     "required": false,
-    "type": "Text (max 25)"
+    "type": "Text (max 25)",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "StateCode",
     "required": false,
-    "type": "2-letter state code"
+    "type": "2-letter state code",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "County",
     "required": false,
-    "type": "Text (max 100)"
+    "type": "Text (max 100)",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "Zip",
     "required": false,
-    "type": "Text"
+    "type": "Text",
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "VeteranStatus",
     "required": false,
     "type": "List",
-    "listId": 37
+    "listId": 37,
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Client",
     "field": "MaritalStatus",
     "required": false,
     "type": "List",
-    "listId": 128
+    "listId": 128,
+    "modules": [
+      "Client"
+    ]
   },
   {
     "table": "Program",
     "field": "ProgramID",
     "required": true,
-    "type": "Unique ID"
+    "type": "Unique ID",
+    "modules": [
+      "Program"
+    ]
   },
   {
     "table": "Program",
     "field": "ProgramName",
     "required": true,
-    "type": "Text (max 50)"
+    "type": "Text (max 50)",
+    "modules": [
+      "Program"
+    ]
   },
   {
     "table": "Program",
     "field": "BeginDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "Program"
+    ]
   },
   {
     "table": "Program",
     "field": "EndDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "Program"
+    ]
   },
   {
     "table": "Program",
     "field": "EnrollmentsEnabled",
     "required": false,
-    "type": "Boolean (0/1)"
+    "type": "Boolean (0/1)",
+    "modules": [
+      "Program"
+    ]
   },
   {
     "table": "Program",
     "field": "NotifyOnAutoExit",
     "required": false,
     "type": "List",
-    "listId": 2893
+    "listId": 2893,
+    "modules": [
+      "Program"
+    ]
   },
   {
     "table": "Enrollment",
     "field": "MemberID",
     "required": true,
-    "type": "Unique ID"
+    "type": "Unique ID",
+    "modules": [
+      "Enrollment"
+    ]
   },
   {
     "table": "Enrollment",
     "field": "EnrollmentID",
     "required": true,
-    "type": "ID"
+    "type": "ID",
+    "modules": [
+      "Enrollment"
+    ]
   },
   {
     "table": "Enrollment",
     "field": "ProgramID",
     "required": true,
-    "type": "FK → Program"
+    "type": "FK → Program",
+    "modules": [
+      "Enrollment"
+    ]
   },
   {
     "table": "Enrollment",
     "field": "ClientID",
     "required": true,
-    "type": "FK → Client"
+    "type": "FK → Client",
+    "modules": [
+      "Enrollment"
+    ]
   },
   {
     "table": "Enrollment",
     "field": "ProviderID",
     "required": true,
-    "type": "FK → Provider"
+    "type": "FK → Provider",
+    "modules": [
+      "Enrollment"
+    ]
   },
   {
     "table": "Enrollment",
@@ -338,19 +488,28 @@
     "required": true,
     "type": "List",
     "listId": 52,
-    "decode": "100=Enrolled, 200=Exited"
+    "decode": "100=Enrolled, 200=Exited",
+    "modules": [
+      "Enrollment"
+    ]
   },
   {
     "table": "Enrollment",
     "field": "BeginDate",
     "required": true,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "Enrollment"
+    ]
   },
   {
     "table": "Enrollment",
     "field": "ExitDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "Enrollment"
+    ]
   },
   {
     "table": "Enrollment",
@@ -358,19 +517,28 @@
     "required": false,
     "type": "List",
     "listId": 25,
-    "decode": "1=Shared, 2=Not Shared"
+    "decode": "1=Shared, 2=Not Shared",
+    "modules": [
+      "Enrollment"
+    ]
   },
   {
     "table": "ServiceType",
     "field": "ServiceTypeID",
     "required": true,
-    "type": "Unique ID (numeric)"
+    "type": "Unique ID (numeric)",
+    "modules": [
+      "ServiceType"
+    ]
   },
   {
     "table": "ServiceType",
     "field": "Description",
     "required": true,
-    "type": "Text"
+    "type": "Text",
+    "modules": [
+      "ServiceType"
+    ]
   },
   {
     "table": "ServiceType",
@@ -378,80 +546,119 @@
     "required": true,
     "type": "List",
     "listId": 2,
-    "decode": "1=Days, 2=Hours, 3=Minutes, 4=Each, 5=Dollar, 6=Mileage"
+    "decode": "1=Days, 2=Hours, 3=Minutes, 4=Each, 5=Dollar, 6=Mileage",
+    "modules": [
+      "ServiceType"
+    ]
   },
   {
     "table": "ServiceType",
     "field": "UnitValue",
     "required": true,
-    "type": "Decimal"
+    "type": "Decimal",
+    "modules": [
+      "ServiceType"
+    ]
   },
   {
     "table": "ServiceType",
     "field": "DuplicateMinutes",
     "required": false,
     "type": "Integer",
-    "note": "Use 0 for no limit."
+    "note": "Use 0 for no limit.",
+    "modules": [
+      "ServiceType"
+    ]
   },
   {
     "table": "ServiceType",
     "field": "CreatedBy",
     "required": false,
-    "type": "FK → Users"
+    "type": "FK → Users",
+    "modules": [
+      "ServiceType"
+    ]
   },
   {
     "table": "ServiceType",
     "field": "CreatedDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "ServiceType"
+    ]
   },
   {
     "table": "ServiceType",
     "field": "EffectiveDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "ServiceType"
+    ]
   },
   {
     "table": "Users",
     "field": "UserID",
     "required": true,
-    "type": "Unique ID"
+    "type": "Unique ID",
+    "modules": [
+      "Users"
+    ]
   },
   {
     "table": "Users",
     "field": "UserName",
     "required": true,
-    "type": "Text"
+    "type": "Text",
+    "modules": [
+      "Users"
+    ]
   },
   {
     "table": "Users",
     "field": "FirstName",
     "required": true,
-    "type": "Text"
+    "type": "Text",
+    "modules": [
+      "Users"
+    ]
   },
   {
     "table": "Users",
     "field": "LastName",
     "required": true,
-    "type": "Text"
+    "type": "Text",
+    "modules": [
+      "Users"
+    ]
   },
   {
     "table": "Users",
     "field": "EmailAddress",
     "required": false,
-    "type": "Text"
+    "type": "Text",
+    "modules": [
+      "Users"
+    ]
   },
   {
     "table": "Users",
     "field": "OrganizationID",
     "required": true,
-    "type": "FK → Organization"
+    "type": "FK → Organization",
+    "modules": [
+      "Users"
+    ]
   },
   {
     "table": "Users",
     "field": "ProviderID",
     "required": false,
-    "type": "FK → Provider"
+    "type": "FK → Provider",
+    "modules": [
+      "Users"
+    ]
   },
   {
     "table": "Users",
@@ -459,174 +666,255 @@
     "required": false,
     "type": "List",
     "listId": 8,
-    "decode": "2=Authenticated Users, 3=Alter Own Role, 4=Alter Any Role"
+    "decode": "2=Authenticated Users, 3=Alter Own Role, 4=Alter Any Role",
+    "modules": [
+      "Users"
+    ]
   },
   {
     "table": "Users",
     "field": "SupervisorUserID",
     "required": false,
-    "type": "Self-reference to UserID"
+    "type": "Self-reference to UserID",
+    "modules": [
+      "Users"
+    ]
   },
   {
     "table": "Users",
     "field": "isSupervisor",
     "required": false,
-    "type": "Boolean (0/1)"
+    "type": "Boolean (0/1)",
+    "modules": [
+      "Users"
+    ]
   },
   {
     "table": "Users",
     "field": "isActive",
     "required": false,
-    "type": "Boolean (0/1)"
+    "type": "Boolean (0/1)",
+    "modules": [
+      "Users"
+    ]
   },
   {
     "table": "Organization",
     "field": "OrganizationID",
     "required": true,
     "type": "Unique ID",
-    "note": "Unique identifier for the organization record."
+    "note": "Unique identifier for the organization record.",
+    "modules": [
+      "Organization"
+    ]
   },
   {
     "table": "Organization",
     "field": "OrgName",
     "required": true,
-    "type": "Text (max 100)"
+    "type": "Text (max 100)",
+    "modules": [
+      "Organization"
+    ]
   },
   {
     "table": "Organization",
     "field": "DefaultProviderID",
     "required": false,
-    "type": "Float"
+    "type": "Float",
+    "modules": [
+      "Organization"
+    ]
   },
   {
     "table": "Organization",
     "field": "PWChangeDays",
     "required": false,
-    "type": "Integer"
+    "type": "Integer",
+    "modules": [
+      "Organization"
+    ]
   },
   {
     "table": "Organization",
     "field": "AutoLogoutMinutes",
     "required": false,
-    "type": "Integer"
+    "type": "Integer",
+    "modules": [
+      "Organization"
+    ]
   },
   {
     "table": "Organization",
     "field": "AllowPrint",
     "required": false,
     "type": "Boolean (0/1)",
-    "decode": "1=Yes, 0=No"
+    "decode": "1=Yes, 0=No",
+    "modules": [
+      "Organization"
+    ]
   },
   {
     "table": "Organization",
     "field": "AllowExcel",
     "required": false,
     "type": "Boolean (0/1)",
-    "decode": "1=Yes, 0=No"
+    "decode": "1=Yes, 0=No",
+    "modules": [
+      "Organization"
+    ]
   },
   {
     "table": "Organization",
     "field": "EnableTimeLogging",
     "required": false,
     "type": "Boolean (0/1)",
-    "decode": "1=Yes, 0=No"
+    "decode": "1=Yes, 0=No",
+    "modules": [
+      "Organization"
+    ]
   },
   {
     "table": "Organization",
     "field": "LockoutAfterAttempts",
     "required": false,
-    "type": "Integer"
+    "type": "Integer",
+    "modules": [
+      "Organization"
+    ]
   },
   {
     "table": "Organization",
     "field": "CreatedDate",
     "required": false,
     "type": "Date",
-    "note": "Optional but must be a valid date if provided."
+    "note": "Optional but must be a valid date if provided.",
+    "modules": [
+      "Organization"
+    ]
   },
   {
     "table": "Provider",
     "field": "ProviderID",
     "required": true,
     "type": "Unique ID",
-    "note": "Unique identifier for the provider record."
+    "note": "Unique identifier for the provider record.",
+    "modules": [
+      "Provider"
+    ]
   },
   {
     "table": "Provider",
     "field": "ProviderName",
     "required": true,
-    "type": "Text"
+    "type": "Text",
+    "modules": [
+      "Provider"
+    ]
   },
   {
     "table": "Provider",
     "field": "OrganizationID",
     "required": true,
-    "type": "FK → Organization"
+    "type": "FK → Organization",
+    "modules": [
+      "Provider"
+    ]
   },
   {
     "table": "Provider",
     "field": "ProviderTypeCategoryTypeID",
     "required": false,
     "type": "List",
-    "listId": 313
+    "listId": 313,
+    "modules": [
+      "Provider"
+    ]
   },
   {
     "table": "Provider",
     "field": "Address",
     "required": false,
-    "type": "Text (max 100)"
+    "type": "Text (max 100)",
+    "modules": [
+      "Provider"
+    ]
   },
   {
     "table": "Provider",
     "field": "Address2",
     "required": false,
-    "type": "Text (max 100)"
+    "type": "Text (max 100)",
+    "modules": [
+      "Provider"
+    ]
   },
   {
     "table": "Provider",
     "field": "City",
     "required": false,
-    "type": "Text (max 50)"
+    "type": "Text (max 50)",
+    "modules": [
+      "Provider"
+    ]
   },
   {
     "table": "Provider",
     "field": "State",
     "required": false,
     "type": "Text (max 2)",
-    "note": "Must not contain digits (2-letter state code)."
+    "note": "Must not contain digits (2-letter state code).",
+    "modules": [
+      "Provider"
+    ]
   },
   {
     "table": "Provider",
     "field": "ZipCode",
     "required": false,
     "type": "Integer",
-    "note": "Must be exactly 5 numeric digits."
+    "note": "Must be exactly 5 numeric digits.",
+    "modules": [
+      "Provider"
+    ]
   },
   {
     "table": "Provider",
     "field": "Phone",
     "required": false,
     "type": "Text (10 digits)",
-    "note": "Must be exactly 10 numeric digits after removing dashes."
+    "note": "Must be exactly 10 numeric digits after removing dashes.",
+    "modules": [
+      "Provider"
+    ]
   },
   {
     "table": "Provider",
     "field": "Fax",
     "required": false,
     "type": "Text (10 digits)",
-    "note": "Must be exactly 10 numeric digits after removing dashes."
+    "note": "Must be exactly 10 numeric digits after removing dashes.",
+    "modules": [
+      "Provider"
+    ]
   },
   {
     "table": "Provider",
     "field": "Email",
     "required": false,
-    "type": "Text (max 100)"
+    "type": "Text (max 100)",
+    "modules": [
+      "Provider"
+    ]
   },
   {
     "table": "Provider",
     "field": "Website",
     "required": false,
-    "type": "Text (max 100)"
+    "type": "Text (max 100)",
+    "modules": [
+      "Provider"
+    ]
   },
   {
     "table": "Provider",
@@ -634,14 +922,20 @@
     "required": false,
     "type": "List",
     "listId": 343,
-    "decode": "1=Corporation, 5=Partnership, 10=Individual"
+    "decode": "1=Corporation, 5=Partnership, 10=Individual",
+    "modules": [
+      "Provider"
+    ]
   },
   {
     "table": "Provider",
     "field": "SiteConfigurationType",
     "required": false,
     "type": "List",
-    "listId": 40
+    "listId": 40,
+    "modules": [
+      "Provider"
+    ]
   },
   {
     "table": "Provider",
@@ -649,7 +943,10 @@
     "required": false,
     "type": "List",
     "listId": 194,
-    "decode": "0=No, 1=Yes"
+    "decode": "0=No, 1=Yes",
+    "modules": [
+      "Provider"
+    ]
   },
   {
     "table": "Provider",
@@ -657,20 +954,29 @@
     "required": false,
     "type": "List",
     "listId": 6845,
-    "decode": "1=Urban, 2=Suburban, 3=Rural"
+    "decode": "1=Urban, 2=Suburban, 3=Rural",
+    "modules": [
+      "Provider"
+    ]
   },
   {
     "table": "Provider",
     "field": "CreatedDate",
     "required": false,
     "type": "Date",
-    "note": "Optional but must be a valid date if provided."
+    "note": "Optional but must be a valid date if provided.",
+    "modules": [
+      "Provider"
+    ]
   },
   {
     "table": "ClientRace",
     "field": "ClientID",
     "required": false,
-    "type": "FK → Client"
+    "type": "FK → Client",
+    "modules": [
+      "ClientRace"
+    ]
   },
   {
     "table": "ClientRace",
@@ -678,20 +984,29 @@
     "required": false,
     "type": "List",
     "listId": 6,
-    "note": "0 is valid for multi-racial."
+    "note": "0 is valid for multi-racial.",
+    "modules": [
+      "ClientRace"
+    ]
   },
   {
     "table": "AddressHistory",
     "field": "AddressID",
     "required": true,
     "type": "Unique ID",
-    "note": "Unique identifier for the address history record."
+    "note": "Unique identifier for the address history record.",
+    "modules": [
+      "AddressHistory"
+    ]
   },
   {
     "table": "AddressHistory",
     "field": "ClientID",
     "required": false,
-    "type": "FK → Client"
+    "type": "FK → Client",
+    "modules": [
+      "AddressHistory"
+    ]
   },
   {
     "table": "AddressHistory",
@@ -700,32 +1015,47 @@
     "type": "List",
     "listId": 5,
     "decode": "2=Mailing Address, 3=Previous Address",
-    "note": "Do not use 1 (current address); current address goes on the Client sheet."
+    "note": "Do not use 1 (current address); current address goes on the Client sheet.",
+    "modules": [
+      "AddressHistory"
+    ]
   },
   {
     "table": "AddressHistory",
     "field": "StateCode",
     "required": false,
     "type": "Text (max 2)",
-    "note": "Must not contain digits (2-letter state abbreviation)."
+    "note": "Must not contain digits (2-letter state abbreviation).",
+    "modules": [
+      "AddressHistory"
+    ]
   },
   {
     "table": "AddressHistory",
     "field": "City",
     "required": false,
-    "type": "Text (max 25)"
+    "type": "Text (max 25)",
+    "modules": [
+      "AddressHistory"
+    ]
   },
   {
     "table": "EntityVeteranEra",
     "field": "EntityVeteranEraID",
     "required": true,
-    "type": "Unique ID"
+    "type": "Unique ID",
+    "modules": [
+      "EntityVeteranEra"
+    ]
   },
   {
     "table": "EntityVeteranEra",
     "field": "ClientID",
     "required": false,
-    "type": "FK → Client"
+    "type": "FK → Client",
+    "modules": [
+      "EntityVeteranEra"
+    ]
   },
   {
     "table": "EntityVeteranEra",
@@ -733,153 +1063,225 @@
     "required": true,
     "type": "List",
     "listId": 37,
-    "decode": "1=Yes, 2=No, etc."
+    "decode": "1=Yes, 2=No, etc.",
+    "modules": [
+      "EntityVeteranEra"
+    ]
   },
   {
     "table": "EntityVeteranEra",
     "field": "VeteranEraTypeID",
     "required": true,
-    "type": "FK → VeteranEraType"
+    "type": "FK → VeteranEraType",
+    "modules": [
+      "EntityVeteranEra"
+    ]
   },
   {
     "table": "EntityVeteranInfo",
     "field": "ClientID",
     "required": false,
-    "type": "FK → Client"
+    "type": "FK → Client",
+    "modules": [
+      "EntityVeteranInfo"
+    ]
   },
   {
     "table": "EntityVeteranInfo",
     "field": "VetServedWarZone",
     "required": false,
     "type": "List",
-    "listId": 37
+    "listId": 37,
+    "modules": [
+      "EntityVeteranInfo"
+    ]
   },
   {
     "table": "EntityVeteranInfo",
     "field": "VetWarZoneName",
     "required": false,
     "type": "List",
-    "listId": 589
+    "listId": 589,
+    "modules": [
+      "EntityVeteranInfo"
+    ]
   },
   {
     "table": "EntityVeteranInfo",
     "field": "VetReceivedFire",
     "required": false,
     "type": "List",
-    "listId": 37
+    "listId": 37,
+    "modules": [
+      "EntityVeteranInfo"
+    ]
   },
   {
     "table": "EntityVeteranInfo",
     "field": "VetBranch",
     "required": false,
     "type": "List",
-    "listId": 66
+    "listId": 66,
+    "modules": [
+      "EntityVeteranInfo"
+    ]
   },
   {
     "table": "EntityVeteranInfo",
     "field": "VetDischargeStatus",
     "required": false,
     "type": "List",
-    "listId": 65
+    "listId": 65,
+    "modules": [
+      "EntityVeteranInfo"
+    ]
   },
   {
     "table": "EntityVeteranInfo",
     "field": "DateEnteredService",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "EntityVeteranInfo"
+    ]
   },
   {
     "table": "EntityVeteranInfo",
     "field": "DateSeparatedFromService",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "EntityVeteranInfo"
+    ]
   },
   {
     "table": "EntityVeteranInfo",
     "field": "ServiceConnectedDisability",
     "required": false,
     "type": "List",
-    "listId": 37
+    "listId": 37,
+    "modules": [
+      "EntityVeteranInfo"
+    ]
   },
   {
     "table": "EntityVeteranInfo",
     "field": "DisabilityRewardLevel",
     "required": false,
     "type": "List",
-    "listId": 702
+    "listId": 702,
+    "modules": [
+      "EntityVeteranInfo"
+    ]
   },
   {
     "table": "EnrollmentServicePlan",
     "field": "EnrollmentServicePlanID",
     "required": true,
-    "type": "Unique ID"
+    "type": "Unique ID",
+    "modules": [
+      "EnrollmentServicePlan"
+    ]
   },
   {
     "table": "EnrollmentServicePlan",
     "field": "EnrollmentID",
     "required": true,
-    "type": "FK → Enrollment"
+    "type": "FK → Enrollment",
+    "modules": [
+      "EnrollmentServicePlan"
+    ]
   },
   {
     "table": "EnrollmentServicePlan",
     "field": "ClientID",
     "required": true,
-    "type": "FK → Client"
+    "type": "FK → Client",
+    "modules": [
+      "EnrollmentServicePlan"
+    ]
   },
   {
     "table": "EnrollmentServicePlan",
     "field": "PlanBeginDate",
     "required": true,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "EnrollmentServicePlan"
+    ]
   },
   {
     "table": "EnrollmentServicePlan",
     "field": "PlanEndDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "EnrollmentServicePlan"
+    ]
   },
   {
     "table": "EnrollmentServicePlan",
     "field": "ActualCompletedDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "EnrollmentServicePlan"
+    ]
   },
   {
     "table": "CaseManagerAssignment",
     "field": "AssignmentID",
     "required": true,
-    "type": "Unique ID"
+    "type": "Unique ID",
+    "modules": [
+      "CaseManagerAssignment"
+    ]
   },
   {
     "table": "CaseManagerAssignment",
     "field": "ClientID",
     "required": true,
-    "type": "FK → Client"
+    "type": "FK → Client",
+    "modules": [
+      "CaseManagerAssignment"
+    ]
   },
   {
     "table": "CaseManagerAssignment",
     "field": "UserID",
     "required": true,
     "type": "FK → Users",
-    "note": "Must match Users.UserID from the staging Users sheet or EntityID in the destination Users table."
+    "note": "Must match Users.UserID from the staging Users sheet or EntityID in the destination Users table.",
+    "modules": [
+      "CaseManagerAssignment"
+    ]
   },
   {
     "table": "CaseManagerAssignment",
     "field": "EnrollmentID",
     "required": false,
-    "type": "FK → Enrollment"
+    "type": "FK → Enrollment",
+    "modules": [
+      "CaseManagerAssignment"
+    ]
   },
   {
     "table": "CaseManagerAssignment",
     "field": "BeginDate",
     "required": true,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "CaseManagerAssignment"
+    ]
   },
   {
     "table": "CaseManagerAssignment",
     "field": "EndDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "CaseManagerAssignment"
+    ]
   },
   {
     "table": "CaseManagerAssignment",
@@ -887,39 +1289,57 @@
     "required": false,
     "type": "List",
     "listId": 25,
-    "decode": "1=Shared, 2=Not Shared"
+    "decode": "1=Shared, 2=Not Shared",
+    "modules": [
+      "CaseManagerAssignment"
+    ]
   },
   {
     "table": "CaseNotes",
     "field": "CaseNoteID",
     "required": true,
-    "type": "Unique ID"
+    "type": "Unique ID",
+    "modules": [
+      "CaseNotes"
+    ]
   },
   {
     "table": "CaseNotes",
     "field": "CaseNoteSummary",
     "required": true,
-    "type": "Text (max 50)"
+    "type": "Text (max 50)",
+    "modules": [
+      "CaseNotes"
+    ]
   },
   {
     "table": "CaseNotes",
     "field": "Body",
     "required": false,
     "type": "Text",
-    "note": "Warning only, not a blocking error; note body defaults to a blank space if omitted."
+    "note": "Warning only, not a blocking error; note body defaults to a blank space if omitted.",
+    "modules": [
+      "CaseNotes"
+    ]
   },
   {
     "table": "CaseNotes",
     "field": "ClientID",
     "required": true,
-    "type": "FK → Client"
+    "type": "FK → Client",
+    "modules": [
+      "CaseNotes"
+    ]
   },
   {
     "table": "CaseNotes",
     "field": "CreatedDate",
     "required": false,
     "type": "Date",
-    "note": "If invalid/blank, import date is used instead (warning)."
+    "note": "If invalid/blank, import date is used instead (warning).",
+    "modules": [
+      "CaseNotes"
+    ]
   },
   {
     "table": "CaseNotes",
@@ -927,170 +1347,251 @@
     "required": false,
     "type": "List",
     "listId": 36,
-    "decode": "1=Shared, 2=Not Shared, 3=My Eyes Only"
+    "decode": "1=Shared, 2=Not Shared, 3=My Eyes Only",
+    "modules": [
+      "CaseNotes"
+    ]
   },
   {
     "table": "CaseNotes",
     "field": "CaseNoteTypeID",
     "required": false,
     "type": "List",
-    "listId": 360
+    "listId": 360,
+    "modules": [
+      "CaseNotes"
+    ]
   },
   {
     "table": "CaseNotes",
     "field": "EnrollmentID",
     "required": false,
     "type": "FK → Enrollment",
-    "note": "Must match Enrollment sheet only if provided."
+    "note": "Must match Enrollment sheet only if provided.",
+    "modules": [
+      "CaseNotes"
+    ]
   },
   {
     "table": "EntityContact",
     "field": "ContactID",
     "required": true,
-    "type": "Unique ID"
+    "type": "Unique ID",
+    "modules": [
+      "EntityContact"
+    ]
   },
   {
     "table": "EntityContact",
     "field": "EntityContextType",
     "required": true,
     "type": "Fixed Code (11 or 84)",
-    "decode": "11=Client Contact, 84=Provider Contact"
+    "decode": "11=Client Contact, 84=Provider Contact",
+    "modules": [
+      "EntityContact"
+    ]
   },
   {
     "table": "EntityContact",
     "field": "ParentEntityID",
     "required": true,
     "type": "FK → Client or Provider (depends on EntityContextType)",
-    "note": "Must match ClientID when EntityContextType=11; must match ProviderID when EntityContextType=84."
+    "note": "Must match ClientID when EntityContextType=11; must match ProviderID when EntityContextType=84.",
+    "modules": [
+      "EntityContact"
+    ]
   },
   {
     "table": "EntityContact",
     "field": "ContactLastName",
     "required": false,
-    "type": "Text (max 50)"
+    "type": "Text (max 50)",
+    "modules": [
+      "EntityContact"
+    ]
   },
   {
     "table": "EntityContact",
     "field": "ContactFirstName",
     "required": false,
-    "type": "Text (max 50)"
+    "type": "Text (max 50)",
+    "modules": [
+      "EntityContact"
+    ]
   },
   {
     "table": "EntityContact",
     "field": "BeginDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "EntityContact"
+    ]
   },
   {
     "table": "EntityContact",
     "field": "EndDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "EntityContact"
+    ]
   },
   {
     "table": "EntityContact",
     "field": "IsEmergencyContact",
     "required": false,
     "type": "Boolean (0/1)",
-    "decode": "1=Yes, 0=No"
+    "decode": "1=Yes, 0=No",
+    "modules": [
+      "EntityContact"
+    ]
   },
   {
     "table": "EntityContact",
     "field": "RelationshipTypeID",
     "required": false,
     "type": "List",
-    "listId": 86
+    "listId": 86,
+    "modules": [
+      "EntityContact"
+    ]
   },
   {
     "table": "EntityContact",
     "field": "CreatedDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "EntityContact"
+    ]
   },
   {
     "table": "EntityContact",
     "field": "AddressBeginDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "EntityContact"
+    ]
   },
   {
     "table": "EntityContact",
     "field": "AddressEndDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "EntityContact"
+    ]
   },
   {
     "table": "Service",
     "field": "ServiceID",
     "required": true,
-    "type": "Unique ID"
+    "type": "Unique ID",
+    "modules": [
+      "Service"
+    ]
   },
   {
     "table": "Service",
     "field": "ServiceTypeID",
     "required": true,
-    "type": "FK → ServiceType"
+    "type": "FK → ServiceType",
+    "modules": [
+      "Service"
+    ]
   },
   {
     "table": "Service",
     "field": "ProvidedToEntityID",
     "required": true,
-    "type": "FK → Client"
+    "type": "FK → Client",
+    "modules": [
+      "Service"
+    ]
   },
   {
     "table": "Service",
     "field": "ProvidedByEntityID",
     "required": false,
-    "type": "FK → Provider or Users"
+    "type": "FK → Provider or Users",
+    "modules": [
+      "Service"
+    ]
   },
   {
     "table": "Service",
     "field": "EnrollmentID",
     "required": true,
-    "type": "FK → Enrollment"
+    "type": "FK → Enrollment",
+    "modules": [
+      "Service"
+    ]
   },
   {
     "table": "Service",
     "field": "CreatedBy",
     "required": true,
-    "type": "FK → Users"
+    "type": "FK → Users",
+    "modules": [
+      "Service"
+    ]
   },
   {
     "table": "Service",
     "field": "UnitOfMeasure",
     "required": true,
     "type": "List",
-    "listId": 2
+    "listId": 2,
+    "modules": [
+      "Service"
+    ]
   },
   {
     "table": "Service",
     "field": "UnitValue",
     "required": true,
-    "type": "Decimal"
+    "type": "Decimal",
+    "modules": [
+      "Service"
+    ]
   },
   {
     "table": "Service",
     "field": "Units",
     "required": true,
-    "type": "Decimal"
+    "type": "Decimal",
+    "modules": [
+      "Service"
+    ]
   },
   {
     "table": "Service",
     "field": "OwnedByOrgID",
     "required": false,
-    "type": "FK → Organization"
+    "type": "FK → Organization",
+    "modules": [
+      "Service"
+    ]
   },
   {
     "table": "Service",
     "field": "BeginDate",
     "required": true,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "Service"
+    ]
   },
   {
     "table": "Service",
     "field": "EndDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "Service"
+    ]
   },
   {
     "table": "Service",
@@ -1098,31 +1599,46 @@
     "required": false,
     "type": "List",
     "listId": 25,
-    "decode": "1=Shared, 2=Not Shared"
+    "decode": "1=Shared, 2=Not Shared",
+    "modules": [
+      "Service"
+    ]
   },
   {
     "table": "Issue",
     "field": "IssueID",
     "required": true,
-    "type": "Unique ID"
+    "type": "Unique ID",
+    "modules": [
+      "Issue"
+    ]
   },
   {
     "table": "Issue",
     "field": "ClientID",
     "required": true,
-    "type": "FK → Client"
+    "type": "FK → Client",
+    "modules": [
+      "Issue"
+    ]
   },
   {
     "table": "Issue",
     "field": "IssueTypeID",
     "required": true,
-    "type": "FK → IssueType"
+    "type": "FK → IssueType",
+    "modules": [
+      "Issue"
+    ]
   },
   {
     "table": "Issue",
     "field": "IdentifiedDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "Issue"
+    ]
   },
   {
     "table": "Issue",
@@ -1130,7 +1646,10 @@
     "required": false,
     "type": "List",
     "listId": 37,
-    "decode": "1=Yes, 2=No, etc."
+    "decode": "1=Yes, 2=No, etc.",
+    "modules": [
+      "Issue"
+    ]
   },
   {
     "table": "Issue",
@@ -1138,32 +1657,47 @@
     "required": false,
     "type": "List",
     "listId": 37,
-    "decode": "1=Yes, 2=No, etc."
+    "decode": "1=Yes, 2=No, etc.",
+    "modules": [
+      "Issue"
+    ]
   },
   {
     "table": "Issue",
     "field": "EvalLevel",
     "required": false,
     "type": "List",
-    "listId": 432
+    "listId": 432,
+    "modules": [
+      "Issue"
+    ]
   },
   {
     "table": "Issue",
     "field": "OwnedByOrgID",
     "required": false,
-    "type": "FK → Organization"
+    "type": "FK → Organization",
+    "modules": [
+      "Issue"
+    ]
   },
   {
     "table": "Issue",
     "field": "CreatedDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "Issue"
+    ]
   },
   {
     "table": "Issue",
     "field": "EndDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "Issue"
+    ]
   },
   {
     "table": "Issue",
@@ -1171,56 +1705,83 @@
     "required": false,
     "type": "List",
     "listId": 25,
-    "decode": "1=Shared, 2=Not Shared"
+    "decode": "1=Shared, 2=Not Shared",
+    "modules": [
+      "Issue"
+    ]
   },
   {
     "table": "Goal",
     "field": "GoalID",
     "required": true,
     "type": "Unique ID",
-    "note": "Unique identifier for the goal record."
+    "note": "Unique identifier for the goal record.",
+    "modules": [
+      "Goal"
+    ]
   },
   {
     "table": "Goal",
     "field": "ClientID",
     "required": true,
-    "type": "FK → Client"
+    "type": "FK → Client",
+    "modules": [
+      "Goal"
+    ]
   },
   {
     "table": "Goal",
     "field": "GoalTypeID",
     "required": true,
-    "type": "FK → GoalType"
+    "type": "FK → GoalType",
+    "modules": [
+      "Goal"
+    ]
   },
   {
     "table": "Goal",
     "field": "EnrollmentServicePlanID",
     "required": false,
-    "type": "FK → EnrollmentServicePlan"
+    "type": "FK → EnrollmentServicePlan",
+    "modules": [
+      "Goal"
+    ]
   },
   {
     "table": "Goal",
     "field": "PlanAttainDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "Goal"
+    ]
   },
   {
     "table": "Goal",
     "field": "ActualAttainDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "Goal"
+    ]
   },
   {
     "table": "Goal",
     "field": "SetDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "Goal"
+    ]
   },
   {
     "table": "Goal",
     "field": "CreatedDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "Goal"
+    ]
   },
   {
     "table": "Goal",
@@ -1228,40 +1789,58 @@
     "required": false,
     "type": "List",
     "listId": 415,
-    "decode": "1=Client, 5=Staff, 10=Both"
+    "decode": "1=Client, 5=Staff, 10=Both",
+    "modules": [
+      "Goal"
+    ]
   },
   {
     "table": "Credential",
     "field": "CredentialID",
     "required": true,
     "type": "Unique ID",
-    "note": "Unique identifier for the credential record."
+    "note": "Unique identifier for the credential record.",
+    "modules": [
+      "Credential"
+    ]
   },
   {
     "table": "Credential",
     "field": "ClientID",
     "required": true,
-    "type": "FK → Client"
+    "type": "FK → Client",
+    "modules": [
+      "Credential"
+    ]
   },
   {
     "table": "Credential",
     "field": "CredentialTypeID",
     "required": true,
     "type": "Integer",
-    "note": "Message states it must match the CredentialType table in the destination database, but script only validates numeric format."
+    "note": "Message states it must match the CredentialType table in the destination database, but script only validates numeric format.",
+    "modules": [
+      "Credential"
+    ]
   },
   {
     "table": "Credential",
     "field": "SkillTypeID",
     "required": true,
     "type": "Integer",
-    "note": "Message states it must match the SkillType table in the destination database, but script only validates numeric format."
+    "note": "Message states it must match the SkillType table in the destination database, but script only validates numeric format.",
+    "modules": [
+      "Credential"
+    ]
   },
   {
     "table": "Credential",
     "field": "IssuedDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "Credential"
+    ]
   },
   {
     "table": "Credential",
@@ -1269,57 +1848,84 @@
     "required": false,
     "type": "List",
     "listId": 25,
-    "decode": "1=Shared, 2=Not Shared"
+    "decode": "1=Shared, 2=Not Shared",
+    "modules": [
+      "Credential"
+    ]
   },
   {
     "table": "ProviderReferral",
     "field": "ProviderReferralID",
     "required": true,
     "type": "Unique ID",
-    "note": "Unique identifier for the provider referral record."
+    "note": "Unique identifier for the provider referral record.",
+    "modules": [
+      "ProviderReferral"
+    ]
   },
   {
     "table": "ProviderReferral",
     "field": "ReferFromProviderID",
     "required": true,
-    "type": "FK → Provider"
+    "type": "FK → Provider",
+    "modules": [
+      "ProviderReferral"
+    ]
   },
   {
     "table": "ProviderReferral",
     "field": "ReferToProviderID",
     "required": true,
-    "type": "FK → Provider"
+    "type": "FK → Provider",
+    "modules": [
+      "ProviderReferral"
+    ]
   },
   {
     "table": "ProviderReferral",
     "field": "ClientID",
     "required": true,
-    "type": "FK → Client"
+    "type": "FK → Client",
+    "modules": [
+      "ProviderReferral"
+    ]
   },
   {
     "table": "ProviderReferral",
     "field": "ServiceTypeID",
     "required": true,
-    "type": "FK → ServiceType"
+    "type": "FK → ServiceType",
+    "modules": [
+      "ProviderReferral"
+    ]
   },
   {
     "table": "ProviderReferral",
     "field": "ReferralDate",
     "required": true,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "ProviderReferral"
+    ]
   },
   {
     "table": "ProviderReferral",
     "field": "ReferralStatus",
     "required": true,
     "type": "List",
-    "listId": 132
+    "listId": 132,
+    "modules": [
+      "ProviderReferral"
+    ]
   },
   {
     "table": "ProviderReferral",
     "field": "ReferToUserID",
     "required": false,
-    "type": "FK → Users"
+    "type": "FK → Users",
+    "modules": [
+      "ProviderReferral"
+    ]
   },
   {
     "table": "ProviderReferral",
@@ -1327,46 +1933,67 @@
     "required": false,
     "type": "List",
     "listId": 2943,
-    "decode": "1=Attained, 2=Not Attained, 3=Unknown"
+    "decode": "1=Attained, 2=Not Attained, 3=Unknown",
+    "modules": [
+      "ProviderReferral"
+    ]
   },
   {
     "table": "ProviderReferral",
     "field": "EnrollmentID",
     "required": false,
-    "type": "FK → Enrollment"
+    "type": "FK → Enrollment",
+    "modules": [
+      "ProviderReferral"
+    ]
   },
   {
     "table": "ProviderReferral",
     "field": "CreatedDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "ProviderReferral"
+    ]
   },
   {
     "table": "FileDocument",
     "field": "FileDocumentID",
     "required": true,
     "type": "Unique ID",
-    "note": "Unique identifier for the file document record."
+    "note": "Unique identifier for the file document record.",
+    "modules": [
+      "FileDocument"
+    ]
   },
   {
     "table": "FileDocument",
     "field": "FileName",
     "required": true,
     "type": "Text (max 100)",
-    "note": "Must exactly match the file name uploaded to the FTP."
+    "note": "Must exactly match the file name uploaded to the FTP.",
+    "modules": [
+      "FileDocument"
+    ]
   },
   {
     "table": "FileDocument",
     "field": "ClientID",
     "required": true,
-    "type": "FK → Client"
+    "type": "FK → Client",
+    "modules": [
+      "FileDocument"
+    ]
   },
   {
     "table": "FileDocument",
     "field": "DocumentTypeID",
     "required": true,
     "type": "Text",
-    "note": "Must map to a value in the LookUpValue tab where StagingTable = FileDocument."
+    "note": "Must map to a value in the LookUpValue tab where StagingTable = FileDocument.",
+    "modules": [
+      "FileDocument"
+    ]
   },
   {
     "table": "FileDocument",
@@ -1374,14 +2001,20 @@
     "required": false,
     "type": "List",
     "listId": 84,
-    "decode": "0=None, 2=Client Photo, 3=Scanned Document, 4=Other File"
+    "decode": "0=None, 2=Client Photo, 3=Scanned Document, 4=Other File",
+    "modules": [
+      "FileDocument"
+    ]
   },
   {
     "table": "FileDocument",
     "field": "VerificationMethodID",
     "required": false,
     "type": "List",
-    "listId": 81
+    "listId": 81,
+    "modules": [
+      "FileDocument"
+    ]
   },
   {
     "table": "FileDocument",
@@ -1389,137 +2022,200 @@
     "required": false,
     "type": "List",
     "listId": 82,
-    "decode": "1=Paper File, 2=Electronic File"
+    "decode": "1=Paper File, 2=Electronic File",
+    "modules": [
+      "FileDocument"
+    ]
   },
   {
     "table": "FileDocument",
     "field": "CreatedDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "FileDocument"
+    ]
   },
   {
     "table": "FileDocument",
     "field": "IssueDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "FileDocument"
+    ]
   },
   {
     "table": "FileDocument",
     "field": "ExpiresDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "FileDocument"
+    ]
   },
   {
     "table": "WorkHistory",
     "field": "WorkHistoryID",
     "required": true,
     "type": "Unique ID",
-    "note": "Unique identifier for the work history record."
+    "note": "Unique identifier for the work history record.",
+    "modules": [
+      "WorkHistory"
+    ]
   },
   {
     "table": "WorkHistory",
     "field": "ClientID",
     "required": true,
-    "type": "FK → Client"
+    "type": "FK → Client",
+    "modules": [
+      "WorkHistory"
+    ]
   },
   {
     "table": "WorkHistory",
     "field": "ProviderID",
     "required": true,
-    "type": "FK → Provider"
+    "type": "FK → Provider",
+    "modules": [
+      "WorkHistory"
+    ]
   },
   {
     "table": "WorkHistory",
     "field": "EmploymentTypeID",
     "required": true,
     "type": "List",
-    "listId": 97
+    "listId": 97,
+    "modules": [
+      "WorkHistory"
+    ]
   },
   {
     "table": "WorkHistory",
     "field": "BeginDate",
     "required": true,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "WorkHistory"
+    ]
   },
   {
     "table": "WorkHistory",
     "field": "EndDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "WorkHistory"
+    ]
   },
   {
     "table": "WorkHistory",
     "field": "PaymentTypeID",
     "required": false,
     "type": "List",
-    "listId": 107
+    "listId": 107,
+    "modules": [
+      "WorkHistory"
+    ]
   },
   {
     "table": "WorkHistory",
     "field": "PaymentIntervalID",
     "required": false,
     "type": "List",
-    "listId": 2973
+    "listId": 2973,
+    "modules": [
+      "WorkHistory"
+    ]
   },
   {
     "table": "WorkHistory",
     "field": "ExitReasonID",
     "required": false,
     "type": "List",
-    "listId": 109
+    "listId": 109,
+    "modules": [
+      "WorkHistory"
+    ]
   },
   {
     "table": "WorkHistory",
     "field": "TerminationReasonID",
     "required": false,
     "type": "List",
-    "listId": 108
+    "listId": 108,
+    "modules": [
+      "WorkHistory"
+    ]
   },
   {
     "table": "WorkHistory",
     "field": "EndPaymentRate",
     "required": false,
-    "type": "Decimal"
+    "type": "Decimal",
+    "modules": [
+      "WorkHistory"
+    ]
   },
   {
     "table": "WorkHistory",
     "field": "HealthBenefits",
     "required": false,
     "type": "Boolean (0/1)",
-    "decode": "1=Yes, 0=No"
+    "decode": "1=Yes, 0=No",
+    "modules": [
+      "WorkHistory"
+    ]
   },
   {
     "table": "WorkHistory",
     "field": "WorkerPaysBenefits",
     "required": false,
     "type": "Boolean (0/1)",
-    "decode": "1=Yes, 0=No"
+    "decode": "1=Yes, 0=No",
+    "modules": [
+      "WorkHistory"
+    ]
   },
   {
     "table": "Assessment",
     "field": "AssessmentID",
     "required": true,
     "type": "Unique ID",
-    "note": "Unique identifier for the assessment record."
+    "note": "Unique identifier for the assessment record.",
+    "modules": [
+      "Assessment"
+    ]
   },
   {
     "table": "Assessment",
     "field": "ClientID",
     "required": true,
-    "type": "FK → Client"
+    "type": "FK → Client",
+    "modules": [
+      "Assessment"
+    ]
   },
   {
     "table": "Assessment",
     "field": "EnrollmentID",
     "required": true,
     "type": "FK → Enrollment",
-    "note": "Also cross-checked that ClientID must match the ClientID on that Enrollment."
+    "note": "Also cross-checked that ClientID must match the ClientID on that Enrollment.",
+    "modules": [
+      "Assessment"
+    ]
   },
   {
     "table": "Assessment",
     "field": "AssessmentBy",
     "required": true,
-    "type": "FK → Users"
+    "type": "FK → Users",
+    "modules": [
+      "Assessment"
+    ]
   },
   {
     "table": "Assessment",
@@ -1527,31 +2223,46 @@
     "required": true,
     "type": "List",
     "listId": 27,
-    "decode": "1=At Entry, 2=During, 3=At Exit, 5=Annual, 6=Post-Exit"
+    "decode": "1=At Entry, 2=During, 3=At Exit, 5=Annual, 6=Post-Exit",
+    "modules": [
+      "Assessment"
+    ]
   },
   {
     "table": "Assessment",
     "field": "BeginAssessment",
     "required": true,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "Assessment"
+    ]
   },
   {
     "table": "Assessment",
     "field": "EndAssessment",
     "required": true,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "Assessment"
+    ]
   },
   {
     "table": "Assessment",
     "field": "CreatedBy",
     "required": true,
-    "type": "FK → Users"
+    "type": "FK → Users",
+    "modules": [
+      "Assessment"
+    ]
   },
   {
     "table": "Assessment",
     "field": "OwnedByOrgID",
     "required": true,
-    "type": "FK → Organization"
+    "type": "FK → Organization",
+    "modules": [
+      "Assessment"
+    ]
   },
   {
     "table": "Assessment",
@@ -1559,102 +2270,150 @@
     "required": false,
     "type": "List",
     "listId": 25,
-    "decode": "1=Shared, 2=Not Shared"
+    "decode": "1=Shared, 2=Not Shared",
+    "modules": [
+      "Assessment"
+    ]
   },
   {
     "table": "Assessment",
     "field": "CreatedDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "Assessment"
+    ]
   },
   {
     "table": "AssessFinancialItem",
     "field": "AssessmentID",
     "required": true,
-    "type": "FK → Assessment"
+    "type": "FK → Assessment",
+    "modules": [
+      "AssessFinancialItem"
+    ]
   },
   {
     "table": "AssessFinancialItem",
     "field": "IncomeBenefitType",
     "required": true,
     "type": "Integer",
-    "decode": "0=Non-Cash Benefit, 1=Cash Income Source, 2=Expense"
+    "decode": "0=Non-Cash Benefit, 1=Cash Income Source, 2=Expense",
+    "modules": [
+      "AssessFinancialItem"
+    ]
   },
   {
     "table": "AssessFinancialItem",
     "field": "FinancialItemTypeID",
     "required": true,
-    "type": "FK → FinancialType"
+    "type": "FK → FinancialType",
+    "modules": [
+      "AssessFinancialItem"
+    ]
   },
   {
     "table": "AssessFinancialItem",
     "field": "Amount",
     "required": false,
-    "type": "Decimal"
+    "type": "Decimal",
+    "modules": [
+      "AssessFinancialItem"
+    ]
   },
   {
     "table": "AssessFinancialItem",
     "field": "CreatedBy",
     "required": true,
-    "type": "FK → Users"
+    "type": "FK → Users",
+    "modules": [
+      "AssessFinancialItem"
+    ]
   },
   {
     "table": "AssessEmploymentPlacement",
     "field": "AssessmentID",
     "required": true,
     "type": "Unique ID",
-    "note": "Must be unique within this sheet and must match an Assessment record."
+    "note": "Must be unique within this sheet and must match an Assessment record.",
+    "modules": [
+      "AssessEmploymentPlacement"
+    ]
   },
   {
     "table": "AssessEmploymentPlacement",
     "field": "WorkHistoryID",
     "required": true,
-    "type": "FK → WorkHistory"
+    "type": "FK → WorkHistory",
+    "modules": [
+      "AssessEmploymentPlacement"
+    ]
   },
   {
     "table": "AssessEmploymentPlacement",
     "field": "PlacementDate",
     "required": true,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "AssessEmploymentPlacement"
+    ]
   },
   {
     "table": "AssessEmploymentPlacement",
     "field": "PlacementBy",
     "required": true,
-    "type": "FK → Users"
+    "type": "FK → Users",
+    "modules": [
+      "AssessEmploymentPlacement"
+    ]
   },
   {
     "table": "AssessEmploymentPlacement",
     "field": "PlacementVerificationMethod",
     "required": false,
     "type": "List",
-    "listId": 423
+    "listId": 423,
+    "modules": [
+      "AssessEmploymentPlacement"
+    ]
   },
   {
     "table": "AssessEmploymentPlacement",
     "field": "PlacementType",
     "required": false,
     "type": "List",
-    "listId": 308
+    "listId": 308,
+    "modules": [
+      "AssessEmploymentPlacement"
+    ]
   },
   {
     "table": "AssessEmploymentPlacement",
     "field": "FollowUpType",
     "required": false,
     "type": "List",
-    "listId": 152
+    "listId": 152,
+    "modules": [
+      "AssessEmploymentPlacement"
+    ]
   },
   {
     "table": "AssessHUDRHY",
     "field": "AssessmentID",
     "required": true,
-    "type": "FK → Assessment"
+    "type": "FK → Assessment",
+    "modules": [
+      "AssessHUDRHY"
+    ]
   },
   {
     "table": "AssessHUDRHY",
     "field": "DateOfBCPDetermination",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "AssessHUDRHY"
+    ]
   },
   {
     "table": "AssessHUDRHY",
@@ -1662,96 +2421,138 @@
     "required": false,
     "type": "List",
     "listId": 100,
-    "decode": "1=Yes, 2=No"
+    "decode": "1=Yes, 2=No",
+    "modules": [
+      "AssessHUDRHY"
+    ]
   },
   {
     "table": "AssessHUDRHY",
     "field": "ReasonNotFYSBYouth",
     "required": false,
     "type": "List",
-    "listId": 2909
+    "listId": 2909,
+    "modules": [
+      "AssessHUDRHY"
+    ]
   },
   {
     "table": "AssessHUDRHY",
     "field": "SexualOrientation",
     "required": false,
     "type": "List",
-    "listId": 2910
+    "listId": 2910,
+    "modules": [
+      "AssessHUDRHY"
+    ]
   },
   {
     "table": "AssessHUDRHY",
     "field": "SchoolStatus",
     "required": false,
     "type": "List",
-    "listId": 2912
+    "listId": 2912,
+    "modules": [
+      "AssessHUDRHY"
+    ]
   },
   {
     "table": "AssessHUDRHY",
     "field": "MentalHealthStatus",
     "required": false,
     "type": "List",
-    "listId": 63
+    "listId": 63,
+    "modules": [
+      "AssessHUDRHY"
+    ]
   },
   {
     "table": "AssessHUDRHY",
     "field": "ReferralSource",
     "required": false,
     "type": "List",
-    "listId": 2914
+    "listId": 2914,
+    "modules": [
+      "AssessHUDRHY"
+    ]
   },
   {
     "table": "AssessHUDRHY",
     "field": "WorkplaceViolenceThreats",
     "required": false,
     "type": "List",
-    "listId": 37
+    "listId": 37,
+    "modules": [
+      "AssessHUDRHY"
+    ]
   },
   {
     "table": "AssessHUDRHY",
     "field": "WorkPromiseDifference",
     "required": false,
     "type": "List",
-    "listId": 37
+    "listId": 37,
+    "modules": [
+      "AssessHUDRHY"
+    ]
   },
   {
     "table": "AssessHUDRHY",
     "field": "ExchangeForSex",
     "required": false,
     "type": "List",
-    "listId": 37
+    "listId": 37,
+    "modules": [
+      "AssessHUDRHY"
+    ]
   },
   {
     "table": "AssessHUDRHY",
     "field": "FamilyReunificationAchieved",
     "required": false,
     "type": "List",
-    "listId": 37
+    "listId": 37,
+    "modules": [
+      "AssessHUDRHY"
+    ]
   },
   {
     "table": "AssessHUDRHY",
     "field": "WrittenAftercarePlan",
     "required": false,
     "type": "List",
-    "listId": 1790
+    "listId": 1790,
+    "modules": [
+      "AssessHUDRHY"
+    ]
   },
   {
     "table": "AssessDVS",
     "field": "AssessmentID",
     "required": true,
     "type": "Unique ID",
-    "note": "Must be unique within this sheet and must match an Assessment record."
+    "note": "Must be unique within this sheet and must match an Assessment record.",
+    "modules": [
+      "AssessDVS"
+    ]
   },
   {
     "table": "AssessDVS",
     "field": "MostRecentIncidentDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "AssessDVS"
+    ]
   },
   {
     "table": "AssessDVS",
     "field": "MostRecentIncidentDesc",
     "required": false,
-    "type": "Text (max 2000)"
+    "type": "Text (max 2000)",
+    "modules": [
+      "AssessDVS"
+    ]
   },
   {
     "table": "AssessDVS",
@@ -1759,7 +2560,10 @@
     "required": false,
     "type": "List",
     "listId": 100,
-    "decode": "1=Yes, 2=No"
+    "decode": "1=Yes, 2=No",
+    "modules": [
+      "AssessDVS"
+    ]
   },
   {
     "table": "AssessDVS",
@@ -1767,7 +2571,10 @@
     "required": false,
     "type": "List",
     "listId": 100,
-    "decode": "1=Yes, 2=No"
+    "decode": "1=Yes, 2=No",
+    "modules": [
+      "AssessDVS"
+    ]
   },
   {
     "table": "AssessDVS",
@@ -1775,7 +2582,10 @@
     "required": false,
     "type": "List",
     "listId": 100,
-    "decode": "1=Yes, 2=No"
+    "decode": "1=Yes, 2=No",
+    "modules": [
+      "AssessDVS"
+    ]
   },
   {
     "table": "AssessDVS",
@@ -1783,7 +2593,10 @@
     "required": false,
     "type": "List",
     "listId": 100,
-    "decode": "1=Yes, 2=No"
+    "decode": "1=Yes, 2=No",
+    "modules": [
+      "AssessDVS"
+    ]
   },
   {
     "table": "AssessDVS",
@@ -1791,7 +2604,10 @@
     "required": false,
     "type": "List",
     "listId": 100,
-    "decode": "1=Yes, 2=No"
+    "decode": "1=Yes, 2=No",
+    "modules": [
+      "AssessDVS"
+    ]
   },
   {
     "table": "AssessDVS",
@@ -1799,7 +2615,10 @@
     "required": false,
     "type": "List",
     "listId": 100,
-    "decode": "1=Yes, 2=No"
+    "decode": "1=Yes, 2=No",
+    "modules": [
+      "AssessDVS"
+    ]
   },
   {
     "table": "AssessDVS",
@@ -1807,57 +2626,84 @@
     "required": false,
     "type": "List",
     "listId": 6864,
-    "decode": "1=Proper, 2=Improper"
+    "decode": "1=Proper, 2=Improper",
+    "modules": [
+      "AssessDVS"
+    ]
   },
   {
     "table": "AssessDVS",
     "field": "ExitDateRec",
     "required": false,
     "type": "List",
-    "listId": 6870
+    "listId": 6870,
+    "modules": [
+      "AssessDVS"
+    ]
   },
   {
     "table": "Outcome",
     "field": "OutcomeID",
     "required": true,
-    "type": "Unique ID"
+    "type": "Unique ID",
+    "modules": [
+      "Outcome"
+    ]
   },
   {
     "table": "Outcome",
     "field": "ClientID",
     "required": true,
-    "type": "FK → Client"
+    "type": "FK → Client",
+    "modules": [
+      "Outcome"
+    ]
   },
   {
     "table": "Outcome",
     "field": "ContextTypeID",
     "required": true,
     "type": "Integer",
-    "decode": "91=Assessment, 92=Goal"
+    "decode": "91=Assessment, 92=Goal",
+    "modules": [
+      "Outcome"
+    ]
   },
   {
     "table": "Outcome",
     "field": "ContextID",
     "required": true,
     "type": "FK → Assessment or Goal",
-    "note": "Must match an AssessmentID when ContextTypeID=91, or a GoalID when ContextTypeID=92."
+    "note": "Must match an AssessmentID when ContextTypeID=91, or a GoalID when ContextTypeID=92.",
+    "modules": [
+      "Outcome"
+    ]
   },
   {
     "table": "Outcome",
     "field": "DomainID",
     "required": true,
-    "type": "FK → OutcomeDomain"
+    "type": "FK → OutcomeDomain",
+    "modules": [
+      "Outcome"
+    ]
   },
   {
     "table": "Outcome",
     "field": "ScoreID",
     "required": true,
-    "type": "FK → OutcomeScore"
+    "type": "FK → OutcomeScore",
+    "modules": [
+      "Outcome"
+    ]
   },
   {
     "table": "Outcome",
     "field": "OutcomeDate",
     "required": false,
-    "type": "Date"
+    "type": "Date",
+    "modules": [
+      "Outcome"
+    ]
   }
 ]

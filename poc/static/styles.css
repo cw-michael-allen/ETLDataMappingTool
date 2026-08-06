@@ -101,12 +101,14 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--surface-heading); ma
   background: #FDEAE3; border: 1px solid var(--cw-orange); border-radius: 8px;
   padding: 10px 14px; font-size: 13px; color: var(--cw-black); margin-top: 8px;
 }
+/* Small and out of the way, at the bottom of the page next to the footer
+   text -- still visible, deliberately not competing with the header. */
 .lib-stat {
-  background: var(--cw-nav-dark); color: #fff; border-radius: 10px; padding: 12px 18px;
-  font-family: var(--font-heading); min-width: 220px;
+  display: flex; justify-content: center; align-items: baseline; gap: 4px;
+  margin-top: 6px; font-family: var(--font-heading);
 }
-.lib-stat .num { font-size: 26px; font-weight: 700; color: var(--cw-teal-light); }
-.lib-stat .lbl { font-size: 11px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.06em; }
+.lib-stat .num { font-size: 13px; font-weight: 700; color: var(--cw-teal-dark); }
+.lib-stat .lbl { font-size: 10px; color: var(--surface-text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
 .safety-note {
   background: #FFF8E1; border: 1px solid var(--cw-gold); border-radius: 8px;
   padding: 10px 14px; font-size: 13px; color: var(--cw-black); margin-bottom: 16px;
@@ -163,10 +165,14 @@ footer { text-align: center; font-size: 11px; color: var(--surface-text-muted); 
 .readiness-group ul { margin: 0; padding-left: 20px; font-size: 13px; color: var(--surface-text); }
 .readiness-clean { color: var(--cw-green); font-size: 13px; font-weight: 600; }
 
-/* Module picker (ServTracker). Uses the same semantic surface variables as
-   everything else so it follows dark/light mode with no extra work, and no
-   `transition` on a theme-swapped property -- see poc/README.md. */
+/* Module/tab picker (both databases now -- CaseWorthy's tabs and
+   ServTracker's modules, see schema_rules.TARGET_DB_META). Uses the same
+   semantic surface variables as everything else so it follows dark/light
+   mode with no extra work, and no `transition` on a theme-swapped property
+   -- see poc/README.md. */
 .module-picker { margin-top: 14px; }
+.module-actions { display: flex; gap: 8px; margin-bottom: 8px; }
+.module-actions button { padding: 4px 10px; font-size: 11px; }
 .module-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
