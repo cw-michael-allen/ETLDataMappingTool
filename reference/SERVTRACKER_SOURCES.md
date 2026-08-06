@@ -9,6 +9,23 @@ two authoritative sources, both owned by the CaseWorthy ETL team.
 |---|---|
 | Master validation script | `~/OneDrive - CaseWorthy/ETL Team/12. ServTracker/Master Scripts/1 - Master Validation.sql` |
 | Master Excel templates (20 workbooks) | `~/OneDrive - CaseWorthy/ETL Team/12. ServTracker/ExcelTemplates/Master Templates/` |
+| Data dictionary — **field descriptions only** | `~/OneDrive - CaseWorthy/ETL Team/12. ServTracker/ExcelTemplates/Master Template Documentation/ServTracker Data Dictionary.xlsx` |
+
+**The data dictionary supplies descriptions, never rules.** It also states a
+Required Y/N per field and disagrees with the validation script on several, so
+adopting it as a rule source would mean silently picking a winner between two
+sources. Descriptions carry no such conflict. A description is applied only where
+the field has no note already, so the link-key, merge-only and scratch-column
+notes are never overwritten. Disable with `--no-data-dictionary`.
+
+Sheets are matched by field-name overlap rather than by name, because the
+dictionary says `Notes`, `Congregate`, `Suspensions`, `Membership Schedules`
+where the templates say `Client Notes`, `Congregate Meal Schedule`,
+`Temporary Suspensions Holds`, `Membership Details`. It also keeps a single
+`Volunteer` sheet covering what the templates split into Volunteer Intake and
+Volunteer Schedule, so one dictionary sheet can serve several template sheets.
+
+The options-list workbook is **not** used.
 
 `2 - Master Import.sql` (6,834 lines) is **not** used. It moves validated
 staging rows into live ServTracker tables — useful for understanding where data

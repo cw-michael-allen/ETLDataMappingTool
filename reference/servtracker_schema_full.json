@@ -35,7 +35,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Name of Provider for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Intake",
@@ -46,7 +48,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Start Date for this schedule entry in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Intake",
@@ -57,7 +61,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Stop date for this schedule entry in mm/dd/yyyy format or blank if still active",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Intake",
@@ -68,7 +74,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Reason for Termination if schedule entry was stopped",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Intake",
@@ -79,7 +87,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Name of Funding source for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Intake",
@@ -90,7 +100,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "authorization number for schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Intake",
@@ -101,7 +113,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Last Assessment date for this client in the mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Intake",
@@ -112,7 +126,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Next Assessment date for this client in the mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Intake",
@@ -123,7 +139,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Case Manager's First Name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Intake",
@@ -134,7 +152,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Case Manager's Last Name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Intake",
@@ -145,7 +165,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Case Manager's ID",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Intake",
@@ -156,7 +178,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Case Manager's Phone number in 111-111-1111 format.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Intake",
@@ -167,7 +191,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Case Manager's Email address. Must include an @ and \".\" in the address.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Intake",
@@ -216,7 +242,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Start Date for this schedule entry in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Service Plans",
@@ -227,7 +255,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "End date for this schedule entry in mm/dd/yyyy format or blank if still active",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Service Plans",
@@ -238,7 +268,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Reason for Termination if schedule entry was stopped",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Service Plans",
@@ -250,7 +282,9 @@
       "Case Management"
     ],
     "validated": true,
-    "lookupTable": "Service"
+    "lookupTable": "Service",
+    "note": "What service this plan is under",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Service Plans",
@@ -261,7 +295,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Description of the Case Management Service",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Service Plans",
@@ -272,7 +308,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Name of Funding source for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Service Plans",
@@ -283,7 +321,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Name of Provider for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Service Plans",
@@ -294,7 +334,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "authorization number for schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Service Plans",
@@ -305,7 +347,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Meal type for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Service Plans",
@@ -316,7 +360,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Diet description for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Service Plans",
@@ -327,7 +373,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Name of site for this service",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Service Plans",
@@ -338,7 +386,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "qty of units for Mon",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Service Plans",
@@ -349,7 +399,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "qty of units  for Tue",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Service Plans",
@@ -360,7 +412,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "qty of units for Wed",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Service Plans",
@@ -371,7 +425,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "qty of units for Thu",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Service Plans",
@@ -382,7 +438,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "qty of units for Fri",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Service Plans",
@@ -393,7 +451,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "qty of units  for Sat",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Service Plans",
@@ -404,7 +464,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "qty of units  for Sun",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Service Plans",
@@ -426,7 +488,9 @@
       "Sunday",
       "As Assigned"
     ],
-    "decode": "Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, As Assigned"
+    "decode": "Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, As Assigned",
+    "note": "Day(s) of week services are delivered to the client.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Service Plans",
@@ -450,7 +514,9 @@
       "4th Occurence",
       "5th Occurence"
     ],
-    "decode": "Weekly, Monthly, PRN, Even week, Odd week, 1st Occurence, 2nd Occurence, 3rd Occurence, 4th Occurence, 5th Occurence"
+    "decode": "Weekly, Monthly, PRN, Even week, Odd week, 1st Occurence, 2nd Occurence, 3rd Occurence, 4th Occurence, 5th Occurence",
+    "note": "Recurrence of the service schedule",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Service Plans",
@@ -461,7 +527,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Monthly units",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Service Plans",
@@ -510,7 +578,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Start Date for this schedule entry in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Case Notes",
@@ -521,7 +591,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Date note was created in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Case Notes",
@@ -532,7 +604,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Case manager's first name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Case Notes",
@@ -543,7 +617,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Case manager's last name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Case Notes",
@@ -554,7 +630,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Case Manager's ID",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Case Notes",
@@ -565,7 +643,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Case Manager's Phone number in 111-111-1111 format.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Case Notes",
@@ -576,7 +656,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Case Manager's Email address. Must include an @ and \".\" in the address.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Case Notes",
@@ -587,7 +669,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Method for contact",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Case Notes",
@@ -598,7 +682,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Person contacted",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Case Notes",
@@ -609,7 +695,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Name of Provider for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Case Notes",
@@ -620,7 +708,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Who was contacted",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Case Notes",
@@ -631,7 +721,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Name of Funding source for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Case Notes",
@@ -642,7 +734,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Start time in HH:MM AM/FM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Case Notes",
@@ -653,7 +747,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "End time in HH:MM AM/FM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Case Notes",
@@ -664,7 +760,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "# units provided",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Mgmt Case Notes",
@@ -675,7 +773,9 @@
     "modules": [
       "Case Management"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Text of Case Note",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -728,7 +828,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "A secondary id for the client often used for data that is to be imported into a 3rd party system",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -739,7 +841,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "An extra ID field used to allow for 3rd party integrations like Napis.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -750,7 +854,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Location for client's Passport ID",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -761,7 +867,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's Last Name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -772,7 +880,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's First Name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -783,7 +893,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's Middle Initial",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -794,7 +906,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's Social Security Number in 111-11-1111 format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -805,7 +919,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Date of client registration in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -816,7 +932,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's street numer and street name only. Also use abbreviations for ST, RD, AVE, etc. To make geocoding more effective.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -827,7 +945,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Optional building name or appartment complex name if desired.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -838,7 +958,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's appartment, building, lot, hotel room numbers. Do not include in the ResidentialAddress field!",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -849,7 +971,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's City",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -860,7 +984,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's State. Use only two character state abbreviations.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -871,7 +997,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's Zip code. Can be formatted as 5 digits or 5-4 digits.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -883,7 +1011,9 @@
       "Client Master with Demographics"
     ],
     "validated": true,
-    "lookupTable": "County"
+    "lookupTable": "County",
+    "note": "Client's County name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -895,7 +1025,9 @@
       "Client Master with Demographics"
     ],
     "validated": true,
-    "lookupTable": "Township"
+    "lookupTable": "Township",
+    "note": "Client's Township name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -906,7 +1038,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's mailing address",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -917,7 +1051,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's mailing building name or appartment complex name if desired.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -928,7 +1064,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's mailing appartment, building, lot, hotel room numbers.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -939,7 +1077,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's mailing City",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -950,7 +1090,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's mailing State. Use only two character state abbreviations.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -961,7 +1103,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's mailing Zip. Can be formatted as 5 digits or 5-4 digits.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -972,7 +1116,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's Home Phone number in 111-111-1111 format.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -983,7 +1129,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's Mobile Phone number in 111-111-1111 format.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -994,7 +1142,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's Work Phone number in 111-111-1111 format.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1005,7 +1155,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's Work Extension.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1022,7 +1174,9 @@
       "Mobile",
       "Work"
     ],
-    "decode": "Home, Mobile, Work"
+    "decode": "Home, Mobile, Work",
+    "note": "Client's Mobile Phone number in 111-111-1111 format.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1038,7 +1192,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Flag to indicate that client has no phone",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1049,7 +1205,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's Email address. Must include an @ and \".\" in the address.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1060,7 +1218,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Optional Client Group field.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1072,7 +1232,9 @@
       "Client Master with Demographics"
     ],
     "validated": true,
-    "lookupTable": "Gender"
+    "lookupTable": "Gender",
+    "note": "1. Declined to State\n2. Female\n3. Male\n4. Other\n5. Genderqueer/non-binary\n6. Transgender Female to Male\n7. Transgender Male to Female\n8. Transgender Unknown\n9. Unknown",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1084,7 +1246,9 @@
       "Client Master with Demographics"
     ],
     "validated": true,
-    "lookupTable": "MStatus"
+    "lookupTable": "MStatus",
+    "note": "1. Civil Union\n2. Divorced\n3. Married\n4. Never Married\n5. Other\n6. Separated\n7. Single\n8. Partner\n9. Unknown\n10. Widowed",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1095,7 +1259,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's date of birth in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1112,7 +1278,9 @@
       "No",
       "Unknown"
     ],
-    "decode": "Yes, No, Unknown"
+    "decode": "Yes, No, Unknown",
+    "note": "1. Yes\n2. No\n3. Unknown",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1128,7 +1296,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "allowable values = yes or no (if blank, assumed to be no)",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1140,7 +1310,9 @@
       "Client Master with Demographics"
     ],
     "validated": true,
-    "lookupTable": "Race"
+    "lookupTable": "Race",
+    "note": "1. African American\n2. Asian\n3. Native American/Alaskan\n4. Native Hawaiian/Other Pacific Islander\n5. Other\n6. Pacific Islander\n7. Refuse to Answer\n8. Unknown Race\n9. White",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1152,7 +1324,9 @@
       "Client Master with Demographics"
     ],
     "validated": true,
-    "lookupTable": "Race"
+    "lookupTable": "Race",
+    "note": "1. African American\n2. Asian\n3. Native American/Alaskan\n4. Native Hawaiian/Other Pacific Islander\n5. Other\n6. Pacific Islander\n7. Refuse to Answer\n8. Unknown Race\n9. White",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1163,7 +1337,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "see 'Ethnicity Options' tab for allowable values",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1175,7 +1351,9 @@
       "Client Master with Demographics"
     ],
     "validated": true,
-    "lookupTable": "tblPriLanguage"
+    "lookupTable": "tblPriLanguage",
+    "note": "see 'Primary Language Options' tab for allowable values",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1187,7 +1365,9 @@
       "Client Master with Demographics"
     ],
     "validated": true,
-    "lookupTable": "Household"
+    "lookupTable": "Household",
+    "note": "see 'Household Comp Options' tab for allowable values",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1198,7 +1378,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Quantity of household memebers",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1209,7 +1391,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Monthly income amount",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1220,7 +1404,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Date for last monthly income update in mm/dd/yyyy format.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1237,7 +1423,9 @@
       "Couple",
       "Family"
     ],
-    "decode": "Individual, Couple, Family"
+    "decode": "Individual, Couple, Family",
+    "note": "**required if monthly income amt supplied\n\n1. Individual\n2. Couple\n3. Family",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1248,7 +1436,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Quantity of family member used to calcuate the % of poverty from the Monthly Income.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1287,7 +1477,9 @@
       "Unstable Housing",
       "Unknown"
     ],
-    "decode": "Apartment, Assisted Living, Boarding, Care Home, Caregiver, Congregate Housing, Elderly Housing, Group Home, Homeless, Hotel, House, LTC Institution, None, Nursing Home, Other, Owns Home, Private Apartment, Private Home, Rents Home, Rents Room, Shelter, Stable Housing, Temporary Housing, Unstable Housing, Unknown"
+    "decode": "Apartment, Assisted Living, Boarding, Care Home, Caregiver, Congregate Housing, Elderly Housing, Group Home, Homeless, Hotel, House, LTC Institution, None, Nursing Home, Other, Owns Home, Private Apartment, Private Home, Rents Home, Rents Room, Shelter, Stable Housing, Temporary Housing, Unstable Housing, Unknown",
+    "note": "see 'Living Arrangement Options' tab for allowable values",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1298,7 +1490,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Date for last Living Arrangement update in mm/dd/yyyy format.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1309,7 +1503,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "*common value categories are: family, friend, neighbor, self, other, caregiver",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1320,7 +1516,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "*typically descriptive name of person (if available)",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1331,7 +1529,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Date for last Referral update in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1342,7 +1542,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "should be 3-3-4 format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1353,7 +1555,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Date for Client Intake in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1379,7 +1583,9 @@
       "251%+",
       "Refused"
     ],
-    "decode": "Unknown, 0 - 100%, 101 - 120%, 121 - 133%, 134 - 135%, 136 - 150%, 151 - 175%, 176 - 185%, 186 - 200%, 201 - 250%, 251%+, Refused"
+    "decode": "Unknown, 0 - 100%, 101 - 120%, 121 - 133%, 134 - 135%, 136 - 150%, 151 - 175%, 176 - 185%, 186 - 200%, 201 - 250%, 251%+, Refused",
+    "note": "Holds the percent of poverty ranges; only specific values are allowed.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1390,7 +1596,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Name of the church the client prefers.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Demographics",
@@ -1401,7 +1609,9 @@
     "modules": [
       "Client Master with Demographics"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Any notes you have on the client that don’t have a designated space",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Medical Main",
@@ -1440,7 +1650,9 @@
     "modules": [
       "Client Medical - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's Height in Inches",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Medical Main",
@@ -1451,7 +1663,9 @@
     "modules": [
       "Client Medical - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's Weight in pounds",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Medical Main",
@@ -1462,7 +1676,9 @@
     "modules": [
       "Client Medical - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's medical problem diagnosis",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Medical Main",
@@ -1478,7 +1694,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Date client signed Medical Release Form in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Medical Main",
@@ -1489,7 +1707,9 @@
     "modules": [
       "Client Medical - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Date Medical Release Form expires in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Medical Main",
@@ -1505,7 +1725,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Date client signed Health History Form in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Medical Main",
@@ -1516,7 +1738,9 @@
     "modules": [
       "Client Medical - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Date Health History Form expires in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Medical Main",
@@ -1533,7 +1757,9 @@
       "Walker",
       "Wheelchair"
     ],
-    "decode": "Cane, Walker, Wheelchair"
+    "decode": "Cane, Walker, Wheelchair",
+    "note": "Client's mobility aide - entered on individual rows.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Medical Main",
@@ -1544,7 +1770,9 @@
     "modules": [
       "Client Medical - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's Medicare A card number",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Medical Main",
@@ -1555,7 +1783,9 @@
     "modules": [
       "Client Medical - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's Medicare B card number",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Medical Main",
@@ -1566,7 +1796,9 @@
     "modules": [
       "Client Medical - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's Medicaid card number",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Medical Main",
@@ -1577,7 +1809,9 @@
     "modules": [
       "Client Medical - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's provider name of Other Insurance",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Medical Main",
@@ -1588,7 +1822,9 @@
     "modules": [
       "Client Medical - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's Other Insurance card number",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Health Conditions",
@@ -1665,7 +1901,9 @@
       "Client Medical - optional"
     ],
     "validated": true,
-    "lookupTable": "ICD10Codes"
+    "lookupTable": "ICD10Codes",
+    "note": "Client's rows of individual ICD 10 code assignments.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "ICD 10 CM Codes",
@@ -1676,7 +1914,9 @@
     "modules": [
       "Client Medical - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Description of the IDC 10 codes",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Congregate Meal Schedule",
@@ -1714,7 +1954,9 @@
     "modules": [
       "Congregate"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Name of Provider for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Congregate Meal Schedule",
@@ -1725,7 +1967,9 @@
     "modules": [
       "Congregate"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Name of Funding source for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Congregate Meal Schedule",
@@ -1736,7 +1980,9 @@
     "modules": [
       "Congregate"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Congregate site name for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Congregate Meal Schedule",
@@ -1747,7 +1993,9 @@
     "modules": [
       "Congregate"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Start Date for this schedule entry in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Congregate Meal Schedule",
@@ -1758,7 +2006,9 @@
     "modules": [
       "Congregate"
     ],
-    "validated": true
+    "validated": true,
+    "note": "End date for this schedule entry in mm/dd/yyyy format or blank if still active",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Congregate Meal Schedule",
@@ -1769,7 +2019,9 @@
     "modules": [
       "Congregate"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Reason for Termination if schedule entry was stopped",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Congregate Meal Schedule",
@@ -1780,7 +2032,9 @@
     "modules": [
       "Congregate"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Meal type for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Congregate Meal Schedule",
@@ -1791,7 +2045,9 @@
     "modules": [
       "Congregate"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Diet description for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Congregate Meal Schedule",
@@ -1802,7 +2058,9 @@
     "modules": [
       "Congregate"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Beverage description for this schedule entry - please use None if no beverage is provided.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Congregate Meal Schedule",
@@ -1813,7 +2071,9 @@
     "modules": [
       "Congregate"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Donation pledge amount for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Congregate Meal Schedule",
@@ -1824,7 +2084,9 @@
     "modules": [
       "Congregate"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Special meal requirements for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Congregate Meal Schedule",
@@ -1835,7 +2097,9 @@
     "modules": [
       "Congregate"
     ],
-    "validated": true
+    "validated": true,
+    "note": "First Assessment Date for this schedule entry in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Congregate Meal Schedule",
@@ -1846,7 +2110,9 @@
     "modules": [
       "Congregate"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Last Assessment Date for this schedule entry in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Congregate Meal Schedule",
@@ -1857,7 +2123,9 @@
     "modules": [
       "Congregate"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Next Assessment Date for this schedule entry in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Congregate Meal Schedule",
@@ -1875,7 +2143,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Y, N, Yes, No"
+    "decode": "Y, N, Yes, No",
+    "note": "Is client disabled?",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Congregate Meal Schedule",
@@ -1891,7 +2161,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Create a service plan for this client?",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Emergency Contacts",
@@ -1930,7 +2202,9 @@
     "modules": [
       "Emergency Contacts - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Emergency Contact's Last Name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Emergency Contacts",
@@ -1941,7 +2215,9 @@
     "modules": [
       "Emergency Contacts - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Emergency Contact's First Name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Emergency Contacts",
@@ -1952,7 +2228,9 @@
     "modules": [
       "Emergency Contacts - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Emergency Contact's Middle Initial",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Emergency Contacts",
@@ -1963,7 +2241,9 @@
     "modules": [
       "Emergency Contacts - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Emergency Contact's Address",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Emergency Contacts",
@@ -1974,7 +2254,9 @@
     "modules": [
       "Emergency Contacts - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Emergency Contact's City",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Emergency Contacts",
@@ -1985,7 +2267,9 @@
     "modules": [
       "Emergency Contacts - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Emergency Contact's State. Use only two character state abbreviations.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Emergency Contacts",
@@ -1996,7 +2280,9 @@
     "modules": [
       "Emergency Contacts - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Emergency Contact's Zip code. Can be formatted as 5 digits or 5-4 digits.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Emergency Contacts",
@@ -2007,7 +2293,9 @@
     "modules": [
       "Emergency Contacts - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Emergency Contact's Phone number in 111-111-1111 format.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Emergency Contacts",
@@ -2024,7 +2312,9 @@
       "Work",
       "Mobile"
     ],
-    "decode": "Home, Work, Mobile"
+    "decode": "Home, Work, Mobile",
+    "note": "Emergency Contact's Phone Type",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Emergency Contacts",
@@ -2035,7 +2325,9 @@
     "modules": [
       "Emergency Contacts - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Emergency Contact's Email address. Must include an @ and \".\" in the address.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Emergency Contacts",
@@ -2046,7 +2338,9 @@
     "modules": [
       "Emergency Contacts - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Emergency Contact's relationship to client. Text - only allowable values",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Emergency Contacts",
@@ -2057,7 +2351,9 @@
     "modules": [
       "Emergency Contacts - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Emergency Contact's Priorty. If more than one EC per client - use to order which emergency contact to contact first.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Emergency Contacts",
@@ -2068,7 +2364,9 @@
     "modules": [
       "Emergency Contacts - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Emergency Contact's comments. Ues this field to better define the EC's relationship with the client or additional phone info.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Emergency Contacts",
@@ -2086,7 +2384,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Y, N, Yes, No"
+    "decode": "Y, N, Yes, No",
+    "note": "Emergency Contact lives with client (y/n)?",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Emergency Contacts",
@@ -2104,7 +2404,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Y, N, Yes, No"
+    "decode": "Y, N, Yes, No",
+    "note": "Emergency Contact is primary Caregiver for client (y/n)?",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Emergency Contacts",
@@ -2122,7 +2424,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Y, N, Yes, No"
+    "decode": "Y, N, Yes, No",
+    "note": "Client has Release of Information On File (y/n)?",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Main",
@@ -2161,7 +2465,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "instructions for driver delivery",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Main",
@@ -2172,7 +2478,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "special meal accommodations",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Main",
@@ -2183,7 +2491,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Last Assessment Date for this schedule entry in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Main",
@@ -2194,7 +2504,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Reassessment Due Date for this schedule entry in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Main",
@@ -2205,7 +2517,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "First name of case manager",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Main",
@@ -2216,7 +2530,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Last name of case manager",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Main",
@@ -2227,7 +2543,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "ID for case manager",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Main",
@@ -2238,7 +2556,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Case Manager's Phone number in 111-111-1111 format.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Main",
@@ -2249,7 +2569,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Case Manager's Email address. Must include an @ and \".\" in the address.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Main",
@@ -2260,7 +2582,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "HDM categories - some have used this for clients that are not part of their holiday meal program or to indicate the client is frail/high priority.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Schedules",
@@ -2309,7 +2633,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Start Date for this schedule entry in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Schedules",
@@ -2320,7 +2646,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "End date for this schedule entry in mm/dd/yyyy format or blank if still active",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Schedules",
@@ -2331,7 +2659,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Reason for Termination if schedule entry was stopped",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Schedules",
@@ -2342,7 +2672,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Driver's starting point for this route.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Schedules",
@@ -2353,7 +2685,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Name of Route",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Schedules",
@@ -2364,7 +2698,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Meal type for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Schedules",
@@ -2375,7 +2711,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Diet description for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Schedules",
@@ -2386,7 +2724,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Beverage description for this schedule entry. Please use None if no beverage is provided.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Schedules",
@@ -2397,7 +2737,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Name of Provider for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Schedules",
@@ -2408,7 +2750,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Name of Funding source for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Schedules",
@@ -2419,7 +2763,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "qty of meal for Mon",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Schedules",
@@ -2430,7 +2776,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "qty of meal for Tue",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Schedules",
@@ -2441,7 +2789,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "qty of meal for Wed",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Schedules",
@@ -2452,7 +2802,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "qty of meal for Thu",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Schedules",
@@ -2463,7 +2815,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "qty of meal for Fri",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Schedules",
@@ -2474,7 +2828,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "qty of meal for Sat",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Schedules",
@@ -2485,7 +2841,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "qty of meal for Sun",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Schedules",
@@ -2507,7 +2865,9 @@
       "Saturday",
       "As Assigned"
     ],
-    "decode": "Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, As Assigned"
+    "decode": "Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, As Assigned",
+    "note": "Day(s) of week meals are delivered to the client.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Schedules",
@@ -2531,7 +2891,9 @@
       "4th occurrence",
       "5th occurrence"
     ],
-    "decode": "Weekly, Monthly, PRN, Even week, Odd week, 1st occurrence, 2nd occurrence, 3rd occurrence, 4th occurrence, 5th occurrence"
+    "decode": "Weekly, Monthly, PRN, Even week, Odd week, 1st occurrence, 2nd occurrence, 3rd occurrence, 4th occurrence, 5th occurrence",
+    "note": "Recurrence of the meal schedule",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Schedules",
@@ -2542,7 +2904,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Private Pay amount ONLY IF different than standard meal amount",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Schedules",
@@ -2553,7 +2917,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Donation pledge amount for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Schedules",
@@ -2564,7 +2930,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": true
+    "validated": true,
+    "note": "authorization number for schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "HDM Schedules",
@@ -2575,7 +2943,9 @@
     "modules": [
       "Home Delivered"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Create a service plan for this client?",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2587,7 +2957,9 @@
       "Homecare"
     ],
     "validated": true,
-    "unique": true
+    "unique": true,
+    "note": "Unique ID for each employee - aides, CNAs and Supervisors. You can use existing employee id's or assign them numerically.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2598,7 +2970,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Employee's First Name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2609,7 +2983,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Employee's Last Name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2620,7 +2996,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Employee's Last Name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2636,7 +3014,9 @@
       "Female",
       "Male"
     ],
-    "decode": "Female, Male"
+    "decode": "Female, Male",
+    "note": "Employee's Gender",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2647,7 +3027,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Date Employee was hired in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2658,7 +3040,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Effective Date for Employee in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2669,7 +3053,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Employee's Address",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2680,7 +3066,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Employee's City",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2691,7 +3079,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Employee's State. Use only two character state abbreviations.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2702,7 +3092,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Employee's Zip code. Can be formatted as 5 digits or 5-4 digits.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2713,7 +3105,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Employee's primary phone number in 999-999-9999 format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2724,7 +3118,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Employee's secondary phone number in 999-999-9999 format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2735,7 +3131,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Employee's tertiary phone number in 999-999-9999 format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2746,7 +3144,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Employee's Email address. Must include an @ and \".\" in the address.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2757,7 +3157,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Employee's date of birth in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2768,7 +3170,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Employee's Race",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2795,7 +3199,9 @@
       "Full-Time",
       "Part-Time"
     ],
-    "decode": "Full-Time, Part-Time"
+    "decode": "Full-Time, Part-Time",
+    "note": "Employee's Work Status",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2813,7 +3219,9 @@
       "Monthly",
       "Bi-Monthly"
     ],
-    "decode": "Weekly, Bi-Weekly, Monthly, Bi-Monthly"
+    "decode": "Weekly, Bi-Weekly, Monthly, Bi-Monthly",
+    "note": "Employee's Pay Frequency",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2824,7 +3232,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Employee's Employment Category",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2841,7 +3251,9 @@
       "CNA",
       "Supervisor"
     ],
-    "decode": "Aide, CNA, Supervisor"
+    "decode": "Aide, CNA, Supervisor",
+    "note": "Employee's Job Title",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2852,7 +3264,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Employee's Provider",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2863,7 +3277,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Employee's Supervisor's First Name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2874,7 +3290,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Employee's Supervisor's Last Name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2885,7 +3303,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Employee's Location",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2896,7 +3316,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Employee's Pay Rate",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2907,7 +3329,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Sunday's start time in HH:MM:SS AM/PM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2918,7 +3342,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Sunday's end time in HH:MM:SS AM/PM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2929,7 +3355,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Monday's start time in HH:MM:SS AM/PM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2940,7 +3368,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Monday's end time in HH:MM:SS AM/PM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2951,7 +3381,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Tuesday's start time in HH:MM:SS AM/PM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2962,7 +3394,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Tuesday's end time in HH:MM:SS AM/PM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2973,7 +3407,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Wednesday's start time in HH:MM:SS AM/PM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2984,7 +3420,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Wednesday's end time in HH:MM:SS AM/PM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -2995,7 +3433,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Thurday's start time in HH:MM:SS AM/PM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -3006,7 +3446,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Thursday's end time in HH:MM:SS AM/PM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -3017,7 +3459,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Friday's start time in HH:MM:SS AM/PM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -3028,7 +3472,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Friday's end time in HH:MM:SS AM/PM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -3039,7 +3485,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Saturday's start time in HH:MM:SS AM/PM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -3050,7 +3498,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Saturday' end time in HH:MM:SS AM/PM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -3066,7 +3516,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Employee is a Vietnam Vet",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -3082,7 +3534,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Employee is a Veteran",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -3098,7 +3552,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Employee is Disabled",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -3114,7 +3570,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Employee's Background Check Completed",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -3125,7 +3583,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Employee's PPD Test Date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -3136,7 +3596,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Employee's Auto Insurance Expire date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -3147,7 +3609,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Employee's Drivers License number",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -3158,7 +3622,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Employee's Drivers License Expire Date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -3180,7 +3646,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Employee's CPR Certification Date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -3191,7 +3659,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Employee's CNA License Number",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Employees",
@@ -3202,7 +3672,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Employee's CNA License Expire Date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Tasks",
@@ -3240,7 +3712,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Define the high level services for each of your Homecare services",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Tasks",
@@ -3251,7 +3725,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Define the categories for   each of your Homecare services",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Tasks",
@@ -3262,7 +3738,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Define the tasks your aides will perform for the client for each of your Homecare services",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Intake",
@@ -3300,7 +3778,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "note": "First and last name of client's supervisor",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Intake",
@@ -3311,7 +3791,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "note": "First and last name of client's supervisor",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Intake",
@@ -3322,7 +3804,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "note": "The ID of the client's supervisor",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Intake",
@@ -3333,7 +3817,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "First and last name of client's case manager",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Intake",
@@ -3344,7 +3830,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "First and last name of client's case manager",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Intake",
@@ -3355,7 +3843,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "ID for case manager",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Intake",
@@ -3371,7 +3861,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Client is Disabled",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Intake",
@@ -3393,7 +3885,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's last contact type",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Intake",
@@ -3404,7 +3898,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Clients last contact date",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Intake",
@@ -3415,7 +3911,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's next contact type",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Intake",
@@ -3426,7 +3924,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's next contact date",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3464,7 +3964,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Service Start Date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3475,7 +3977,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Service End Date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3486,7 +3990,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Reason for Termination if schedule entry was stopped",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3497,7 +4003,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Name of Provider for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3508,7 +4016,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Name of Funding source for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3519,7 +4029,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Service Description",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3541,7 +4053,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "First name of client's Aide",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3552,7 +4066,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Last name of client's Aide",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3563,7 +4079,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Employee ID of client's aide",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3574,7 +4092,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Units for Mon",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3585,7 +4105,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Units for Tue",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3596,7 +4118,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Units for Wed",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3607,7 +4131,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Units for Thu",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3618,7 +4144,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Units for Fri",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3629,7 +4157,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Units for Sat",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3640,7 +4170,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Units for Sun",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3651,7 +4183,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Miles for Mon",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3662,7 +4196,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Miles for Tue",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3673,7 +4209,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Miles for Wed",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3684,7 +4222,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Miles for Thu",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3695,7 +4235,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Miles for Fri",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3706,7 +4248,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Miles for Sat",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3717,7 +4261,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Miles for Sun",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3728,7 +4274,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Schedule recurrence",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3739,7 +4287,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Unit Cost of other than the standard amount",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3750,7 +4300,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Donation Pledge amount if other than the standard amount",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3766,7 +4318,9 @@
       "PerUnit",
       "PerMonth"
     ],
-    "decode": "PerUnit, PerMonth"
+    "decode": "PerUnit, PerMonth",
+    "note": "Pledge recurrence",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3777,7 +4331,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Number of Authorized monthly units",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3788,7 +4344,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Number of Authorized daily units",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3799,7 +4357,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Schedule's Authorization Number",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3810,7 +4370,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "For state of NC only - it is the code for Site/Route/Worker",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3826,7 +4388,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Create a service plan for this client?",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Assessments",
@@ -3864,7 +4428,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Service",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Assessments",
@@ -3882,7 +4448,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Y, N, Yes, No"
+    "decode": "Y, N, Yes, No",
+    "note": "Select Flag",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Assessments",
@@ -3893,7 +4461,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "First Assessment Date in MM/DD/YYYY format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Assessments",
@@ -3904,7 +4474,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Assessment Date in MM/DD/YYYY format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Assessments",
@@ -3915,7 +4487,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Next Assessment Date in MM/DD/YYYY format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Assessments",
@@ -3933,7 +4507,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Y, N, Yes, No"
+    "decode": "Y, N, Yes, No",
+    "note": "Is Aide Present?",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Assessments",
@@ -3951,7 +4527,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Y, N, Yes, No"
+    "decode": "Y, N, Yes, No",
+    "note": "Is Aide Reuired?",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Notes",
@@ -3989,7 +4567,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Homecare Note Date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Notes",
@@ -4000,7 +4580,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Homecare Note Category",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Notes",
@@ -4011,7 +4593,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Homecare Note Funding Source",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Homecare Notes",
@@ -4022,7 +4606,9 @@
     "modules": [
       "Homecare"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Homecare note text",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Pets",
@@ -4066,7 +4652,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Flag to indicate that the client has cats",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Pets",
@@ -4083,7 +4671,9 @@
       "Medium",
       "Large"
     ],
-    "decode": "Small, Medium, Large"
+    "decode": "Small, Medium, Large",
+    "note": "Cat Size",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Pets",
@@ -4094,7 +4684,9 @@
     "modules": [
       "Household - Pets - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Total Number of Cats",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Pets",
@@ -4110,7 +4702,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Cat receiving Animeal meal",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Pets",
@@ -4121,7 +4715,9 @@
     "modules": [
       "Household - Pets - optional"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Cat Comment",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Pets",
@@ -4137,7 +4733,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Flag to indicate that the client has dogs",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Pets",
@@ -4154,7 +4752,9 @@
       "Medium",
       "Large"
     ],
-    "decode": "Small, Medium, Large"
+    "decode": "Small, Medium, Large",
+    "note": "Dog Size",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Pets",
@@ -4165,7 +4765,9 @@
     "modules": [
       "Household - Pets - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Total Number of Dogs",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Pets",
@@ -4181,7 +4783,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Dog receiving Animeal meal",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Pets",
@@ -4192,7 +4796,9 @@
     "modules": [
       "Household - Pets - optional"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Dog Comment",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Pets",
@@ -4208,7 +4814,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Flag to indicate that client has other pets",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Pets",
@@ -4219,7 +4827,9 @@
     "modules": [
       "Household - Pets - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Description of Other Pet - Required.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Pets",
@@ -4230,7 +4840,9 @@
     "modules": [
       "Household - Pets - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Number of Other Pets",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Pets",
@@ -4246,7 +4858,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Other animal receiving Animeal meal",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Pets",
@@ -4257,7 +4871,9 @@
     "modules": [
       "Household - Pets - optional"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Other Pet Comment",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Membership Main",
@@ -4296,7 +4912,9 @@
     "modules": [
       "Membership"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Memberhip ID",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Membership Main",
@@ -4307,7 +4925,9 @@
     "modules": [
       "Membership"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Date of wedding anniversary in mm/dd/yyyy format.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Membership Main",
@@ -4318,7 +4938,9 @@
     "modules": [
       "Membership"
     ],
-    "validated": true
+    "validated": true,
+    "note": "misc comments about the member/client",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Membership Main",
@@ -4335,7 +4957,9 @@
       "Hold for Pickup",
       "Email"
     ],
-    "decode": "US Mail, Hold for Pickup, Email"
+    "decode": "US Mail, Hold for Pickup, Email",
+    "note": "Newsletter Delivery Option",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Membership Details",
@@ -4374,7 +4998,9 @@
     "modules": [
       "Membership"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Member Start Date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Membership Details",
@@ -4385,7 +5011,9 @@
     "modules": [
       "Membership"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Member End Date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Membership Details",
@@ -4396,7 +5024,9 @@
     "modules": [
       "Membership"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Reason for membership termination",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Membership Details",
@@ -4407,7 +5037,9 @@
     "modules": [
       "Membership"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Membership Expire Date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Membership Details",
@@ -4418,7 +5050,9 @@
     "modules": [
       "Membership"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Membership dues amount",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Membership Details",
@@ -4429,7 +5063,9 @@
     "modules": [
       "Membership"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Client receives newsletter?",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Membership Details",
@@ -4440,7 +5076,9 @@
     "modules": [
       "Membership"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Site name for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Membership Details",
@@ -4451,7 +5089,9 @@
     "modules": [
       "Membership"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Types of memberships",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Notes",
@@ -4489,7 +5129,9 @@
     "modules": [
       "Notes - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Identifies which service this note belongs to.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Notes",
@@ -4500,7 +5142,9 @@
     "modules": [
       "Notes - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Date of client note  in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Notes",
@@ -4511,7 +5155,9 @@
     "modules": [
       "Notes - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Category for Note",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Notes",
@@ -4522,7 +5168,9 @@
     "modules": [
       "Notes - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Funding source for Note",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Client Notes",
@@ -4533,7 +5181,9 @@
     "modules": [
       "Notes - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Note text",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Other Services Schedule",
@@ -4571,7 +5221,9 @@
     "modules": [
       "Other Services"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Name of Provider for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Other Services Schedule",
@@ -4582,7 +5234,9 @@
     "modules": [
       "Other Services"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Site name for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Other Services Schedule",
@@ -4593,7 +5247,9 @@
     "modules": [
       "Other Services"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Service Description",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Other Services Schedule",
@@ -4604,7 +5260,9 @@
     "modules": [
       "Other Services"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Name of Funding source for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Other Services Schedule",
@@ -4615,7 +5273,9 @@
     "modules": [
       "Other Services"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Service Start Date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Other Services Schedule",
@@ -4626,7 +5286,9 @@
     "modules": [
       "Other Services"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Service End Date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Other Services Schedule",
@@ -4637,7 +5299,9 @@
     "modules": [
       "Other Services"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Reason for Termination if schedule entry was stopped",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Other Services Schedule",
@@ -4648,7 +5312,9 @@
     "modules": [
       "Other Services"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Units for Sun",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Other Services Schedule",
@@ -4659,7 +5325,9 @@
     "modules": [
       "Other Services"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Units for Mon",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Other Services Schedule",
@@ -4670,7 +5338,9 @@
     "modules": [
       "Other Services"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Units for Tue",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Other Services Schedule",
@@ -4681,7 +5351,9 @@
     "modules": [
       "Other Services"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Units for Wed",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Other Services Schedule",
@@ -4692,7 +5364,9 @@
     "modules": [
       "Other Services"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Units for Thu",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Other Services Schedule",
@@ -4703,7 +5377,9 @@
     "modules": [
       "Other Services"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Units for Fri",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Other Services Schedule",
@@ -4714,7 +5390,9 @@
     "modules": [
       "Other Services"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Units for Sat",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Other Services Schedule",
@@ -4733,7 +5411,9 @@
       "Even week",
       "Odd week"
     ],
-    "decode": "Weekly, Monthly, PRN, Even week, Odd week"
+    "decode": "Weekly, Monthly, PRN, Even week, Odd week",
+    "note": "Schedule recurrence",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Other Services Schedule",
@@ -4744,7 +5424,9 @@
     "modules": [
       "Other Services"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Unit Cost of other than the standard amount",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Other Services Schedule",
@@ -4755,7 +5437,9 @@
     "modules": [
       "Other Services"
     ],
-    "validated": true
+    "validated": true,
+    "note": "unique id per case manager",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Other Services Schedule",
@@ -4766,7 +5450,9 @@
     "modules": [
       "Other Services"
     ],
-    "validated": true
+    "validated": true,
+    "note": "client remarks for this service",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Other Services Schedule",
@@ -4777,7 +5463,9 @@
     "modules": [
       "Other Services"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Last Assessment date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Other Services Schedule",
@@ -4788,7 +5476,9 @@
     "modules": [
       "Other Services"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Next Assessment date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Other Services Schedule",
@@ -4804,7 +5494,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Create a service plan for this client?",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Managers",
@@ -4830,7 +5522,9 @@
       "Other Services"
     ],
     "validated": true,
-    "unique": true
+    "unique": true,
+    "note": "Unique ID assigned to each Case Manager",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Managers",
@@ -4841,7 +5535,9 @@
     "modules": [
       "Other Services"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Case Manager's First Name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Managers",
@@ -4852,7 +5548,9 @@
     "modules": [
       "Other Services"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Case Manager's Last Name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Managers",
@@ -4863,7 +5561,9 @@
     "modules": [
       "Other Services"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Case Manager's email address. It must contain an @ and a \".\" in its format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Managers",
@@ -4874,7 +5574,9 @@
     "modules": [
       "Other Services"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Case Manager's Phone number in 111-111-1111 format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Case Managers",
@@ -4885,7 +5587,9 @@
     "modules": [
       "Other Services"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Case Manager's Phone extension",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Outcome Scores",
@@ -4923,7 +5627,9 @@
     "modules": [
       "Outcome Scores - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Score Type",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Outcome Scores",
@@ -4934,7 +5640,9 @@
     "modules": [
       "Outcome Scores - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Date of outcome score in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Outcome Scores",
@@ -4945,7 +5653,9 @@
     "modules": [
       "Outcome Scores - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Score value",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Outcome Scores",
@@ -4956,7 +5666,9 @@
     "modules": [
       "Outcome Scores - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Score comment",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Physicians",
@@ -4994,7 +5706,9 @@
     "modules": [
       "Physicians - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Title",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Physicians",
@@ -5005,7 +5719,9 @@
     "modules": [
       "Physicians - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "First Name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Physicians",
@@ -5016,7 +5732,9 @@
     "modules": [
       "Physicians - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Middle Initial",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Physicians",
@@ -5027,7 +5745,9 @@
     "modules": [
       "Physicians - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Last Name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Physicians",
@@ -5043,7 +5763,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Is this the clients Primary Physician?",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Physicians",
@@ -5054,7 +5776,9 @@
     "modules": [
       "Physicians - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Facility Name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Physicians",
@@ -5076,7 +5800,9 @@
     "modules": [
       "Physicians - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Address",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Physicians",
@@ -5087,7 +5813,9 @@
     "modules": [
       "Physicians - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "City",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Physicians",
@@ -5098,7 +5826,9 @@
     "modules": [
       "Physicians - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Physician's State. Use only two character state abbreviations.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Physicians",
@@ -5109,7 +5839,9 @@
     "modules": [
       "Physicians - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Physician's Zip code. Can be formatted as 5 digits or 5-4 digits.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Physicians",
@@ -5120,7 +5852,9 @@
     "modules": [
       "Physicians - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Physician's Phone number in 111-111-1111 format.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Physicians",
@@ -5131,7 +5865,9 @@
     "modules": [
       "Physicians - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Extension",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Physicians",
@@ -5142,7 +5878,9 @@
     "modules": [
       "Physicians - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Physician's Fax number in 111-111-1111 format.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Physicians",
@@ -5153,7 +5891,9 @@
     "modules": [
       "Physicians - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Physician's Email address. Must include an @ and \".\" in the address.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Physicians",
@@ -5164,7 +5904,9 @@
     "modules": [
       "Physicians - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "NPI Number",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Physicians",
@@ -5175,7 +5917,9 @@
     "modules": [
       "Physicians - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Client's date of Last Visit in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Physicians",
@@ -5186,7 +5930,9 @@
     "modules": [
       "Physicians - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Reason for Last Visit",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Recreation Main",
@@ -5225,7 +5971,9 @@
     "modules": [
       "Recreation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Last Assessment date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Recreation Main",
@@ -5236,7 +5984,9 @@
     "modules": [
       "Recreation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "ReAssessment Due Date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Recreation Main",
@@ -5252,7 +6002,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Client Disabled?",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Recreation Main",
@@ -5269,7 +6021,9 @@
       "N",
       "U"
     ],
-    "decode": "Y, N, U"
+    "decode": "Y, N, U",
+    "note": "Client completed pool orientation?",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Recreation Main",
@@ -5280,7 +6034,9 @@
     "modules": [
       "Recreation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Pool Orientation Date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Recreation Main",
@@ -5291,7 +6047,9 @@
     "modules": [
       "Recreation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Pool Orientation Expiration Date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Recreation Main",
@@ -5308,7 +6066,9 @@
       "N",
       "U"
     ],
-    "decode": "Y, N, U"
+    "decode": "Y, N, U",
+    "note": "Client completed fitness program orientation",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Recreation Main",
@@ -5319,7 +6079,9 @@
     "modules": [
       "Recreation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Fitness Program Orientation Date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Recreation Main",
@@ -5330,7 +6092,9 @@
     "modules": [
       "Recreation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Fitness Program Oreientation Expiration Date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Recreation Schedule",
@@ -5369,7 +6133,9 @@
     "modules": [
       "Recreation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Name of Provider for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Recreation Schedule",
@@ -5380,7 +6146,9 @@
     "modules": [
       "Recreation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Recreation Start Date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Recreation Schedule",
@@ -5391,7 +6159,9 @@
     "modules": [
       "Recreation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Recreation End Date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Recreation Schedule",
@@ -5402,7 +6172,9 @@
     "modules": [
       "Recreation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Reason for service termination",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Recreation Schedule",
@@ -5413,7 +6185,9 @@
     "modules": [
       "Recreation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Site name for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Recreation Schedule",
@@ -5424,7 +6198,9 @@
     "modules": [
       "Recreation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Name of Funding source for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Recreation Schedule",
@@ -5440,7 +6216,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Create a service plan for this client?",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Temporary Suspensions Holds",
@@ -5485,7 +6263,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Y, N, Yes, No"
+    "decode": "Y, N, Yes, No",
+    "note": "Flag indicating that it is a long term hold with an unknown end date.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Temporary Suspensions Holds",
@@ -5496,7 +6276,9 @@
     "modules": [
       "Suspensions - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "First date meal or service will not be provided in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Temporary Suspensions Holds",
@@ -5507,7 +6289,9 @@
     "modules": [
       "Suspensions - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Last date meal or service will not be provided in mm/dd/yyyy format. If unknown, set long hold flag to \"Yes\" and leave this field empty.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Temporary Suspensions Holds",
@@ -5518,7 +6302,9 @@
     "modules": [
       "Suspensions - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Service being suspended.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Temporary Suspensions Holds",
@@ -5529,7 +6315,9 @@
     "modules": [
       "Suspensions - optional"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Reason for Suspension.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Destination Options",
@@ -5554,7 +6342,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Destination Name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Destination Options",
@@ -5565,7 +6355,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Destination Address",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Destination Options",
@@ -5576,7 +6368,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Destination City",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Destination Options",
@@ -5587,7 +6381,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Destination Zip Code with either 5 digit or 5-4 digit zip code",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Destination Options",
@@ -5598,7 +6394,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": false
+    "validated": false,
+    "note": "Destination Phone in 111-111-1111 format.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Main",
@@ -5647,7 +6445,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "generalized directions to client home, if applicable",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Main",
@@ -5658,7 +6458,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Last Assessment Date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Main",
@@ -5669,7 +6471,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "ReAssessment Due Date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Main",
@@ -5685,7 +6489,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Does the client travel with an escort?",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Main",
@@ -5701,7 +6507,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Is this client disabled?",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Main",
@@ -5719,7 +6527,9 @@
       "Extra Large",
       "Scooter"
     ],
-    "decode": "Electric, Manual, Extra Large, Scooter"
+    "decode": "Electric, Manual, Extra Large, Scooter",
+    "note": "Type of the client's wheelchair?",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Main",
@@ -5735,7 +6545,9 @@
       "YES",
       "NO"
     ],
-    "decode": "YES, NO"
+    "decode": "YES, NO",
+    "note": "Does the client have a wheelchair ramp?",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Main",
@@ -5746,7 +6558,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Case Manager's First Name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Main",
@@ -5757,7 +6571,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Case Manager's Last Name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Main",
@@ -5768,7 +6584,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Case Manager's unique ID",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Main",
@@ -5779,7 +6597,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Case Manager's email address. It must contain an @ and a \".\" in its format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Main",
@@ -5790,7 +6610,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Case Manager's Phone number in 111-111-1111 format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -5828,7 +6650,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Name of Provider for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -5839,7 +6663,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Name of Funding source for this schedule entry",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -5850,7 +6676,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Start Date for this schedule entry in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -5861,7 +6689,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "End date for this schedule entry in mm/dd/yyyy format or blank if still active",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -5873,7 +6703,9 @@
       "Transportation"
     ],
     "validated": true,
-    "lookupTable": "Can"
+    "lookupTable": "Can",
+    "note": "Reason for Termination if schedule entry was stopped",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -5884,7 +6716,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Trip Type for this transportation schedule",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -5895,7 +6729,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Origination point where driver will begin his transporation route",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -5906,7 +6742,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Route name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -5917,7 +6755,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Trips Destination",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -5928,7 +6768,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Set to 1 if trip repeats on this day for a defined frequency OR 0 if on demand trip",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -5939,7 +6781,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Enter time for pick up in HH:MM AM or PM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -5950,7 +6794,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Enter time for appointment in HH:MM AM or PM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -5961,7 +6807,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Set to 1 if trip repeats on this day for a defined frequency OR 0 if on demand trip",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -5972,7 +6820,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Enter time for pick up in HH:MM AM or PM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -5983,7 +6833,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Enter time for appointment in HH:MM AM or PM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -5994,7 +6846,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Set to 1 if trip repeats on this day for a defined frequency OR 0 if on demand trip",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -6005,7 +6859,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Enter time for pick up in HH:MM AM or PM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -6016,7 +6872,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Enter time for appointment in HH:MM AM or PM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -6027,7 +6885,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Set to 1 if trip repeats on this day for a defined frequency OR 0 if on demand trip",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -6038,7 +6898,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Enter time for pick up in HH:MM AM or PM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -6049,7 +6911,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Enter time for appointment in HH:MM AM or PM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -6060,7 +6924,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Set to 1 if trip repeats on this day for a defined frequency OR 0 if on demand trip",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -6071,7 +6937,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Enter time for pick up in HH:MM AM or PM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -6082,7 +6950,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Enter time for appointment in HH:MM AM or PM format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -6101,7 +6971,9 @@
       "Odd week",
       "Demand response"
     ],
-    "decode": "Weekly, Monthly, Even week, Odd week, Demand response"
+    "decode": "Weekly, Monthly, Even week, Odd week, Demand response",
+    "note": "Recurrence of trip schedule",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -6112,7 +6984,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "suggested donation amount per trip, if applicable",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -6123,7 +6997,9 @@
     "modules": [
       "Transportation"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Authorization # for trip",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Transportation Schedules",
@@ -6139,7 +7015,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Create a service plan for this client?",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Volunteer Intake",
@@ -6178,7 +7056,9 @@
     "modules": [
       "Volunteer"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Volunteer's start date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Volunteer Intake",
@@ -6189,7 +7069,9 @@
     "modules": [
       "Volunteer"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Volunteer's end date in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Volunteer Intake",
@@ -6200,7 +7082,9 @@
     "modules": [
       "Volunteer"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Reason for Termination if schedule entry was stopped",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Volunteer Intake",
@@ -6211,7 +7095,9 @@
     "modules": [
       "Volunteer"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Location where volunteer's job is performed",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Volunteer Intake",
@@ -6222,7 +7108,9 @@
     "modules": [
       "Volunteer"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Program for volunteer job",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Volunteer Intake",
@@ -6375,7 +7263,9 @@
     "modules": [
       "Volunteer"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Location where volunteer's job is performed",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Volunteer Schedule",
@@ -6397,7 +7287,9 @@
     "modules": [
       "Volunteer"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Route Name",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Volunteer Schedule",
@@ -6415,7 +7307,9 @@
       "Monthly by Day of the Week",
       "Monthly by Day of the Month"
     ],
-    "decode": "Never, Weekly, Monthly by Day of the Week, Monthly by Day of the Month"
+    "decode": "Never, Weekly, Monthly by Day of the Week, Monthly by Day of the Month",
+    "note": "Schedule repeat frequency",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Volunteer Schedule",
@@ -6426,7 +7320,9 @@
     "modules": [
       "Volunteer"
     ],
-    "validated": true
+    "validated": true,
+    "note": "For Monthly repeats, specifies the Day of Month or Day of Week for repeating schedule",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Volunteer Schedule",
@@ -6437,7 +7333,9 @@
     "modules": [
       "Volunteer"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Weekly schedule repeats",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Main",
@@ -6481,7 +7379,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Set to Yes if client is a full pay client. Leave blank or set to No if not.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Main",
@@ -6492,7 +7392,9 @@
     "modules": [
       "WaitList"
     ],
-    "validated": true
+    "validated": true,
+    "note": "First name of case manager, if applicable",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Main",
@@ -6503,7 +7405,9 @@
     "modules": [
       "WaitList"
     ],
-    "validated": true
+    "validated": true,
+    "note": "last name of case manager, if applicable",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Main",
@@ -6547,7 +7451,9 @@
     "modules": [
       "WaitList"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Date when this wait list request was last reviewed in mm/dd/yyyy format.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Main",
@@ -6558,7 +7464,9 @@
     "modules": [
       "WaitList"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Date when this wait list request should be reviewed next in mm/dd/yyyy format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Main",
@@ -6574,7 +7482,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "Set to Yes if client was previously contacted. Leave blank or set to No if not.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Main",
@@ -6596,7 +7506,9 @@
     "modules": [
       "WaitList"
     ],
-    "validated": true
+    "validated": true,
+    "note": "Why was client referred to your agency for services.",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Schedules",
@@ -6634,7 +7546,9 @@
     "modules": [
       "WaitList"
     ],
-    "validated": true
+    "validated": true,
+    "note": "start/intake date for wait list record",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Schedules",
@@ -6645,7 +7559,9 @@
     "modules": [
       "WaitList"
     ],
-    "validated": true
+    "validated": true,
+    "note": "time of day intake for wait list was completed (if applicable)",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Schedules",
@@ -6656,7 +7572,9 @@
     "modules": [
       "WaitList"
     ],
-    "validated": true
+    "validated": true,
+    "note": "date wait list record ended, leave blank if on-going\n\n*can be a future date",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Schedules",
@@ -6667,7 +7585,9 @@
     "modules": [
       "WaitList"
     ],
-    "validated": true
+    "validated": true,
+    "note": "reason for membership termination\n\nsee 'End Reason Options' tab for allowable values\n\nactive records will be set to 'Being Provided'",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Schedules",
@@ -6678,7 +7598,9 @@
     "modules": [
       "WaitList"
     ],
-    "validated": true
+    "validated": true,
+    "note": "provider who will provide wait list service, if the client becomes active (if known)\n\nthis field can be left blank if desired",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Schedules",
@@ -6689,7 +7611,9 @@
     "modules": [
       "WaitList"
     ],
-    "validated": true
+    "validated": true,
+    "note": "funding source for wait list service (if known)\n\nthis field can be left blank if unknown or desired",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Schedules",
@@ -6700,7 +7624,9 @@
     "modules": [
       "WaitList"
     ],
-    "validated": true
+    "validated": true,
+    "note": "program and/or service client is waitlisted for",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Schedules",
@@ -6722,7 +7648,9 @@
     "modules": [
       "WaitList"
     ],
-    "validated": true
+    "validated": true,
+    "note": "preferred method of contact for this client/service",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Schedules",
@@ -6733,7 +7661,9 @@
     "modules": [
       "WaitList"
     ],
-    "validated": true
+    "validated": true,
+    "note": "current status of this wait list record, if applicable\n\nif all records are a status of 'waiting', leave blank",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Schedules",
@@ -6766,7 +7696,9 @@
     "modules": [
       "WaitList"
     ],
-    "validated": true
+    "validated": true,
+    "note": "date last assessment was performed on client, if applicable",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Schedules",
@@ -6777,7 +7709,9 @@
     "modules": [
       "WaitList"
     ],
-    "validated": true
+    "validated": true,
+    "note": "wait list score, if applicable.  \n\nthis can be used to 'weight' client's positions on the wait list\n\nmust be a whole number",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Schedules",
@@ -6793,7 +7727,9 @@
       "Yes",
       "No"
     ],
-    "decode": "Yes, No"
+    "decode": "Yes, No",
+    "note": "is this client high priority?\n\nAllowable values are Yes or No (if left blank, values will be set to No)",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Schedules",
@@ -6815,7 +7751,9 @@
     "modules": [
       "WaitList"
     ],
-    "validated": true
+    "validated": true,
+    "note": "agency responsible for referring client to you, if applicable",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Schedules",
@@ -6826,7 +7764,9 @@
     "modules": [
       "WaitList"
     ],
-    "validated": true
+    "validated": true,
+    "note": "name of the specific individual who referred client to you, if applicable",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Schedules",
@@ -6837,7 +7777,9 @@
     "modules": [
       "WaitList"
     ],
-    "validated": true
+    "validated": true,
+    "note": "phone number of referring person or agency, if applicable\n\nshould be ###-###-#### format",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Schedules",
@@ -6848,7 +7790,9 @@
     "modules": [
       "WaitList"
     ],
-    "validated": true
+    "validated": true,
+    "note": "email address of referring person or agency, if applicable",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Schedules",
@@ -6859,7 +7803,9 @@
     "modules": [
       "WaitList"
     ],
-    "validated": true
+    "validated": true,
+    "note": "how did this client or referring agency/person hear about your agency, if known\n\nsee 'How Did You Hear Options' tab for allowable values",
+    "noteSource": "data dictionary"
   },
   {
     "sheet": "Waiting List Schedules",

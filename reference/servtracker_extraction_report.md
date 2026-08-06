@@ -10,6 +10,8 @@ Russ, who confirmed `target_schema_full.json` on 2026-08-04).
   - SHA-256 `64415c643a1c9582c93472d722e0362fde961c6e330b5d70553bcf45418598a3`
 - **Validation script** — `C:/Users/AlexanderButton/OneDrive - CaseWorthy/ETL Team/12. ServTracker/Master Scripts/1 - Master Validation.sql`
   - SHA-256 `5508c2e01130bcf692c7807435793dd22d5667f112f21342f233983bd77ffc0e`
+- **Data dictionary (descriptions only)** — `C:\Users\AlexanderButton\OneDrive - CaseWorthy\ETL Team\12. ServTracker\ExcelTemplates\Master Template Documentation\ServTracker Data Dictionary.xlsx`
+  - SHA-256 `4afa60bb245e77c99e29d3b017a1d4e123c0bee0b8ff006a0a1bc4946325ddc6`
 
 Sources are live maintained documents, deliberately not copied into this repo.
 Re-run the extractor to detect drift against these hashes.
@@ -137,6 +139,25 @@ _...and 48 more._
 ### Same sheet with differing columns across workbooks
 
 _None — sheets duplicated across workbooks are structurally identical._
+
+### Field descriptions from the data dictionary
+
+Descriptions only. Rules are never taken from the dictionary — it also states a
+Required Y/N per field and disagrees with the validation script on several, so
+treating it as a rule source would mean silently picking a winner. A description
+is applied only where the field has no note already, so the link-key,
+merge-only and scratch-column notes are never overwritten.
+
+- **473** fields given a description (37 skipped — already had a note).
+- **34 of 35** dictionary sheets matched, by field-name overlap rather than by sheet name (the dictionary says `Notes`, `Congregate`, `Membership Schedules` where the templates say `Client Notes`, `Congregate Meal Schedule`, `Membership Details`).
+
+Dictionary sheets with no confident template match. Their descriptions were
+**not** used — a sheet the templates no longer carry should stay unmatched
+rather than attach itself to whatever looked closest.
+
+| Dictionary sheet | Closest template sheet | Field overlap |
+|---|---|---|
+| `ClientMedicalHealthConditions` | — | 0% |
 
 ### Scratch-column convention
 

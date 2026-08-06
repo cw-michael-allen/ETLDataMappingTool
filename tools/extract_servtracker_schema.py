@@ -50,6 +50,10 @@ DEFAULT_ST_ROOT = os.path.join(
 )
 DEFAULT_TEMPLATES = os.path.join(DEFAULT_ST_ROOT, "ExcelTemplates", "Master Templates")
 DEFAULT_VALIDATION = os.path.join(DEFAULT_ST_ROOT, "Master Scripts", "1 - Master Validation.sql")
+DEFAULT_DICTIONARY = os.path.join(
+    DEFAULT_ST_ROOT, "ExcelTemplates", "Master Template Documentation",
+    "ServTracker Data Dictionary.xlsx",
+)
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_SCHEMA = os.path.join(REPO_ROOT, "reference", "servtracker_schema_full.json")
@@ -196,6 +200,159 @@ def load_templates(templates_dir):
             else:
                 sheets[sheet] = {"columns": cols, "workbooks": [fname]}
     return sheets, files, conflicts, excluded
+
+
+# --------------------------------------------------------------------------
+# Data dictionary (descriptions only)
+# --------------------------------------------------------------------------
+
+def read_dictionary(path):
+    """{sheet: {normalised field: description}} from the data dictionary.
+
+    Descriptive text only. Rules still come from the validation script -- the
+    dictionary also states a Required Y/N per field, and it disagrees with the
+    script on a handful, so adopting it as a rule source would mean silently
+    picking a winner. Descriptions carry no such conflict.
+
+    The sheet layout is not fixed: some sheets open with a paragraph of
+    guidance, so the field-name row sits at a different index on each. The
+    invariant that does hold is that the field-name row is directly above the
+    row labelled "Description", so that row is located first and the header read
+    from the one above it. Cells are keyed by column index, never compacted --
+    a blank description would otherwise shift every later column by one.
+    """
+    z = zipfile.ZipFile(path)
+    names = z.namelist()
+    shared = []
+    if "xl/sharedStrings.xml" in names:
+        for si in ET.fromstring(z.read("xl/sharedStrings.xml")).findall(NS + "si"):
+            shared.append("".join(t.text or "" for t in si.iter(NS + "t")))
+    wb = ET.fromstring(z.read("xl/workbook.xml"))
+    rel_map = {r.get("Id"): r.get("Target")
+               for r in ET.fromstring(z.read("xl/_rels/workbook.xml.rels"))}
+
+    def cell_text(c):
+        v = c.find(NS + "v")
+        inline = c.find(NS + "is")
+        if c.get("t") == "s" and v is not None and v.text is not None:
+            i = int(v.text)
+            return shared[i] if i < len(shared) else ""
+        if inline is not None:
+            return "".join(t.text or "" for t in inline.iter(NS + "t"))
+        return (v.text if v is not None else "") or ""
+
+    out = collections.OrderedDict()
+    for sh in wb.find(NS + "sheets"):
+        target = rel_map.get(sh.get(RELID), "") or ""
+        target = target if target.startswith("xl/") else "xl/" + target.lstrip("/")
+        if target not in names:
+            continue
+        data = ET.fromstring(z.read(target)).find(NS + "sheetData")
+        grid = []
+        for r in list(data or [])[:14]:
+            cells = {}
+            for c in r.findall(NS + "c"):
+                val = cell_text(c)
+                if val.strip():
+                    cells[_col_index(c.get("r"))] = val.strip()
+            grid.append(cells)
+
+        desc_row = next(
+            (i for i, row in enumerate(grid)
+             if i > 0 and re.match(r"descriptions?$", (row.get(0) or "").strip(), re.I)),
+            None,
+        )
+        if desc_row is None:
+            continue
+        header, descs = grid[desc_row - 1], grid[desc_row]
+
+        # Sheets carry per-field prose in two different rows -- one labelled
+        # "Description" and, further down, one labelled "Comments". Which is
+        # filled in varies: Waiting List Schedules leaves Description blank for
+        # every column but one and puts the real text in the Comments row.
+        # Only rows *below* Description are considered, since the header row
+        # itself is also labelled Comments (it's the template's first column).
+        fallback = next(
+            (grid[i] for i in range(desc_row + 1, len(grid))
+             if re.match(r"comments?$", (grid[i].get(0) or "").strip(), re.I)),
+            {},
+        )
+
+        fields = {}
+        for col, name in header.items():
+            if col == 0:
+                continue
+            text = (descs.get(col) or "").strip() or (fallback.get(col) or "").strip()
+            if text:
+                fields[_norm(name)] = text
+        if fields:
+            out[sh.get("name")] = fields
+    return out
+
+
+def attach_descriptions(rows, dictionary):
+    """Fill empty `note` fields from the dictionary, matching sheets by field
+    overlap rather than by name -- the dictionary calls them `Notes`,
+    `Congregate`, `Membership Schedules` where the templates say `Client Notes`,
+    `Congregate Meal Schedule`, `Membership Details`. Overlap is self-checking in
+    a way a hand-written alias table is not."""
+    by_sheet = collections.OrderedDict()
+    for r in rows:
+        by_sheet.setdefault(r["sheet"], []).append(r)
+    sheet_fields = {s: {_norm(r["field"]) for r in rs} for s, rs in by_sheet.items()}
+
+    # Scored per *template* sheet -- how much of it the dictionary sheet covers
+    # -- not the other way round. The dictionary keeps one `Volunteer` sheet
+    # spanning what the templates split into Volunteer Intake and Volunteer
+    # Schedule, so scoring by the dictionary's own field list left both
+    # unmatched. This direction lets one dictionary sheet serve several template
+    # sheets, which is what the sources actually look like.
+    pairings = {}
+    used = set()
+    for sheet, fields in sheet_fields.items():
+        if not fields:
+            continue
+        scored = sorted(
+            ((len(fields & set(dv)) / float(len(fields)), len(fields & set(dv)), dn)
+             for dn, dv in dictionary.items()),
+            reverse=True,
+        )
+        if not scored:
+            continue
+        score, common, best = scored[0]
+        runner_up = scored[1][0] if len(scored) > 1 else 0.0
+
+        # Three conditions, each blocking a failure seen in the real data:
+        #   common >= 3   -- else a 3-column sheet pairs off ClientImportId and
+        #                    the scratch column alone (Health Conditions did).
+        #   ratio >= 0.4  -- the dictionary keeps one Volunteer sheet covering
+        #                    what the templates split in two, so it legitimately
+        #                    covers only about half of each.
+        #   strictly best -- a tie means the evidence doesn't name a winner.
+        if common >= 3 and score >= 0.4 and score > runner_up:
+            pairings[sheet] = (best, score)
+            used.add(best)
+
+    unmatched = [
+        {"sheet": d, "best": None, "overlap": 0.0}
+        for d in dictionary if d not in used
+    ]
+
+    applied = skipped = 0
+    for sheet, (dsheet, _score) in pairings.items():
+        dfields = dictionary[dsheet]
+        for r in by_sheet[sheet]:
+            text = dfields.get(_norm(r["field"]))
+            if not text:
+                continue
+            if r.get("note"):
+                skipped += 1          # link key, merge-only and scratch notes win
+                continue
+            r["note"] = text
+            r["noteSource"] = "data dictionary"
+            applied += 1
+    return {"pairings": pairings, "unmatched": unmatched,
+            "applied": applied, "skipped": skipped}
 
 
 # --------------------------------------------------------------------------
@@ -822,7 +979,7 @@ def sha256(path):
 
 
 def write_report(path, rows, orphans, templates, renames, conflicts, unparsed, checks, sources,
-                 length_conflicts, excluded, notes_with_rules, notes_misplaced):
+                 length_conflicts, excluded, notes_with_rules, notes_misplaced, dict_result):
     link_key_sheets = [s for s, i in templates.items() if any(
         re.sub(r"[^a-z0-9]", "", c.lower()) == "clientimportid" for c in i["columns"])]
     unvalidated = [r for r in rows if not r["validated"]]
@@ -931,6 +1088,37 @@ def write_report(path, rows, orphans, templates, renames, conflicts, unparsed, c
     else:
         L.append("_None — sheets duplicated across workbooks are structurally identical._")
     L.append("")
+
+    L.append("### Field descriptions from the data dictionary\n")
+    if dict_result:
+        L.append("Descriptions only. Rules are never taken from the dictionary — it also states a")
+        L.append("Required Y/N per field and disagrees with the validation script on several, so")
+        L.append("treating it as a rule source would mean silently picking a winner. A description")
+        L.append("is applied only where the field has no note already, so the link-key,")
+        L.append("merge-only and scratch-column notes are never overwritten.\n")
+        L.append("- **%d** fields given a description (%d skipped — already had a note)."
+                 % (dict_result["applied"], dict_result["skipped"]))
+        L.append("- **%d of %d** dictionary sheets matched, by field-name overlap rather than by "
+                 "sheet name (the dictionary says `Notes`, `Congregate`, `Membership Schedules` "
+                 "where the templates say `Client Notes`, `Congregate Meal Schedule`, "
+                 "`Membership Details`)."
+                 % (len(dict_result["pairings"]),
+                    len(dict_result["pairings"]) + len(dict_result["unmatched"])))
+        L.append("")
+        if dict_result["unmatched"]:
+            L.append("Dictionary sheets with no confident template match. Their descriptions were")
+            L.append("**not** used — a sheet the templates no longer carry should stay unmatched")
+            L.append("rather than attach itself to whatever looked closest.\n")
+            L.append("| Dictionary sheet | Closest template sheet | Field overlap |")
+            L.append("|---|---|---|")
+            for umatch in dict_result["unmatched"]:
+                L.append("| `%s` | %s | %.0f%% |" % (
+                    umatch["sheet"],
+                    "`%s`" % umatch["best"] if umatch["best"] else "—",
+                    umatch["overlap"] * 100))
+            L.append("")
+    else:
+        L.append("_Not used._\n")
 
     L.append("### Scratch-column convention\n")
     L.append("`Comments` (plural) is scratch space for whoever fills the sheet in and is never")
@@ -1070,6 +1258,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[1])
     ap.add_argument("--templates", default=DEFAULT_TEMPLATES)
     ap.add_argument("--validation", default=DEFAULT_VALIDATION)
+    ap.add_argument("--data-dictionary", default=DEFAULT_DICTIONARY,
+                    help="Field descriptions only; rules always come from the validation script.")
+    ap.add_argument("--no-data-dictionary", action="store_true")
     ap.add_argument("--out", default=OUT_SCHEMA)
     ap.add_argument("--report", default=OUT_REPORT)
     args = ap.parse_args()
@@ -1086,20 +1277,31 @@ def main():
     checks, unparsed = parse_checks(sql)
     rows, orphans, _, length_conflicts, notes_with_rules, notes_misplaced = merge(templates, renames, checks)
 
+    dict_result = None
+    if not args.no_data_dictionary and os.path.exists(args.data_dictionary):
+        dict_result = attach_descriptions(rows, read_dictionary(args.data_dictionary))
+
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(rows, f, indent=2, ensure_ascii=False)
         f.write("\n")
 
     write_report(
         args.report, rows, orphans, templates, renames, conflicts, unparsed, checks,
-        [("Templates", args.templates), ("Validation script", args.validation)],
-        length_conflicts, excluded, notes_with_rules, notes_misplaced,
+        ([("Templates", args.templates), ("Validation script", args.validation)]
+         + ([("Data dictionary (descriptions only)", args.data_dictionary)] if dict_result else [])),
+        length_conflicts, excluded, notes_with_rules, notes_misplaced, dict_result,
     )
 
     print("Templates: %d workbooks, %d sheets" % (len(files), len(templates)))
     print("Checks parsed: %d (unreadable: %d)" % (len(checks), len(unparsed)))
     print("Fields: %d (%d with rules, %d without)" % (
         len(rows), sum(1 for r in rows if r["validated"]), sum(1 for r in rows if not r["validated"])))
+    if dict_result:
+        print("Descriptions from data dictionary: %d applied, %d skipped (field already had a note)"
+              % (dict_result["applied"], dict_result["skipped"]))
+        if dict_result["unmatched"]:
+            print("  dictionary sheets not matched to a template sheet: %d"
+                  % len(dict_result["unmatched"]))
     print("Orphan rules (no template column): %d" % len(orphans))
     print("Wrote %s" % os.path.relpath(args.out, REPO_ROOT))
     print("Wrote %s" % os.path.relpath(args.report, REPO_ROOT))

@@ -68,6 +68,8 @@ verified by its owner, so changing its contents is their call, not this tool's.
 | `validated` | bool | ServTracker: whether any validation rule was found. `false` means no rule was found, **not** that the field is unconstrained. |
 | `ruleSourceTable` | string | ServTracker: rules came from a differently-named import table (dual `sp_rename`). |
 | `maxLengthConflict` | int[] | The script states two different max lengths; the stricter one is in `type`. Needs adjudication. |
+| `noteSource` | string | Where `note` came from when it wasn't authored here — `"data dictionary"` for ServTracker field descriptions. Absent for the built-in link-key, merge-only and scratch-column notes, which always take precedence. |
+| `notesColumn` / `notMigrated` | bool | ServTracker: the template's `Comments` scratch column. Kept for display, excluded as a mapping destination. |
 | `linkKey` | bool | ServTracker: this is `ClientImportId`, the key the import uses to link a client across every sheet. Present on 32 of 35 sheets. **Not a name collision to suppress** — the UI should teach customers to use one consistent value per client. |
 | `mergeOnly` | bool | ServTracker: `ServTrackerClientId` — only needed when updating clients who already exist in the database, blank for new clients. |
 
