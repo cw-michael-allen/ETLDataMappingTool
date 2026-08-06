@@ -17,8 +17,14 @@ API_URL = os.environ.get("ANTHROPIC_API_URL", "https://api.anthropic.com/v1/mess
 MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5")
 ANTHROPIC_VERSION = "2023-06-01"
 
-SYSTEM_PROMPT = """You are helping a CaseWorthy data migration specialist map a customer's \
-source system field to CaseWorthy's target ETL schema. You will be given a source field \
+DEFAULT_TARGET_LABEL = "CaseWorthy"
+
+# The target application is a parameter, not a constant: CaseWorthy and
+# ServTracker are separate products with separate schemas, and telling the model
+# it's mapping to CaseWorthy while handing it ServTracker candidates is simply
+# wrong -- it invites the model to reason from the wrong product's conventions.
+SYSTEM_PROMPT_TEMPLATE = """You are helping a CaseWorthy data migration specialist map a \
+customer's source system field to {target}'s target ETL schema. You will be given a source field \
 name/description and a list of valid target candidates. Respond with ONLY valid JSON, no \
 markdown fences, no preamble, in this exact shape:
 {"table": "<candidate table or null>", "field": "<candidate field or null>", "confidence": \
@@ -40,10 +46,12 @@ def _no_key_response():
     }
 
 
-def suggest_mapping(source_system, field_name, desc, candidates):
+def suggest_mapping(source_system, field_name, desc, candidates, target_label=DEFAULT_TARGET_LABEL):
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         return _no_key_response()
+
+    system_prompt = SYSTEM_PROMPT_TEMPLATE.format(target=target_label or DEFAULT_TARGET_LABEL)
 
     user_msg = json.dumps(
         {
@@ -56,7 +64,7 @@ def suggest_mapping(source_system, field_name, desc, candidates):
     payload = {
         "model": MODEL,
         "max_tokens": 1000,
-        "system": SYSTEM_PROMPT,
+        "system": system_prompt,
         "messages": [{"role": "user", "content": user_msg}],
     }
     req = urllib.request.Request(

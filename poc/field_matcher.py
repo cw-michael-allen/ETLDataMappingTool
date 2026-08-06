@@ -30,6 +30,15 @@ ALIASES = {
     "address2": {"addr2", "aptsuite", "unit", "apartment"},
     "gender": {"sex"},
     "clientid": {"clientno", "clientnum", "clientnumber", "recipientid"},
+    # ServTracker's client key. Customers almost never call their column
+    # "ClientImportId" -- they bring ClientID/ClientNo/MemberID -- and without
+    # this a source field named `Client_ID` matched ServTrackerClientId instead,
+    # which is only for updating clients that already exist. Harmless for
+    # CaseWorthy: it has a literal ClientID field, so an exact match wins there.
+    "clientimportid": {
+        "clientid", "clientno", "clientnum", "clientnumber", "recipientid",
+        "uniqueid", "uniqueclientid", "participantid", "consumerid",
+    },
     "enrollmentid": {"enrollid", "enrollno"},
     "programid": {"progid", "progno"},
     "providerid": {"provid", "provno", "agencyid"},
@@ -102,6 +111,11 @@ def match(field_name, schema):
     like llm_gateway.suggest_mapping's return value, plus "source": "rule"."""
     scored = []
     for row in schema:
+        # Never suggest a column that isn't migrated. ServTracker's `Comments`
+        # columns are scratch space for whoever fills the template in; routing a
+        # customer's real data there would silently drop it on import.
+        if row.get("notMigrated"):
+            continue
         score, reason = _name_score(field_name, row["field"])
         if score >= 0.55:
             scored.append((score, reason, row))
@@ -125,22 +139,44 @@ def match(field_name, schema):
     if preferred:
         top_row = preferred
 
+    # A link key deliberately appears on every sheet -- that's its whole job, so
+    # it is not an ambiguity to warn about. Treating it as one downgraded
+    # ServTracker's ClientImportId to "medium" and appended a list of 31 other
+    # sheets, which is both wrong and unreadable. Say what it's for instead.
+    is_link_key = bool(top_row.get("linkKey"))
+
     if top_score >= 0.9:
-        confidence = "high" if len(tied_tables) == 1 else "medium"
+        confidence = "high" if (len(tied_tables) == 1 or is_link_key) else "medium"
     elif top_score >= 0.75:
         confidence = "medium"
     else:
         confidence = "low"
 
-    reasoning = top_reason or f"Field name closely resembles {top_row['table']}.{top_row['field']}."
-    others = [t for t in tied_tables if t != top_row["table"]]
-    if others:
-        reasoning += f" Note: {top_row['field']} also exists on {', '.join(others)} — verify the right table."
+    def label(row):
+        return row.get("sheet") or row["table"]
+
+    reasoning = top_reason or f"Field name closely resembles {label(top_row)}.{top_row['field']}."
+
+    if is_link_key:
+        reasoning += (
+            f" {top_row['field']} is the key the import uses to link a client across every "
+            f"sheet — use the same value for the same client everywhere."
+        )
+    else:
+        others = [t for t in tied_tables if t != top_row["table"]]
+        if others:
+            shown = ", ".join(others[:4])
+            more = f" and {len(others) - 4} more" if len(others) > 4 else ""
+            reasoning += (
+                f" Note: {top_row['field']} also exists on {shown}{more} — verify the right one."
+            )
 
     return {
         "table": top_row["table"],
         "field": top_row["field"],
+        "sheet": top_row.get("sheet"),
         "confidence": confidence,
         "reasoning": reasoning,
         "source": "rule",
+        "linkKey": is_link_key,
     }

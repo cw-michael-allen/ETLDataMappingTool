@@ -22,18 +22,149 @@ REFERENCE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "
 # yet. We do not fabricate ServTracker rules; None means "not yet available."
 TARGET_DATABASES = {
     "CaseWorthy": os.path.join(REFERENCE_DIR, "target_schema_full.json"),
-    "ServTracker": None,
+    "ServTracker": os.path.join(REFERENCE_DIR, "servtracker_schema_full.json"),
 }
 
 DEFAULT_TARGET_DATABASE = "CaseWorthy"
 
+# Per-target-database presentation and scoping metadata, served to the UI so the
+# frontend stops hardcoding which databases exist and which are usable.
+#
+# `modules` is the important difference between the two. CaseWorthy is a single
+# staging workbook: every customer gets the same 28 tables, so there is nothing
+# to scope and its flow must stay exactly as it was. ServTracker ships as
+# separate program-area workbooks and a customer migrates only the ones they run
+# -- without scoping, a source field named `Site` or `StartDate` ties across a
+# dozen sheets and no suggestion can reach high confidence.
+#
+# `baseModules` are always included regardless of what the customer picks: every
+# ServTracker sheet keys off ClientImportId from the client sheet, so the client
+# module is a base requirement, not an option (confirmed by Alex Button,
+# 2026-08-05).
+TARGET_DB_META = {
+    "CaseWorthy": {
+        "label": "CaseWorthy",
+        "logo": "/assets/logos/caseworthy-corporate.png",
+        "modules": False,
+        "baseModules": [],
+        "unitNoun": "table",
+    },
+    "ServTracker": {
+        "label": "ServTracker",
+        "logo": "/assets/logos/servtracker.png",
+        "modules": True,
+        "baseModules": ["Client Master with Demographics"],
+        "unitNoun": "sheet",
+    },
+}
+
+
+def db_meta(target_database):
+    return TARGET_DB_META.get(target_database, TARGET_DB_META[DEFAULT_TARGET_DATABASE])
+
+
+def list_modules(target_database, schema=None):
+    """Modules available for a target database, derived from the schema itself.
+
+    Returns [] for a database that isn't module-scoped, which is what tells the
+    UI not to render a module picker at all.
+    """
+    meta = db_meta(target_database)
+    if not meta.get("modules"):
+        return []
+    rows = schema if schema is not None else load_schema(target_database)
+    base = set(meta.get("baseModules") or [])
+    grouped = {}
+    for row in rows:
+        for module in row.get("modules") or []:
+            entry = grouped.setdefault(
+                module, {"name": module, "sheets": set(), "fieldCount": 0, "required": module in base}
+            )
+            entry["sheets"].add(row.get("sheet") or row.get("table"))
+            entry["fieldCount"] += 1
+    out = []
+    for entry in grouped.values():
+        entry["sheets"] = sorted(entry["sheets"])
+        out.append(entry)
+    # Base modules first, then alphabetical -- the picker should lead with what
+    # the customer can't opt out of.
+    return sorted(out, key=lambda e: (not e["required"], e["name"]))
+
+
+def scope_schema(schema, target_database, modules):
+    """Narrow a schema to the selected modules, plus any base modules.
+
+    A database without modules, or a request that names none, is returned
+    untouched -- CaseWorthy must behave exactly as it did before scoping existed.
+    """
+    meta = db_meta(target_database)
+    if not meta.get("modules") or not modules:
+        return schema
+    keep = set(modules) | set(meta.get("baseModules") or [])
+    return [r for r in schema if not r.get("modules") or (set(r["modules"]) & keep)]
+
+# The `type` string is a contract: the format checks below regex-match it and an
+# unrecognised value doesn't error, it just skips every check -- which the UI
+# then renders as "no rule violations detected", indistinguishable from a clean
+# result. These are the forms that actually drive a check or are knowingly
+# informational. See reference/SCHEMA_FORMAT.md.
+KNOWN_TYPE_PATTERNS = (
+    r"^Text$",
+    r"^Text \(max \d+\)$",
+    r"^List$",
+    r"^Boolean",
+    r"^Date$",
+    r"^Time$",
+    r"^Numeric$",
+    r"^Integer$",
+    r"^Decimal$",
+    r"^Float$",
+    r"^Unique ID",
+    r"^ID$",
+    r"^FK → .+$",
+    r"^Self-reference to .+$",
+)
+
+# Type strings that only *look* like a checked form. Called out separately
+# because they read as though a constraint is enforced when none is: e.g.
+# "Text (10 digits)" is not "Text (max 10)", so no length check runs on it.
+_MISLEADING_HINT = re.compile(r"\((?:max )?\d+|digits|code|list", re.I)
+
+SCHEMA_WARNINGS = {}
+
+
+def _validate_types(target_database, schema):
+    """Collect fields whose `type` no format check recognises.
+
+    Deliberately does not raise: CaseWorthy's schema is human-signed-off and
+    already contains a handful of these, so failing hard would break a working
+    demo over pre-existing data. It records them instead, and app.py prints
+    them at startup so the gap is visible rather than silent.
+    """
+    unknown = []
+    for row in schema:
+        t = (row.get("type") or "").strip()
+        if not any(re.match(p, t) for p in KNOWN_TYPE_PATTERNS):
+            unknown.append(
+                {
+                    "table": row.get("table"),
+                    "field": row.get("field"),
+                    "type": t,
+                    "misleading": bool(_MISLEADING_HINT.search(t)),
+                }
+            )
+    SCHEMA_WARNINGS[target_database] = unknown
+    return unknown
+
 
 def load_schema(target_database=DEFAULT_TARGET_DATABASE):
     path = TARGET_DATABASES.get(target_database)
-    if not path:
+    if not path or not os.path.exists(path):
         return []
     with open(path, encoding="utf-8") as f:
-        return json.load(f)
+        schema = json.load(f)
+    _validate_types(target_database, schema)
+    return schema
 
 
 def schema_by_table(schema):
@@ -67,20 +198,41 @@ def parse_decode(decode_str):
 
 def _decode_mismatch(meta, desc):
     """Target is a List with known decode values; flag if the customer's own
-    note names specific codes/labels that don't appear in that decode set."""
-    if meta.get("type") != "List" or not meta.get("decode") or not desc:
-        return None
-    pairs = parse_decode(meta["decode"])
-    if not pairs:
-        return None
-    codes = {k for k, _ in pairs}
-    labels = {v.lower() for _, v in pairs}
+    note names specific codes/labels that don't appear in that decode set.
 
+    Two decode styles exist. CaseWorthy encodes code/label pairs
+    ("1=Self, 2=Spouse"); ServTracker validates against bare labels
+    ("Monthly", "One-Time"). `decodeValues` is the machine-readable list both
+    styles populate -- without it the pair parser finds no codes in a
+    ServTracker decode and this check quietly does nothing.
+    """
+    if meta.get("type") != "List" or not desc:
+        return None
+
+    values = meta.get("decodeValues")
+    if values:
+        codes = {v for v in values if v.isdigit()}
+        labels = {v.lower() for v in values if not v.isdigit()}
+        shown = meta.get("decode") or ", ".join(values)
+    else:
+        if not meta.get("decode"):
+            return None
+        pairs = parse_decode(meta["decode"])
+        if not pairs:
+            return None
+        codes = {k for k, _ in pairs}
+        labels = {v.lower() for _, v in pairs}
+        shown = meta["decode"]
+
+    # Only meaningful when the target actually uses numeric codes. For a
+    # label-style list (ServTracker's "Monthly"/"One-Time") a number in the
+    # customer's note is not evidence of a mismatch -- treating it as such
+    # would fire on every List field whose note happens to contain a digit.
     nums = re.findall(r"\d+", desc)
-    if nums and not any(n in codes for n in nums):
+    if codes and nums and not any(n in codes for n in nums):
         return (
             f"Your note mentions {', '.join(nums)}, but {meta['table']}.{meta['field']} "
-            f"expects: {meta['decode']}"
+            f"expects: {shown}"
         )
 
     # No numbers named — check whether the note looks like it's enumerating
@@ -91,7 +243,7 @@ def _decode_mismatch(meta, desc):
         if words and not (words & labels) and not any(w in lbl or lbl in w for w in words for lbl in labels):
             return (
                 f"Your note ('{desc}') doesn't obviously match any of {meta['table']}.{meta['field']}'s "
-                f"expected values: {meta['decode']}"
+                f"expected values: {shown}"
             )
     return None
 
