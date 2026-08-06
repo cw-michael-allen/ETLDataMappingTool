@@ -283,7 +283,7 @@ class Handler(BaseHTTPRequestHandler):
         # first: it's free, instant, and doesn't need an API key. A high-
         # confidence rule match is used outright; anything softer still gets
         # a second opinion from the LLM (if configured) before deciding.
-        rule_sug = field_matcher.match(field_name, schema)
+        rule_sug = field_matcher.match(field_name, schema, desc)
 
         if rule_sug and rule_sug["confidence"] == "high":
             sug = rule_sug
@@ -335,6 +335,10 @@ def main():
     print(f"CW-ETL-FIELDMAP POC running at http://{display_host}:{port}")
     if host == "0.0.0.0":
         print("WARNING: bound to 0.0.0.0 — reachable by anyone on your network. There is no auth on this POC (by design, see docs/PHASE_PLAN.md) — anyone who can reach it can view and edit the shared mapping library.")
+    if os.environ.get("CW_ETL_DB_PATH"):
+        print(f"Learned-mapping library: SHARED at {db.DB_PATH}")
+    else:
+        print(f"Learned-mapping library: local only at {db.DB_PATH} (set CW_ETL_DB_PATH to share it across machines — see poc/README.md, 'Shared learned-mappings library')")
     if not os.environ.get("ANTHROPIC_API_KEY"):
         print("WARNING: ANTHROPIC_API_KEY not set — suggestions will come back as 'no confident match'.")
 

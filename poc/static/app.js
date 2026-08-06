@@ -286,7 +286,17 @@ async function renderStep1() {
   `;
   refreshLibStat();
 
+  // Every handler below re-renders Step 1 from `state`, which throws away
+  // whatever's currently typed in #src-sys unless it's captured first --
+  // this used to silently wipe the source system name on any toggle/select
+  // change made after typing it in.
+  function syncSourceSystem() {
+    const el = document.getElementById("src-sys");
+    if (el) state.sourceSystem = el.value;
+  }
+
   document.getElementById("target-db").onchange = (e) => {
+    syncSourceSystem();
     state.targetDatabase = e.target.value;
     // Module selections belong to a database; carrying them across would scope
     // the new one by names it doesn't have. Clearing modulesInitializedFor
@@ -299,6 +309,7 @@ async function renderStep1() {
   };
   document.querySelectorAll(".module-cb").forEach(cb => {
     cb.onchange = () => {
+      syncSourceSystem();
       const picked = [...document.querySelectorAll(".module-cb")]
         .filter(c => c.checked && !c.disabled)
         .map(c => c.value);
@@ -309,17 +320,20 @@ async function renderStep1() {
   });
   const selectAllBtn = document.getElementById("modules-select-all");
   if (selectAllBtn) selectAllBtn.onclick = () => {
+    syncSourceSystem();
     state.modules = (meta.modules || []).map(m => m.name).filter(n => !(meta.baseModules || []).includes(n));
     state.schemaKey = null;
     renderStep1();
   };
   const selectNoneBtn = document.getElementById("modules-select-none");
   if (selectNoneBtn) selectNoneBtn.onclick = () => {
+    syncSourceSystem();
     state.modules = [];
     state.schemaKey = null;
     renderStep1();
   };
   document.getElementById("advanced-toggle").onchange = (e) => {
+    syncSourceSystem();
     state.advancedMode = e.target.checked;
     renderStep1();
   };

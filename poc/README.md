@@ -14,6 +14,8 @@ Then open http://127.0.0.1:8000 in a browser, or double-click `start.bat` (see b
 Optional env vars:
 - `PORT` — defaults to 8000.
 - `ANTHROPIC_MODEL` — defaults to `claude-sonnet-5`.
+- `CW_ETL_DB_PATH` — points the learned-mappings SQLite file at a shared location instead of the
+  local `data/` folder; see "Shared learned-mappings library" below.
 
 ## Python version compatibility
 
@@ -37,7 +39,8 @@ Practical floor: any Python 3.x anyone would realistically still have installed 
 - `static/` — the frontend (vanilla HTML/CSS/JS), same 4-step interview flow as the original artifact POC (source system → fields → suggestions → summary), now calling this backend instead of `window.storage` / the Anthropic API directly from the browser. Step 1 now also asks which **Target Database** to map against, and has an **Advanced options** toggle (see below).
 - `static/assets/logos/` — CaseWorthy and ServTracker logos (originally bundled from the `caseworthy-brand-visual-identity` skill's snapshot, reprocessed into real transparent PNGs — see Branding below; see the skill for canonical/print versions), swapped in the header based on the selected target database.
 - `start.bat` / `stop.bat` — double-clickable launcher (starts the server + opens it in a Chrome app window for demos) and a matching stop script.
-- `data/mappings.db` — created on first run, gitignored.
+- `data/mappings.db` — created on first run, gitignored. Local by default; see "Shared
+  learned-mappings library" below to point it at a shared location instead.
 
 ## Target database (CaseWorthy / ServTracker)
 
@@ -70,6 +73,46 @@ Display convention: ServTracker schema rows carry both a `sheet` (what the custo
 ## Learned-mappings counter
 
 Moved from a prominent box next to the H1 to a small line at the very bottom of the footer, on every step (`renderFooter()` in `static/app.js`) — still visible, deliberately not competing with the header for attention. Same live-updating element (`#lib-stat`, refreshed by `refreshLibStat()`), just relocated and shrunk (13px/10px vs. the original 26px/11px).
+
+## Shared learned-mappings library
+
+By default `data/mappings.db` (`db.py`'s confirmed-mappings and cross-system field-index tables)
+is local to whoever's running the app — gitignored, starts empty on a fresh checkout, and never
+leaves that machine. Set `CW_ETL_DB_PATH` to a file path before running `python app.py` and every
+confirmed mapping, on any machine pointed at that same path, accumulates in one shared library
+instead — the whole point of "learning mappings over time" per the project's own description,
+not just within one consultant's session.
+
+**The shared location for this:** the CaseWorthy Collaboration SharePoint folder —
+https://caseworthyinc.sharepoint.com/:f:/s/CWCollaboration/IgCw4PgzxHzASIxq7JGqWQTtAZm6U86ExovJ8aSvWb-E6As?e=OfLMLF
+— synced locally via OneDrive ("Add shortcut to OneDrive" on that folder, or open it in the
+OneDrive app). Once it's synced, find its local path in File Explorer (typically something like
+`C:\Users\<you>\CaseWorthy Inc\CWCollaboration - <folder name>\`) and point the app at a
+`mappings.db` file inside it:
+
+```
+set CW_ETL_DB_PATH=C:\Users\<you>\CaseWorthy Inc\CWCollaboration - <folder name>\mappings.db
+python app.py
+```
+(PowerShell: `$env:CW_ETL_DB_PATH="C:\Users\<you>\...\mappings.db"`)
+
+The app prints which mode it's in at startup (`Learned-mapping library: SHARED at ...` vs.
+`local only at ...`), so it's never silently ambiguous which library a given run is actually
+using.
+
+**Known limitation — OneDrive/SharePoint sync is not shared-network file locking.** Each
+consultant's copy is a local file that syncs to the cloud after the fact, not a single file
+multiple processes lock and share live (the way a real network share or a proper client-server
+database would). If two people confirm a mapping within the same sync window, OneDrive resolves
+that as a conflict by creating a separate `<name>'s conflicted copy <date>.db` file rather than
+merging the two — silently forking the library rather than erroring loudly. For how this tool is
+actually used (a handful of consultants, sequentially, not high-frequency concurrent writes) that
+risk is low, but it isn't zero: if a conflicted-copy file ever shows up next to `mappings.db`,
+that's the signal a collision happened, and there's no automatic merge in Phase 0 — someone has
+to look at both and decide (or ask whoever confirmed last) which one to keep going forward.
+
+Not setting `CW_ETL_DB_PATH` keeps today's behavior exactly as-is — a private local library, no
+sharing, no risk of the above.
 
 ## Advanced mode (SQL export)
 

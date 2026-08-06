@@ -74,12 +74,28 @@ code path; don't special-case one database in the frontend when a `TARGET_DB_MET
    target database (`db.py`'s tables have a `target_db` column specifically so CaseWorthy and
    ServTracker mappings never collide).
 2. `field_matcher.match` — rule-based, deterministic, no network call. Exact name match → alias
-   table (common ETL abbreviations) → exact substring/token match → generic similarity. A
+   table (common ETL abbreviations) → exact substring/token match → generic similarity, all
+   against the source **field name**. Only when the name alone matches nothing does the
+   customer's typed **description** get a turn, as a separate, deliberately conservative fallback
+   pass (exact token/alias hits, no fuzzy ratio) — this is what resolves a cryptically-named field
+   ("F23") when its description says "date of birth." Description-only matches are always
+   `source: "rule-desc"` and capped at `low` confidence, and the description is also used to break
+   an otherwise-tied same-named-on-multiple-tables match (e.g. "notes about the provider" prefers
+   `Provider.Notes` over `Client.Notes`) — never to raise confidence past what the name earned. A
    `high`-confidence rule match short-circuits the LLM entirely.
 3. `llm_gateway.suggest_mapping` — only reached when the rule matcher isn't confident. Takes the
    target application's label as a parameter (never hardcode which application it's mapping to
    in the prompt — that was a real bug, fixed, see git history).
 4. `db.get_field_index` — cross-source-system boosting ("also mapped this way N times").
+
+**`db.py`'s learned-mapping library is local-per-machine by default** (`data/mappings.db`,
+gitignored) but can be pointed at a shared file via the `CW_ETL_DB_PATH` env var — e.g. a
+OneDrive-synced SharePoint folder — so confirmed mappings and the cross-system field index
+accumulate across everyone running the tool instead of resetting per machine. See
+`poc/README.md`'s "Shared learned-mappings library" for the setup and its one real caveat:
+OneDrive/SharePoint sync isn't true shared-network file locking, so two people confirming a
+mapping in the same sync window can produce a conflicted-copy file instead of a clean merge —
+low risk for how this tool is actually used (sequential, occasional), not zero.
 
 **`file_import.py`** (Step 2 "Import fields") lets a customer upload a `.csv`/`.xlsx` export
 instead of typing each field in by hand. It only ever reads the **header row** — never the data

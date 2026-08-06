@@ -3,7 +3,14 @@ import os
 import re
 import sqlite3
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "mappings.db")
+# Local by default (gitignored, per-machine). Set CW_ETL_DB_PATH to point this
+# at a synced shared folder instead (e.g. a OneDrive-synced SharePoint library)
+# so every consultant's confirmed mappings and field index accumulate in one
+# place rather than starting over on each machine -- see poc/README.md,
+# "Shared learned-mappings library".
+DB_PATH = os.environ.get("CW_ETL_DB_PATH") or os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "data", "mappings.db"
+)
 
 DEFAULT_TARGET_DATABASE = "CaseWorthy"
 

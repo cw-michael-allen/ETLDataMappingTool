@@ -105,23 +105,12 @@ def _name_score(field_name, candidate_field):
     return ratio, None
 
 
-def match(field_name, schema):
-    """Score field_name against every candidate field in the schema.
-    Returns None if nothing scores decently, else a suggestion dict shaped
-    like llm_gateway.suggest_mapping's return value, plus "source": "rule"."""
-    scored = []
-    for row in schema:
-        # Never suggest a column that isn't migrated. ServTracker's `Comments`
-        # columns are scratch space for whoever fills the template in; routing a
-        # customer's real data there would silently drop it on import.
-        if row.get("notMigrated"):
-            continue
-        score, reason = _name_score(field_name, row["field"])
-        if score >= 0.55:
-            scored.append((score, reason, row))
-    if not scored:
-        return None
-
+def _build_suggestion(scored, field_name, desc_tokens, name_based):
+    """Shared tail for both the name-based and description-based passes below:
+    picks the top scorer, breaks table ties, and assembles the reasoning text.
+    `name_based` controls the confidence ceiling and the ambiguity note --
+    a description-only match never outranks a real name match, since the
+    field's own name gave no corroborating signal at all."""
     scored.sort(key=lambda t: t[0], reverse=True)
     top_score, top_reason, top_row = scored[0]
 
@@ -133,9 +122,19 @@ def match(field_name, schema):
 
     # If the source name itself names one of the tied tables (e.g.
     # "Enrollment_Begin_Date" vs. BeginDate on Program/Enrollment/...),
-    # prefer that one instead of whichever happened to sort first.
+    # prefer that one instead of whichever happened to sort first. Falling
+    # back to the description lets a table mentioned in the customer's own
+    # notes break the same kind of tie when the field name doesn't.
     source_tokens = set(_tokens(field_name))
     preferred = next((r for r in tied if normalize(r["table"]) in source_tokens), None)
+    table_confirmed_by_desc = False
+    if not preferred and desc_tokens and len(tied_tables) > 1:
+        preferred = next(
+            (r for r in tied if normalize(r["table"]) in desc_tokens
+             or (r.get("sheet") and normalize(r["sheet"]) in desc_tokens)),
+            None,
+        )
+        table_confirmed_by_desc = preferred is not None
     if preferred:
         top_row = preferred
 
@@ -145,10 +144,13 @@ def match(field_name, schema):
     # sheets, which is both wrong and unreadable. Say what it's for instead.
     is_link_key = bool(top_row.get("linkKey"))
 
-    if top_score >= 0.9:
-        confidence = "high" if (len(tied_tables) == 1 or is_link_key) else "medium"
-    elif top_score >= 0.75:
-        confidence = "medium"
+    if name_based:
+        if top_score >= 0.9:
+            confidence = "high" if (len(tied_tables) == 1 or is_link_key) else "medium"
+        elif top_score >= 0.75:
+            confidence = "medium"
+        else:
+            confidence = "low"
     else:
         confidence = "low"
 
@@ -156,6 +158,8 @@ def match(field_name, schema):
         return row.get("sheet") or row["table"]
 
     reasoning = top_reason or f"Field name closely resembles {label(top_row)}.{top_row['field']}."
+    if table_confirmed_by_desc:
+        reasoning += f" The field's description names {label(top_row)}, which is why that table was chosen over the others."
 
     if is_link_key:
         reasoning += (
@@ -177,6 +181,54 @@ def match(field_name, schema):
         "sheet": top_row.get("sheet"),
         "confidence": confidence,
         "reasoning": reasoning,
-        "source": "rule",
+        "source": "rule" if name_based else "rule-desc",
         "linkKey": is_link_key,
     }
+
+
+def match(field_name, schema, desc=None):
+    """Score field_name against every candidate field in the schema.
+    Returns None if nothing scores decently, else a suggestion dict shaped
+    like llm_gateway.suggest_mapping's return value, plus "source": "rule"
+    (or "rule-desc" when the match came from `desc`, not the field name).
+
+    `desc` is the customer's own short free-text note ("MM/DD/YYYY",
+    "client's SSN"). The field name is tried first, exactly as before; only
+    when that finds nothing does the description get a turn -- deliberately
+    conservative (exact token/alias hits over a contiguous run of description
+    words, no fuzzy ratio) since loosely-worded free text is much easier to
+    false-positive on than a field name.
+    """
+    scored = []
+    for row in schema:
+        # Never suggest a column that isn't migrated. ServTracker's `Comments`
+        # columns are scratch space for whoever fills the template in; routing a
+        # customer's real data there would silently drop it on import.
+        if row.get("notMigrated"):
+            continue
+        score, reason = _name_score(field_name, row["field"])
+        if score >= 0.55:
+            scored.append((score, reason, row))
+
+    desc_token_list = _tokens(desc) if desc else []
+    desc_tokens = set(desc_token_list)
+
+    if scored:
+        return _build_suggestion(scored, field_name, desc_tokens, name_based=True)
+
+    if not desc_token_list:
+        return None
+
+    desc_grams = _contiguous_ngrams(desc_token_list)
+    desc_scored = []
+    for row in schema:
+        if row.get("notMigrated"):
+            continue
+        cand_norm = normalize(row["field"])
+        aliases = ALIASES.get(cand_norm, ())
+        hit = cand_norm in desc_tokens or cand_norm in desc_grams or bool(set(aliases) & (desc_tokens | desc_grams))
+        if hit:
+            desc_scored.append((0.6, f"The field's description mentions '{row['field']}'.", row))
+    if not desc_scored:
+        return None
+    return _build_suggestion(desc_scored, field_name, desc_tokens, name_based=False)
