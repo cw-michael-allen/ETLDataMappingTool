@@ -96,7 +96,9 @@ def describe_target_databases():
 
 
 def get_candidates(target_db, modules=None):
-    schema = scoped_schema(target_db, modules or [])
+    # Same exclusion the rule matcher applies: a column that is never migrated
+    # is not a valid destination, so the LLM must not see it as one either.
+    schema = [r for r in scoped_schema(target_db, modules or []) if not r.get("notMigrated")]
     return [
         {
             "table": f["table"],

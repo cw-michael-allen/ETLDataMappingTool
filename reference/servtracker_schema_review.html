@@ -103,6 +103,8 @@ tbody tr:hover{background:var(--tint)}
 .b-uniq{background:transparent;color:var(--cw-green);border:1px solid var(--cw-green)}
 .b-warn{background:var(--cw-gold);color:#333}
 .b-base{background:var(--cw-blue);color:#fff}
+.b-notes{background:transparent;color:var(--muted);border:1px dashed var(--border)}
+tr.notes-row{opacity:.72}
 
 .foot{text-align:center;font-size:12px;color:var(--muted);margin-top:28px}
 tr.hide,.sheet.hide,.module.hide{display:none}
@@ -118,27 +120,28 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <h1>ServTracker Target Schema</h1>
 <p class="sub">Extracted from <code>1 - Master Validation.sql</code> and the 18 master Excel templates. Every rule below is transcribed from one of those two sources — nothing is inferred. Review and sign off.</p>
 <div class="stats">
-<div class="stat"><div class="n">540</div><div class="l">Fields</div></div>
+<div class="stat"><div class="n">536</div><div class="l">Migratable fields</div></div>
 <div class="stat"><div class="n">35</div><div class="l">Sheets</div></div>
 <div class="stat"><div class="n">118</div><div class="l">Required</div></div>
 <div class="stat"><div class="n">62</div><div class="l">Allowed-value lists</div></div>
 <div class="stat"><div class="n">11</div><div class="l">Lookup-validated</div></div>
-<div class="stat"><div class="n">54</div><div class="l">No rule found</div></div>
+<div class="stat"><div class="n">44</div><div class="l">No rule found</div></div>
+<div class="stat"><div class="n">34</div><div class="l">Scratch columns</div></div>
 </div></header>
 <section class="card callout">
 <h2>What you're signing off on</h2>
 <ul class="check">
-<li><strong>540 fields across 35 sheets</strong> match the columns in the master templates — the templates are the authority on which fields we offer to migrate.</li>
+<li><strong>536 migratable fields across 35 sheets</strong> match the columns in the master templates — the templates are the authority on which fields we offer to migrate.</li>
+<li><strong>34 <code>Comments</code> scratch columns</strong> are shown but marked <span class="badge b-notes">scratch — not migrated</span>. They are free space for whoever fills the template in, and are excluded as mapping destinations so no data can be routed into them. <code>Comment</code> (singular) is the real, validated field.</li>
 <li><strong>All 785 validation checks parsed</strong>, none unreadable. 118 fields are marked required; each was cross-checked against an independent parse with zero contradictions.</li>
 <li><strong>Commented-out SQL was excluded</strong>, so retired blocks like <code>CaseManagersImport</code> contribute no rules.</li>
 <li><strong>Adult DayCare and HDM Meal Choice are excluded</strong> per your call; their modules do not appear anywhere below.</li>
-<li><strong>54 fields have no rule found.</strong> That means no rule was located in the script — <em>not</em> that the field is unconstrained. They're shown as <span class="badge b-unval">no rule found</span>.</li>
+<li><strong>44 fields have no rule found.</strong> That means no rule was located in the script — <em>not</em> that the field is unconstrained. They're shown as <span class="badge b-unval">no rule found</span>.</li>
 </ul>
 <div class="open">
 <h3>Still open in the source script — not schema defects</h3>
 <p>These don't block sign-off on the schema, but each is a real bug in <code>1 - Master Validation.sql</code> worth fixing upstream:</p><ul>
 <li><strong>2 table(s) referenced but never created</strong> (<code>ClientMembershipDetailImport</code>, <code>DestinationsImport</code>) — 21 checks that never run in production.</li>
-<li><strong>2 checks report against the wrong field</strong> — the <code>FieldName</code> label disagrees with the column actually tested, so customers see errors attributed to the wrong column.</li>
 </ul></div>
 </section>
 <section class="card controls">
@@ -153,12 +156,18 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <h2 class="mod-head">
 <span>Client Master with Demographics</span>
 <span class="badge b-base">required base module</span>
-<span class="mod-meta">1 sheet(s) · 57 fields</span>
+<span class="mod-meta">1 sheet(s) · 58 fields</span>
 </h2>
 <div class="sheet">
 <h3>Client Demographics <span class="tbl">→ ClientMasterImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
+<tr data-s="comments client demographics client master with demographics text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
+<td class="req"></td>
+<td><span class="type t-text">Text</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
+</tr>
 <tr data-s="clientimportid client demographics client master with demographics text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span> <span class="badge b-uniq">unique</span></td>
 <td class="req">●</td>
@@ -506,17 +515,17 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <section class="card module" data-module="Case Management">
 <h2 class="mod-head">
 <span>Case Management</span>
-<span class="mod-meta">3 sheet(s) · 55 fields</span>
+<span class="mod-meta">3 sheet(s) · 58 fields</span>
 </h2>
 <div class="sheet">
 <h3>Case Mgmt Intake <span class="tbl">→ CaseMgmtIntakeImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
-<tr data-s="comment case mgmt intake case management text" data-req="0" data-unval="1" data-vals="0" data-flag="0">
-<td class="fname"><code>Comment</code> <span class="badge b-unval">no rule found</span></td>
+<tr data-s="comments case mgmt intake case management text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
 <td class="req"></td>
 <td><span class="type t-text">Text</span></td>
-<td class="detail"><span class=muted>—</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
 </tr>
 <tr data-s="clientimportid case mgmt intake case management text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span></td>
@@ -602,16 +611,22 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <td><span class="type t-text">Text (max 100)</span></td>
 <td class="detail"><span class=muted>—</span></td>
 </tr>
+<tr data-s="comment case mgmt intake case management text (max 250)" data-req="0" data-unval="0" data-vals="0" data-flag="0">
+<td class="fname"><code>Comment</code> </td>
+<td class="req"></td>
+<td><span class="type t-text">Text (max 250)</span></td>
+<td class="detail"><span class=muted>—</span></td>
+</tr>
 </tbody></table></div></div>
 <div class="sheet">
 <h3>Case Mgmt Service Plans <span class="tbl">→ CaseMgmtServicePlanImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
-<tr data-s="comment case mgmt service plans case management text" data-req="0" data-unval="1" data-vals="0" data-flag="0">
-<td class="fname"><code>Comment</code> <span class="badge b-unval">no rule found</span></td>
+<tr data-s="comments case mgmt service plans case management text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
 <td class="req"></td>
 <td><span class="type t-text">Text</span></td>
-<td class="detail"><span class=muted>—</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
 </tr>
 <tr data-s="clientimportid case mgmt service plans case management text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span></td>
@@ -745,11 +760,23 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <td><span class="type t-text">Text</span></td>
 <td class="detail"><span class=muted>—</span></td>
 </tr>
+<tr data-s="comment case mgmt service plans case management text (max 250)" data-req="0" data-unval="0" data-vals="0" data-flag="0">
+<td class="fname"><code>Comment</code> </td>
+<td class="req"></td>
+<td><span class="type t-text">Text (max 250)</span></td>
+<td class="detail"><span class=muted>—</span></td>
+</tr>
 </tbody></table></div></div>
 <div class="sheet">
 <h3>Case Mgmt Case Notes <span class="tbl">→ CaseMgmtCaseNotesImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
+<tr data-s="comments case mgmt case notes case management text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
+<td class="req"></td>
+<td><span class="type t-text">Text</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
+</tr>
 <tr data-s="clientimportid case mgmt case notes case management text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span></td>
 <td class="req">●</td>
@@ -857,12 +884,18 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <section class="card module" data-module="Client Medical - optional">
 <h2 class="mod-head">
 <span>Client Medical - optional</span>
-<span class="mod-meta">3 sheet(s) · 19 fields</span>
+<span class="mod-meta">3 sheet(s) · 22 fields</span>
 </h2>
 <div class="sheet">
 <h3>Client Medical Main <span class="tbl">→ ClientMedicalImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
+<tr data-s="comments client medical main client medical - optional text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
+<td class="req"></td>
+<td><span class="type t-text">Text</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
+</tr>
 <tr data-s="clientimportid client medical main client medical - optional text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span> <span class="badge b-uniq">unique</span></td>
 <td class="req">●</td>
@@ -952,6 +985,12 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <h3>Health Conditions <span class="tbl">→ ClientHealthConditionsImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
+<tr data-s="comments health conditions client medical - optional text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
+<td class="req"></td>
+<td><span class="type t-text">Text</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
+</tr>
 <tr data-s="clientimportid health conditions client medical - optional text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span></td>
 <td class="req">●</td>
@@ -969,6 +1008,12 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <h3>ICD 10 CM Codes <span class="tbl">→ ClientICDCodesImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
+<tr data-s="comments icd 10 cm codes client medical - optional text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
+<td class="req"></td>
+<td><span class="type t-text">Text</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
+</tr>
 <tr data-s="clientimportid icd 10 cm codes client medical - optional text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span></td>
 <td class="req">●</td>
@@ -992,12 +1037,18 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <section class="card module" data-module="Congregate">
 <h2 class="mod-head">
 <span>Congregate</span>
-<span class="mod-meta">1 sheet(s) · 17 fields</span>
+<span class="mod-meta">1 sheet(s) · 18 fields</span>
 </h2>
 <div class="sheet">
 <h3>Congregate Meal Schedule <span class="tbl">→ ClientCongregateImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
+<tr data-s="comments congregate meal schedule congregate text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
+<td class="req"></td>
+<td><span class="type t-text">Text</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
+</tr>
 <tr data-s="clientimportid congregate meal schedule congregate text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span></td>
 <td class="req">●</td>
@@ -1105,12 +1156,18 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <section class="card module" data-module="Emergency Contacts - optional">
 <h2 class="mod-head">
 <span>Emergency Contacts - optional</span>
-<span class="mod-meta">1 sheet(s) · 17 fields</span>
+<span class="mod-meta">1 sheet(s) · 18 fields</span>
 </h2>
 <div class="sheet">
 <h3>Emergency Contacts <span class="tbl">→ ClientEmergencyContactsImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
+<tr data-s="comments emergency contacts emergency contacts - optional text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
+<td class="req"></td>
+<td><span class="type t-text">Text</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
+</tr>
 <tr data-s="clientimportid emergency contacts emergency contacts - optional fk → clientmasterimport" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span></td>
 <td class="req">●</td>
@@ -1218,12 +1275,18 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <section class="card module" data-module="Home Delivered">
 <h2 class="mod-head">
 <span>Home Delivered</span>
-<span class="mod-meta">2 sheet(s) · 36 fields</span>
+<span class="mod-meta">2 sheet(s) · 38 fields</span>
 </h2>
 <div class="sheet">
 <h3>HDM Main <span class="tbl">→ ClientHDMMainImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
+<tr data-s="comments hdm main home delivered text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
+<td class="req"></td>
+<td><span class="type t-text">Text</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
+</tr>
 <tr data-s="clientimportid hdm main home delivered text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span> <span class="badge b-uniq">unique</span></td>
 <td class="req">●</td>
@@ -1295,6 +1358,12 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <h3>HDM Schedules <span class="tbl">→ ClientHDMSchedulesImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
+<tr data-s="comments hdm schedules home delivered text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
+<td class="req"></td>
+<td><span class="type t-text">Text</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
+</tr>
 <tr data-s="clientimportid hdm schedules home delivered text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span></td>
 <td class="req">●</td>
@@ -1450,7 +1519,7 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <section class="card module" data-module="Homecare">
 <h2 class="mod-head">
 <span>Homecare</span>
-<span class="mod-meta">6 sheet(s) · 121 fields</span>
+<span class="mod-meta">6 sheet(s) · 122 fields</span>
 </h2>
 <div class="sheet">
 <h3>Homecare Employees <span class="tbl">→ EmployeeImport</span></h3>
@@ -1558,8 +1627,8 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <td><span class="type t-text">Text (max 50)</span></td>
 <td class="detail"><span class=muted>—</span></td>
 </tr>
-<tr data-s="generalcomments homecare employees homecare text (max 255)" data-req="0" data-unval="0" data-vals="0" data-flag="0">
-<td class="fname"><code>GeneralComments</code> </td>
+<tr data-s="generalcomment homecare employees homecare text (max 255)" data-req="0" data-unval="0" data-vals="0" data-flag="0">
+<td class="fname"><code>GeneralComment</code> </td>
 <td class="req"></td>
 <td><span class="type t-text">Text (max 255)</span></td>
 <td class="detail"><span class=muted>—</span></td>
@@ -1750,8 +1819,8 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <td><span class="type t-date">Date</span></td>
 <td class="detail"><span class=muted>—</span></td>
 </tr>
-<tr data-s="transportationcomments homecare employees homecare text (max 50)" data-req="0" data-unval="0" data-vals="0" data-flag="0">
-<td class="fname"><code>TransportationComments</code> </td>
+<tr data-s="transportationcomment homecare employees homecare text (max 50)" data-req="0" data-unval="0" data-vals="0" data-flag="0">
+<td class="fname"><code>TransportationComment</code> </td>
 <td class="req"></td>
 <td><span class="type t-text">Text (max 50)</span></td>
 <td class="detail"><span class=muted>—</span></td>
@@ -1779,11 +1848,11 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <h3>Homecare Tasks <span class="tbl">→ HomecareTasksImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
-<tr data-s="comment homecare tasks homecare text" data-req="0" data-unval="1" data-vals="0" data-flag="0">
-<td class="fname"><code>Comment</code> <span class="badge b-unval">no rule found</span></td>
+<tr data-s="comments homecare tasks homecare text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
 <td class="req"></td>
 <td><span class="type t-text">Text</span></td>
-<td class="detail"><span class=muted>—</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
 </tr>
 <tr data-s="clientimportid homecare tasks homecare text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span></td>
@@ -1814,11 +1883,11 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <h3>Homecare Intake <span class="tbl">→ HomecareIntakeImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
-<tr data-s="comment homecare intake homecare text" data-req="0" data-unval="1" data-vals="0" data-flag="0">
-<td class="fname"><code>Comment</code> <span class="badge b-unval">no rule found</span></td>
+<tr data-s="comments homecare intake homecare text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
 <td class="req"></td>
 <td><span class="type t-text">Text</span></td>
-<td class="detail"><span class=muted>—</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
 </tr>
 <tr data-s="clientimportid homecare intake homecare text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span></td>
@@ -1868,6 +1937,12 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <td><span class="type t-list">List</span></td>
 <td class="detail"><span class="vals"><code>Yes</code> <code>No</code></span></td>
 </tr>
+<tr data-s="comment homecare intake homecare text (max 255)" data-req="0" data-unval="0" data-vals="0" data-flag="0">
+<td class="fname"><code>Comment</code> </td>
+<td class="req"></td>
+<td><span class="type t-text">Text (max 255)</span></td>
+<td class="detail"><span class=muted>—</span></td>
+</tr>
 <tr data-s="lastcontacttype homecare intake homecare text (max 50)" data-req="0" data-unval="0" data-vals="0" data-flag="0">
 <td class="fname"><code>LastContactType</code> </td>
 <td class="req"></td>
@@ -1897,11 +1972,11 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <h3>Homecare Client Schedule <span class="tbl">→ HomecareClientScheduleImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
-<tr data-s="comment homecare client schedule homecare text" data-req="0" data-unval="1" data-vals="0" data-flag="0">
-<td class="fname"><code>Comment</code> <span class="badge b-unval">no rule found</span></td>
+<tr data-s="comments homecare client schedule homecare text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
 <td class="req"></td>
 <td><span class="type t-text">Text</span></td>
-<td class="detail"><span class=muted>—</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
 </tr>
 <tr data-s="clientimportid homecare client schedule homecare text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span></td>
@@ -2112,11 +2187,11 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <h3>Homecare Assessments <span class="tbl">→ HomecareAssessmentsImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
-<tr data-s="comment homecare assessments homecare text" data-req="0" data-unval="1" data-vals="0" data-flag="0">
-<td class="fname"><code>Comment</code> <span class="badge b-unval">no rule found</span></td>
+<tr data-s="comments homecare assessments homecare text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
 <td class="req"></td>
 <td><span class="type t-text">Text</span></td>
-<td class="detail"><span class=muted>—</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
 </tr>
 <tr data-s="clientimportid homecare assessments homecare text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span></td>
@@ -2171,11 +2246,11 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <h3>Homecare Notes <span class="tbl">→ HomecareNotesImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
-<tr data-s="comment homecare notes homecare text" data-req="0" data-unval="1" data-vals="0" data-flag="0">
-<td class="fname"><code>Comment</code> <span class="badge b-unval">no rule found</span></td>
+<tr data-s="comments homecare notes homecare text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
 <td class="req"></td>
 <td><span class="type t-text">Text</span></td>
-<td class="detail"><span class=muted>—</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
 </tr>
 <tr data-s="clientimportid homecare notes homecare text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span></td>
@@ -2212,12 +2287,18 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <section class="card module" data-module="Household - Pets - optional">
 <h2 class="mod-head">
 <span>Household - Pets - optional</span>
-<span class="mod-meta">1 sheet(s) · 16 fields</span>
+<span class="mod-meta">1 sheet(s) · 17 fields</span>
 </h2>
 <div class="sheet">
 <h3>Client Pets <span class="tbl">→ HouseHoldPetsImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
+<tr data-s="comments client pets household - pets - optional text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
+<td class="req"></td>
+<td><span class="type t-text">Text</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
+</tr>
 <tr data-s="clientimportid client pets household - pets - optional text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span> <span class="badge b-uniq">unique</span></td>
 <td class="req">●</td>
@@ -2319,12 +2400,18 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <section class="card module" data-module="Membership">
 <h2 class="mod-head">
 <span>Membership</span>
-<span class="mod-meta">2 sheet(s) · 14 fields</span>
+<span class="mod-meta">2 sheet(s) · 16 fields</span>
 </h2>
 <div class="sheet">
 <h3>Membership Main <span class="tbl">→ ClientMembershipImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
+<tr data-s="comments membership main membership text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
+<td class="req"></td>
+<td><span class="type t-text">Text</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
+</tr>
 <tr data-s="clientimportid membership main membership text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span> <span class="badge b-uniq">unique</span></td>
 <td class="req">●</td>
@@ -2360,6 +2447,12 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <h3>Membership Details <span class="tbl">→ ClientMembershipImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
+<tr data-s="comments membership details membership text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
+<td class="req"></td>
+<td><span class="type t-text">Text</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
+</tr>
 <tr data-s="clientimportid membership details membership text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span> <span class="badge b-uniq">unique</span></td>
 <td class="req">●</td>
@@ -2419,12 +2512,18 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <section class="card module" data-module="Notes - optional">
 <h2 class="mod-head">
 <span>Notes - optional</span>
-<span class="mod-meta">1 sheet(s) · 6 fields</span>
+<span class="mod-meta">1 sheet(s) · 7 fields</span>
 </h2>
 <div class="sheet">
 <h3>Client Notes <span class="tbl">→ ClientNotesImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
+<tr data-s="comments client notes notes - optional text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
+<td class="req"></td>
+<td><span class="type t-text">Text</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
+</tr>
 <tr data-s="clientimportid client notes notes - optional text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span></td>
 <td class="req">●</td>
@@ -2466,12 +2565,18 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <section class="card module" data-module="Other Services">
 <h2 class="mod-head">
 <span>Other Services</span>
-<span class="mod-meta">2 sheet(s) · 28 fields</span>
+<span class="mod-meta">2 sheet(s) · 30 fields</span>
 </h2>
 <div class="sheet">
 <h3>Other Services Schedule <span class="tbl">→ ClientOtherSchedulesImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
+<tr data-s="comments other services schedule other services text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
+<td class="req"></td>
+<td><span class="type t-text">Text</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
+</tr>
 <tr data-s="clientimportid other services schedule other services text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span></td>
 <td class="req">●</td>
@@ -2609,6 +2714,12 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <h3>Case Managers <span class="tbl">→ CaseManagerImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
+<tr data-s="comments case managers other services text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
+<td class="req"></td>
+<td><span class="type t-text">Text</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
+</tr>
 <tr data-s="casemanagerid case managers other services text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="0">
 <td class="fname"><code>CaseManagerId</code> <span class="badge b-uniq">unique</span></td>
 <td class="req">●</td>
@@ -2650,12 +2761,18 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <section class="card module" data-module="Outcome Scores - optional">
 <h2 class="mod-head">
 <span>Outcome Scores - optional</span>
-<span class="mod-meta">1 sheet(s) · 5 fields</span>
+<span class="mod-meta">1 sheet(s) · 6 fields</span>
 </h2>
 <div class="sheet">
 <h3>Outcome Scores <span class="tbl">→ ClientOutcomeScoreImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
+<tr data-s="comments outcome scores outcome scores - optional text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
+<td class="req"></td>
+<td><span class="type t-text">Text</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
+</tr>
 <tr data-s="clientimportid outcome scores outcome scores - optional text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span></td>
 <td class="req">●</td>
@@ -2691,12 +2808,18 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <section class="card module" data-module="Physicians - optional">
 <h2 class="mod-head">
 <span>Physicians - optional</span>
-<span class="mod-meta">1 sheet(s) · 19 fields</span>
+<span class="mod-meta">1 sheet(s) · 20 fields</span>
 </h2>
 <div class="sheet">
 <h3>Physicians <span class="tbl">→ EmergencyPhysiciansImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
+<tr data-s="comments physicians physicians - optional text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
+<td class="req"></td>
+<td><span class="type t-text">Text</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
+</tr>
 <tr data-s="clientimportid physicians physicians - optional text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span></td>
 <td class="req">●</td>
@@ -2816,12 +2939,18 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <section class="card module" data-module="Recreation">
 <h2 class="mod-head">
 <span>Recreation</span>
-<span class="mod-meta">2 sheet(s) · 18 fields</span>
+<span class="mod-meta">2 sheet(s) · 20 fields</span>
 </h2>
 <div class="sheet">
 <h3>Recreation Main <span class="tbl">→ ClientRecreationImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
+<tr data-s="comments recreation main recreation text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
+<td class="req"></td>
+<td><span class="type t-text">Text</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
+</tr>
 <tr data-s="clientimportid recreation main recreation text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span> <span class="badge b-uniq">unique</span></td>
 <td class="req">●</td>
@@ -2887,6 +3016,12 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <h3>Recreation Schedule <span class="tbl">→ ClientRecreationSchImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
+<tr data-s="comments recreation schedule recreation text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
+<td class="req"></td>
+<td><span class="type t-text">Text</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
+</tr>
 <tr data-s="clientimportid recreation schedule recreation text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span> <span class="badge b-uniq">unique</span></td>
 <td class="req">●</td>
@@ -2940,12 +3075,18 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <section class="card module" data-module="Suspensions - optional">
 <h2 class="mod-head">
 <span>Suspensions - optional</span>
-<span class="mod-meta">1 sheet(s) · 6 fields</span>
+<span class="mod-meta">1 sheet(s) · 7 fields</span>
 </h2>
 <div class="sheet">
 <h3>Temporary Suspensions Holds <span class="tbl">→ ClientSuspensionsImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
+<tr data-s="comments temporary suspensions holds suspensions - optional text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
+<td class="req"></td>
+<td><span class="type t-text">Text</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
+</tr>
 <tr data-s="clientimportid temporary suspensions holds suspensions - optional text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span></td>
 <td class="req">●</td>
@@ -2987,12 +3128,18 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <section class="card module" data-module="Transportation">
 <h2 class="mod-head">
 <span>Transportation</span>
-<span class="mod-meta">3 sheet(s) · 48 fields</span>
+<span class="mod-meta">3 sheet(s) · 51 fields</span>
 </h2>
 <div class="sheet">
 <h3>Destination Options <span class="tbl">→ DestinationImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
+<tr data-s="comments destination options transportation text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
+<td class="req"></td>
+<td><span class="type t-text">Text</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
+</tr>
 <tr data-s="destinationname destination options transportation text" data-req="0" data-unval="1" data-vals="0" data-flag="0">
 <td class="fname"><code>DestinationName</code> <span class="badge b-unval">no rule found</span></td>
 <td class="req"></td>
@@ -3028,17 +3175,23 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <h3>Transportation Main <span class="tbl">→ ClientTransportationMainImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
-<tr data-s="comment transportation main transportation text" data-req="0" data-unval="1" data-vals="0" data-flag="0">
-<td class="fname"><code>Comment</code> <span class="badge b-unval">no rule found</span></td>
+<tr data-s="comments transportation main transportation text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
 <td class="req"></td>
 <td><span class="type t-text">Text</span></td>
-<td class="detail"><span class=muted>—</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
 </tr>
 <tr data-s="clientimportid transportation main transportation text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span></td>
 <td class="req">●</td>
 <td><span class="type t-text">Text (max 20)</span></td>
 <td class="detail"><span class="note">The key the import uses to link this client across every sheet. Use the same value for a client in all sheets you submit.</span></td>
+</tr>
+<tr data-s="comment transportation main transportation text (max 250)" data-req="0" data-unval="0" data-vals="0" data-flag="0">
+<td class="fname"><code>Comment</code> </td>
+<td class="req"></td>
+<td><span class="type t-text">Text (max 250)</span></td>
+<td class="detail"><span class=muted>—</span></td>
 </tr>
 <tr data-s="directions transportation main transportation text (max 255)" data-req="0" data-unval="0" data-vals="0" data-flag="0">
 <td class="fname"><code>Directions</code> </td>
@@ -3117,6 +3270,12 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <h3>Transportation Schedules <span class="tbl">→ ClientTransportationScheduleImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
+<tr data-s="comments transportation schedules transportation text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
+<td class="req"></td>
+<td><span class="type t-text">Text</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
+</tr>
 <tr data-s="clientimportid transportation schedules transportation text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span></td>
 <td class="req">●</td>
@@ -3296,17 +3455,17 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <section class="card module" data-module="Volunteer">
 <h2 class="mod-head">
 <span>Volunteer</span>
-<span class="mod-meta">2 sheet(s) · 23 fields</span>
+<span class="mod-meta">2 sheet(s) · 25 fields</span>
 </h2>
 <div class="sheet">
 <h3>Volunteer Intake <span class="tbl">→ ServVOLIntakeImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
-<tr data-s="comment volunteer intake volunteer text" data-req="0" data-unval="1" data-vals="0" data-flag="0">
-<td class="fname"><code>Comment</code> <span class="badge b-unval">no rule found</span></td>
+<tr data-s="comments volunteer intake volunteer text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
 <td class="req"></td>
 <td><span class="type t-text">Text</span></td>
-<td class="detail"><span class=muted>—</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
 </tr>
 <tr data-s="clientimportid volunteer intake volunteer text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span> <span class="badge b-uniq">unique</span></td>
@@ -3342,6 +3501,12 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <td class="fname"><code>Program</code> </td>
 <td class="req"></td>
 <td><span class="type t-text">Text (max 50)</span></td>
+<td class="detail"><span class=muted>—</span></td>
+</tr>
+<tr data-s="comment volunteer intake volunteer text (max 255)" data-req="0" data-unval="0" data-vals="0" data-flag="0">
+<td class="fname"><code>Comment</code> </td>
+<td class="req"></td>
+<td><span class="type t-text">Text (max 255)</span></td>
 <td class="detail"><span class=muted>—</span></td>
 </tr>
 <tr data-s="driverlicense# volunteer intake volunteer text (max 30)" data-req="0" data-unval="0" data-vals="0" data-flag="0">
@@ -3385,6 +3550,12 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <h3>Volunteer Schedule <span class="tbl">→ ServVOLSchedulesImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
+<tr data-s="comments volunteer schedule volunteer text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
+<td class="req"></td>
+<td><span class="type t-text">Text</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
+</tr>
 <tr data-s="clientimportid volunteer schedule volunteer text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span></td>
 <td class="req">●</td>
@@ -3450,17 +3621,17 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <section class="card module" data-module="WaitList">
 <h2 class="mod-head">
 <span>WaitList</span>
-<span class="mod-meta">2 sheet(s) · 35 fields</span>
+<span class="mod-meta">2 sheet(s) · 37 fields</span>
 </h2>
 <div class="sheet">
 <h3>Waiting List Main <span class="tbl">→ ClientWaitListImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
-<tr data-s="comment waiting list main waitlist text (max 250)" data-req="0" data-unval="0" data-vals="0" data-flag="0">
-<td class="fname"><code>Comment</code> </td>
+<tr data-s="comments waiting list main waitlist text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
 <td class="req"></td>
-<td><span class="type t-text">Text (max 250)</span></td>
-<td class="detail"><span class=muted>—</span></td>
+<td><span class="type t-text">Text</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
 </tr>
 <tr data-s="clientimportid waiting list main waitlist text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span> <span class="badge b-uniq">unique</span></td>
@@ -3522,6 +3693,12 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <td><span class="type t-list">List</span></td>
 <td class="detail"><span class="vals"><code>Yes</code> <code>No</code></span></td>
 </tr>
+<tr data-s="comment waiting list main waitlist text (max 250)" data-req="0" data-unval="0" data-vals="0" data-flag="0">
+<td class="fname"><code>Comment</code> </td>
+<td class="req"></td>
+<td><span class="type t-text">Text (max 250)</span></td>
+<td class="detail"><span class=muted>—</span></td>
+</tr>
 <tr data-s="referralreason waiting list main waitlist text (max 250)" data-req="0" data-unval="0" data-vals="0" data-flag="0">
 <td class="fname"><code>ReferralReason</code> </td>
 <td class="req"></td>
@@ -3533,11 +3710,11 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <h3>Waiting List Schedules <span class="tbl">→ ClientWaitListSchImport</span></h3>
 <div class="tblwrap"><table>
 <thead><tr><th>Field</th><th>Req</th><th>Type</th><th>Allowed values / notes</th></tr></thead><tbody>
-<tr data-s="comment waiting list schedules waitlist text" data-req="0" data-unval="1" data-vals="0" data-flag="0">
-<td class="fname"><code>Comment</code> <span class="badge b-unval">no rule found</span></td>
+<tr data-s="comments waiting list schedules waitlist text" data-req="0" data-unval="1" data-vals="0" data-flag="0" class=notes-row>
+<td class="fname"><code>Comments</code> <span class="badge b-notes">scratch — not migrated</span></td>
 <td class="req"></td>
 <td><span class="type t-text">Text</span></td>
-<td class="detail"><span class=muted>—</span></td>
+<td class="detail"><span class="note">Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker.</span></td>
 </tr>
 <tr data-s="clientimportid waiting list schedules waitlist text (max 20)" data-req="1" data-unval="0" data-vals="0" data-flag="1">
 <td class="fname"><code>ClientImportId</code> <span class="badge b-link">link key</span></td>
@@ -3669,6 +3846,12 @@ tr.hide,.sheet.hide,.module.hide{display:none}
 <td class="fname"><code>HowHear</code> </td>
 <td class="req"></td>
 <td><span class="type t-text">Text (max 50)</span></td>
+<td class="detail"><span class=muted>—</span></td>
+</tr>
+<tr data-s="comment waiting list schedules waitlist text (max 250)" data-req="0" data-unval="0" data-vals="0" data-flag="0">
+<td class="fname"><code>Comment</code> </td>
+<td class="req"></td>
+<td><span class="type t-text">Text (max 250)</span></td>
 <td class="detail"><span class=muted>—</span></td>
 </tr>
 </tbody></table></div></div>

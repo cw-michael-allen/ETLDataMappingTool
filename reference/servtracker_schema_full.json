@@ -2,13 +2,16 @@
   {
     "sheet": "Case Mgmt Intake",
     "table": "CaseMgmtIntakeImport",
-    "field": "Comment",
+    "field": "Comments",
     "required": false,
     "type": "Text",
     "modules": [
       "Case Management"
     ],
-    "validated": false
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
   },
   {
     "sheet": "Case Mgmt Intake",
@@ -167,15 +170,29 @@
     "validated": true
   },
   {
+    "sheet": "Case Mgmt Intake",
+    "table": "CaseMgmtIntakeImport",
+    "field": "Comment",
+    "required": false,
+    "type": "Text (max 250)",
+    "modules": [
+      "Case Management"
+    ],
+    "validated": true
+  },
+  {
     "sheet": "Case Mgmt Service Plans",
     "table": "CaseMgmtServicePlanImport",
-    "field": "Comment",
+    "field": "Comments",
     "required": false,
     "type": "Text",
     "modules": [
       "Case Management"
     ],
-    "validated": false
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
   },
   {
     "sheet": "Case Mgmt Service Plans",
@@ -447,6 +464,31 @@
     "validated": true
   },
   {
+    "sheet": "Case Mgmt Service Plans",
+    "table": "CaseMgmtServicePlanImport",
+    "field": "Comment",
+    "required": false,
+    "type": "Text (max 250)",
+    "modules": [
+      "Case Management"
+    ],
+    "validated": true
+  },
+  {
+    "sheet": "Case Mgmt Case Notes",
+    "table": "CaseMgmtCaseNotesImport",
+    "field": "Comments",
+    "required": false,
+    "type": "Text",
+    "modules": [
+      "Case Management"
+    ],
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
+  },
+  {
     "sheet": "Case Mgmt Case Notes",
     "table": "CaseMgmtCaseNotesImport",
     "field": "ClientImportId",
@@ -634,6 +676,20 @@
       "Case Management"
     ],
     "validated": true
+  },
+  {
+    "sheet": "Client Demographics",
+    "table": "ClientMasterImport",
+    "field": "Comments",
+    "required": false,
+    "type": "Text",
+    "modules": [
+      "Client Master with Demographics"
+    ],
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
   },
   {
     "sheet": "Client Demographics",
@@ -1350,6 +1406,20 @@
   {
     "sheet": "Client Medical Main",
     "table": "ClientMedicalImport",
+    "field": "Comments",
+    "required": false,
+    "type": "Text",
+    "modules": [
+      "Client Medical - optional"
+    ],
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
+  },
+  {
+    "sheet": "Client Medical Main",
+    "table": "ClientMedicalImport",
     "field": "ClientImportId",
     "required": true,
     "type": "Text (max 20)",
@@ -1523,6 +1593,20 @@
   {
     "sheet": "Health Conditions",
     "table": "ClientHealthConditionsImport",
+    "field": "Comments",
+    "required": false,
+    "type": "Text",
+    "modules": [
+      "Client Medical - optional"
+    ],
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
+  },
+  {
+    "sheet": "Health Conditions",
+    "table": "ClientHealthConditionsImport",
     "field": "ClientImportId",
     "required": true,
     "type": "Text (max 20)",
@@ -1543,6 +1627,20 @@
       "Client Medical - optional"
     ],
     "validated": true
+  },
+  {
+    "sheet": "ICD 10 CM Codes",
+    "table": "ClientICDCodesImport",
+    "field": "Comments",
+    "required": false,
+    "type": "Text",
+    "modules": [
+      "Client Medical - optional"
+    ],
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
   },
   {
     "sheet": "ICD 10 CM Codes",
@@ -1579,6 +1677,20 @@
       "Client Medical - optional"
     ],
     "validated": true
+  },
+  {
+    "sheet": "Congregate Meal Schedule",
+    "table": "ClientCongregateImport",
+    "field": "Comments",
+    "required": false,
+    "type": "Text",
+    "modules": [
+      "Congregate"
+    ],
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
   },
   {
     "sheet": "Congregate Meal Schedule",
@@ -1780,6 +1892,20 @@
       "No"
     ],
     "decode": "Yes, No"
+  },
+  {
+    "sheet": "Emergency Contacts",
+    "table": "ClientEmergencyContactsImport",
+    "field": "Comments",
+    "required": false,
+    "type": "Text",
+    "modules": [
+      "Emergency Contacts - optional"
+    ],
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
   },
   {
     "sheet": "Emergency Contacts",
@@ -2001,6 +2127,20 @@
   {
     "sheet": "HDM Main",
     "table": "ClientHDMMainImport",
+    "field": "Comments",
+    "required": false,
+    "type": "Text",
+    "modules": [
+      "Home Delivered"
+    ],
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
+  },
+  {
+    "sheet": "HDM Main",
+    "table": "ClientHDMMainImport",
     "field": "ClientImportId",
     "required": true,
     "type": "Text (max 20)",
@@ -2121,6 +2261,20 @@
       "Home Delivered"
     ],
     "validated": true
+  },
+  {
+    "sheet": "HDM Schedules",
+    "table": "ClientHDMSchedulesImport",
+    "field": "Comments",
+    "required": false,
+    "type": "Text",
+    "modules": [
+      "Home Delivered"
+    ],
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
   },
   {
     "sheet": "HDM Schedules",
@@ -2619,7 +2773,7 @@
   {
     "sheet": "Homecare Employees",
     "table": "EmployeeImport",
-    "field": "GeneralComments",
+    "field": "GeneralComment",
     "required": false,
     "type": "Text (max 255)",
     "modules": [
@@ -3009,7 +3163,7 @@
   {
     "sheet": "Homecare Employees",
     "table": "EmployeeImport",
-    "field": "TransportationComments",
+    "field": "TransportationComment",
     "required": false,
     "type": "Text (max 50)",
     "modules": [
@@ -3053,13 +3207,16 @@
   {
     "sheet": "Homecare Tasks",
     "table": "HomecareTasksImport",
-    "field": "Comment",
+    "field": "Comments",
     "required": false,
     "type": "Text",
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
   },
   {
     "sheet": "Homecare Tasks",
@@ -3110,13 +3267,16 @@
   {
     "sheet": "Homecare Intake",
     "table": "HomecareIntakeImport",
-    "field": "Comment",
+    "field": "Comments",
     "required": false,
     "type": "Text",
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
   },
   {
     "sheet": "Homecare Intake",
@@ -3216,6 +3376,17 @@
   {
     "sheet": "Homecare Intake",
     "table": "HomecareIntakeImport",
+    "field": "Comment",
+    "required": false,
+    "type": "Text (max 255)",
+    "modules": [
+      "Homecare"
+    ],
+    "validated": true
+  },
+  {
+    "sheet": "Homecare Intake",
+    "table": "HomecareIntakeImport",
     "field": "LastContactType",
     "required": false,
     "type": "Text (max 50)",
@@ -3260,13 +3431,16 @@
   {
     "sheet": "Homecare Client Schedule",
     "table": "HomecareClientScheduleImport",
-    "field": "Comment",
+    "field": "Comments",
     "required": false,
     "type": "Text",
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
   },
   {
     "sheet": "Homecare Client Schedule",
@@ -3657,13 +3831,16 @@
   {
     "sheet": "Homecare Assessments",
     "table": "HomecareAssessmentsImport",
-    "field": "Comment",
+    "field": "Comments",
     "required": false,
     "type": "Text",
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
   },
   {
     "sheet": "Homecare Assessments",
@@ -3779,13 +3956,16 @@
   {
     "sheet": "Homecare Notes",
     "table": "HomecareNotesImport",
-    "field": "Comment",
+    "field": "Comments",
     "required": false,
     "type": "Text",
     "modules": [
       "Homecare"
     ],
-    "validated": false
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
   },
   {
     "sheet": "Homecare Notes",
@@ -3843,6 +4023,20 @@
       "Homecare"
     ],
     "validated": true
+  },
+  {
+    "sheet": "Client Pets",
+    "table": "HouseHoldPetsImport",
+    "field": "Comments",
+    "required": false,
+    "type": "Text",
+    "modules": [
+      "Household - Pets - optional"
+    ],
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
   },
   {
     "sheet": "Client Pets",
@@ -4068,6 +4262,20 @@
   {
     "sheet": "Membership Main",
     "table": "ClientMembershipImport",
+    "field": "Comments",
+    "required": false,
+    "type": "Text",
+    "modules": [
+      "Membership"
+    ],
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
+  },
+  {
+    "sheet": "Membership Main",
+    "table": "ClientMembershipImport",
     "field": "ClientImportId",
     "required": true,
     "type": "Text (max 20)",
@@ -4128,6 +4336,20 @@
       "Email"
     ],
     "decode": "US Mail, Hold for Pickup, Email"
+  },
+  {
+    "sheet": "Membership Details",
+    "table": "ClientMembershipImport",
+    "field": "Comments",
+    "required": false,
+    "type": "Text",
+    "modules": [
+      "Membership"
+    ],
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
   },
   {
     "sheet": "Membership Details",
@@ -4234,6 +4456,20 @@
   {
     "sheet": "Client Notes",
     "table": "ClientNotesImport",
+    "field": "Comments",
+    "required": false,
+    "type": "Text",
+    "modules": [
+      "Notes - optional"
+    ],
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
+  },
+  {
+    "sheet": "Client Notes",
+    "table": "ClientNotesImport",
     "field": "ClientImportId",
     "required": true,
     "type": "Text (max 20)",
@@ -4298,6 +4534,20 @@
       "Notes - optional"
     ],
     "validated": true
+  },
+  {
+    "sheet": "Other Services Schedule",
+    "table": "ClientOtherSchedulesImport",
+    "field": "Comments",
+    "required": false,
+    "type": "Text",
+    "modules": [
+      "Other Services"
+    ],
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
   },
   {
     "sheet": "Other Services Schedule",
@@ -4559,6 +4809,20 @@
   {
     "sheet": "Case Managers",
     "table": "CaseManagerImport",
+    "field": "Comments",
+    "required": false,
+    "type": "Text",
+    "modules": [
+      "Other Services"
+    ],
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
+  },
+  {
+    "sheet": "Case Managers",
+    "table": "CaseManagerImport",
     "field": "CaseManagerId",
     "required": true,
     "type": "Text (max 20)",
@@ -4626,6 +4890,20 @@
   {
     "sheet": "Outcome Scores",
     "table": "ClientOutcomeScoreImport",
+    "field": "Comments",
+    "required": false,
+    "type": "Text",
+    "modules": [
+      "Outcome Scores - optional"
+    ],
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
+  },
+  {
+    "sheet": "Outcome Scores",
+    "table": "ClientOutcomeScoreImport",
     "field": "ClientImportId",
     "required": true,
     "type": "Text (max 20)",
@@ -4679,6 +4957,20 @@
       "Outcome Scores - optional"
     ],
     "validated": true
+  },
+  {
+    "sheet": "Physicians",
+    "table": "EmergencyPhysiciansImport",
+    "field": "Comments",
+    "required": false,
+    "type": "Text",
+    "modules": [
+      "Physicians - optional"
+    ],
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
   },
   {
     "sheet": "Physicians",
@@ -4899,6 +5191,20 @@
   {
     "sheet": "Recreation Main",
     "table": "ClientRecreationImport",
+    "field": "Comments",
+    "required": false,
+    "type": "Text",
+    "modules": [
+      "Recreation"
+    ],
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
+  },
+  {
+    "sheet": "Recreation Main",
+    "table": "ClientRecreationImport",
     "field": "ClientImportId",
     "required": true,
     "type": "Text (max 20)",
@@ -5029,6 +5335,20 @@
   {
     "sheet": "Recreation Schedule",
     "table": "ClientRecreationSchImport",
+    "field": "Comments",
+    "required": false,
+    "type": "Text",
+    "modules": [
+      "Recreation"
+    ],
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
+  },
+  {
+    "sheet": "Recreation Schedule",
+    "table": "ClientRecreationSchImport",
     "field": "ClientImportId",
     "required": true,
     "type": "Text (max 20)",
@@ -5125,6 +5445,20 @@
   {
     "sheet": "Temporary Suspensions Holds",
     "table": "ClientSuspensionsImport",
+    "field": "Comments",
+    "required": false,
+    "type": "Text",
+    "modules": [
+      "Suspensions - optional"
+    ],
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
+  },
+  {
+    "sheet": "Temporary Suspensions Holds",
+    "table": "ClientSuspensionsImport",
     "field": "ClientImportId",
     "required": true,
     "type": "Text (max 20)",
@@ -5200,6 +5534,20 @@
   {
     "sheet": "Destination Options",
     "table": "DestinationImport",
+    "field": "Comments",
+    "required": false,
+    "type": "Text",
+    "modules": [
+      "Transportation"
+    ],
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
+  },
+  {
+    "sheet": "Destination Options",
+    "table": "DestinationImport",
     "field": "DestinationName",
     "required": false,
     "type": "Text",
@@ -5255,13 +5603,16 @@
   {
     "sheet": "Transportation Main",
     "table": "ClientTransportationMainImport",
-    "field": "Comment",
+    "field": "Comments",
     "required": false,
     "type": "Text",
     "modules": [
       "Transportation"
     ],
-    "validated": false
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
   },
   {
     "sheet": "Transportation Main",
@@ -5275,6 +5626,17 @@
     "validated": true,
     "linkKey": true,
     "note": "The key the import uses to link this client across every sheet. Use the same value for a client in all sheets you submit."
+  },
+  {
+    "sheet": "Transportation Main",
+    "table": "ClientTransportationMainImport",
+    "field": "Comment",
+    "required": false,
+    "type": "Text (max 250)",
+    "modules": [
+      "Transportation"
+    ],
+    "validated": true
   },
   {
     "sheet": "Transportation Main",
@@ -5429,6 +5791,20 @@
       "Transportation"
     ],
     "validated": true
+  },
+  {
+    "sheet": "Transportation Schedules",
+    "table": "ClientTransportationScheduleImport",
+    "field": "Comments",
+    "required": false,
+    "type": "Text",
+    "modules": [
+      "Transportation"
+    ],
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
   },
   {
     "sheet": "Transportation Schedules",
@@ -5768,13 +6144,16 @@
   {
     "sheet": "Volunteer Intake",
     "table": "ServVOLIntakeImport",
-    "field": "Comment",
+    "field": "Comments",
     "required": false,
     "type": "Text",
     "modules": [
       "Volunteer"
     ],
-    "validated": false
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
   },
   {
     "sheet": "Volunteer Intake",
@@ -5840,6 +6219,17 @@
     "field": "Program",
     "required": false,
     "type": "Text (max 50)",
+    "modules": [
+      "Volunteer"
+    ],
+    "validated": true
+  },
+  {
+    "sheet": "Volunteer Intake",
+    "table": "ServVOLIntakeImport",
+    "field": "Comment",
+    "required": false,
+    "type": "Text (max 255)",
     "modules": [
       "Volunteer"
     ],
@@ -5915,6 +6305,20 @@
       "Volunteer"
     ],
     "validated": true
+  },
+  {
+    "sheet": "Volunteer Schedule",
+    "table": "ServVOLSchedulesImport",
+    "field": "Comments",
+    "required": false,
+    "type": "Text",
+    "modules": [
+      "Volunteer"
+    ],
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
   },
   {
     "sheet": "Volunteer Schedule",
@@ -6038,13 +6442,16 @@
   {
     "sheet": "Waiting List Main",
     "table": "ClientWaitListImport",
-    "field": "Comment",
+    "field": "Comments",
     "required": false,
-    "type": "Text (max 250)",
+    "type": "Text",
     "modules": [
       "WaitList"
     ],
-    "validated": true
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
   },
   {
     "sheet": "Waiting List Main",
@@ -6172,6 +6579,17 @@
   {
     "sheet": "Waiting List Main",
     "table": "ClientWaitListImport",
+    "field": "Comment",
+    "required": false,
+    "type": "Text (max 250)",
+    "modules": [
+      "WaitList"
+    ],
+    "validated": true
+  },
+  {
+    "sheet": "Waiting List Main",
+    "table": "ClientWaitListImport",
     "field": "ReferralReason",
     "required": false,
     "type": "Text (max 250)",
@@ -6183,13 +6601,16 @@
   {
     "sheet": "Waiting List Schedules",
     "table": "ClientWaitListSchImport",
-    "field": "Comment",
+    "field": "Comments",
     "required": false,
     "type": "Text",
     "modules": [
       "WaitList"
     ],
-    "validated": false
+    "validated": false,
+    "notesColumn": true,
+    "notMigrated": true,
+    "note": "Free space for your own notes while filling in this template — not validated, tracked, or migrated into ServTracker."
   },
   {
     "sheet": "Waiting List Schedules",
@@ -6435,6 +6856,17 @@
     "field": "HowHear",
     "required": false,
     "type": "Text (max 50)",
+    "modules": [
+      "WaitList"
+    ],
+    "validated": true
+  },
+  {
+    "sheet": "Waiting List Schedules",
+    "table": "ClientWaitListSchImport",
+    "field": "Comment",
+    "required": false,
+    "type": "Text (max 250)",
     "modules": [
       "WaitList"
     ],

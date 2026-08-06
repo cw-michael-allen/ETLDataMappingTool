@@ -111,6 +111,11 @@ def match(field_name, schema):
     like llm_gateway.suggest_mapping's return value, plus "source": "rule"."""
     scored = []
     for row in schema:
+        # Never suggest a column that isn't migrated. ServTracker's `Comments`
+        # columns are scratch space for whoever fills the template in; routing a
+        # customer's real data there would silently drop it on import.
+        if row.get("notMigrated"):
+            continue
         score, reason = _name_score(field_name, row["field"])
         if score >= 0.55:
             scored.append((score, reason, row))

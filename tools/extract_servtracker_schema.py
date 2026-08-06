@@ -55,8 +55,31 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_SCHEMA = os.path.join(REPO_ROOT, "reference", "servtracker_schema_full.json")
 OUT_REPORT = os.path.join(REPO_ROOT, "reference", "servtracker_extraction_report.md")
 
-# Leading bookkeeping column present in every template; not an importable field.
-NON_FIELD_COLUMNS = {"comments", "comment#", ""}
+# Templates carry a scratch column for whoever fills the sheet in to leave
+# themselves notes. It is not validated, not imported, and not migrated.
+#
+# The two spellings were rationalised across every template and both scripts by
+# Alex Button on 2026-08-05, so the distinction is now carried by the name alone:
+#
+#   Comments (plural)   -- scratch space, never migrated
+#   Comment  (singular)  -- a real field, validated and imported
+#
+# Verified against all three sources before adopting: 34 of 35 sheets put the
+# scratch column first, every `Comment` is validated, and the import script
+# reads `i.Comment`. Position is no longer the rule but is still cross-checked,
+# because a sheet that puts the *migrated* column first is a trap for anyone
+# used to the other 34 -- see the report's column-order section.
+#
+# Flagged rather than dropped, so the sheet listing can say what the column is
+# for; excluded as a mapping candidate, since offering a destination that is
+# never migrated would quietly lose the customer's data.
+NOTES_COLUMN_NAME = "comments"
+NOTES_COLUMN_NOTE = (
+    "Free space for your own notes while filling in this template — not validated, "
+    "tracked, or migrated into ServTracker."
+)
+
+NON_FIELD_COLUMNS = {""}
 
 # Templates whose scripting is out of date and must not be offered. Adjudicated
 # by Alex Button (ServTracker schema owner) on 2026-08-05. Listed explicitly
@@ -458,10 +481,19 @@ def parse_checks(sql):
         # which otherwise lands a bogus max-50 rule on the link key). Only a
         # plain column reference is trusted; anything else falls back to the
         # label and the disagreement is reported.
+        # Start from the *second* literal by position, not by splitting on its
+        # text. ImportType and FieldName are sometimes the same string -- the
+        # HomecareTasks checks read
+        #   select 'HomecareTasks', ClientImportId, 'HomecareTasks', [HomecareTasks], ...
+        # -- so splitting on the name matched the ImportType occurrence and read
+        # ErrorLog's ClientImportId column as the tested field, reporting a
+        # mismatch in a check that is perfectly correct.
         tested = None
-        after = select_part.split("'" + declared + "'", 1)
-        if len(after) > 1:
-            vm = re.match(r"\s*,\s*\[([^\]]+)\]\s*,|\s*,\s*(\w+)\s*,", after[1])
+        spans = list(QUOTED_RE.finditer(select_part))
+        if len(spans) >= 2:
+            vm = re.match(
+                r"\s*,\s*\[([^\]]+)\]\s*,|\s*,\s*(\w+)\s*,", select_part[spans[1].end():]
+            )
             if vm:
                 tested = vm.group(1) or vm.group(2)
 
@@ -475,9 +507,25 @@ def parse_checks(sql):
         field, alt = (tested or declared), None
         mismatch = None
         if tested and _norm(tested) != _norm(declared):
-            mnorm = _norm(message)
-            in_msg_declared = _norm(declared) in mnorm
-            in_msg_tested = _norm(tested) in mnorm
+            # Whole-word, not substring: `Comment` is a substring of `Comments`,
+            # so a plain `in` test says the message mentions both and the
+            # tiebreaker collapses. Messages spell field names either joined
+            # (`ClientImportId`) or spaced (`Client Import Id`), so compare
+            # against the message with separators stripped *and* against its
+            # individual words.
+            words = {_norm(w) for w in re.findall(r"[A-Za-z]+", message)}
+            joined = _norm(message)
+
+            def named(cand):
+                n = _norm(cand)
+                if n in words:
+                    return True
+                # joined spelling: require the run to not be a prefix of a
+                # longer word, which is what made Comment match Comments.
+                return bool(re.search(n + r"(?![a-z0-9])", joined))
+
+            in_msg_declared = named(declared)
+            in_msg_tested = named(tested)
             if in_msg_declared and not in_msg_tested:
                 field, alt = declared, tested
             else:
@@ -486,6 +534,22 @@ def parse_checks(sql):
                 "declared": declared, "tested": tested, "message": message,
                 "table": fm.group(1), "used": field,
             }
+
+        # Fourth signal, used only for length rules: the column inside
+        # `len(...)` in the WHERE clause is what the constraint actually applies
+        # to. One check has all three of label, value expression and message
+        # saying `Comment` while the WHERE tests `len([Comments])` -- and the
+        # `--Comments` header above it agrees the WHERE is right. Narrow by
+        # design: it fires on exactly this one check out of 785.
+        lens = set(re.findall(r"len\s*\(\s*\[?(\w+)\]?\s*\)", where or "", re.I))
+        if len(lens) == 1 and "too long" in message.lower():
+            len_col = lens.pop()
+            if _norm(len_col) != _norm(field):
+                mismatch = {
+                    "declared": declared, "tested": len_col, "message": message,
+                    "table": fm.group(1), "used": len_col,
+                }
+                field, alt = len_col, field
 
         checks.append(
             {
@@ -593,10 +657,12 @@ def merge(templates, renames, checks):
     rows = []
     matched_keys = set()
     cross_conflicts = {}
+    notes_with_rules = []
+    notes_misplaced = []
     unresolved_refs = set()
     for sheet, info in templates.items():
         tables = renames.get(sheet) or []
-        for col in info["columns"]:
+        for col_index, col in enumerate(info["columns"]):
             norm = re.sub(r"[^a-z0-9]", "", col.lower())
             facts, used_table = {}, None
             seen_lengths = set()
@@ -644,6 +710,23 @@ def merge(templates, renames, checks):
                 row["crossSheetRef"] = facts["crossSheetRef"]
             if facts.get("unique"):
                 row["unique"] = True
+            # `Comments` (plural) is the template's scratch column by the
+            # rationalised naming convention. A rule found on one would mean the
+            # convention has drifted, so that is reported rather than assumed.
+            if norm == NOTES_COLUMN_NAME:
+                row["notesColumn"] = True
+                row["notMigrated"] = True
+                row["note"] = NOTES_COLUMN_NOTE
+                if facts:
+                    notes_with_rules.append({"sheet": sheet, "field": col})
+                if col_index != 0:
+                    notes_misplaced.append({"sheet": sheet, "field": col, "index": col_index})
+            elif norm == "comment" and col_index == 0:
+                # Inverse trap: the *migrated* column sitting where every other
+                # sheet puts scratch space.
+                notes_misplaced.append({"sheet": sheet, "field": col, "index": col_index,
+                                        "migratedFirst": True})
+
             if col == LINK_KEY_FIELD:
                 row["linkKey"] = True
                 row["note"] = (
@@ -672,7 +755,7 @@ def merge(templates, renames, checks):
         for (t, f) in sorted(facts_by)
         if (t, f) not in matched_keys
     ]
-    return rows, orphans, sheet_for_table, cross_conflicts
+    return rows, orphans, sheet_for_table, cross_conflicts, notes_with_rules, notes_misplaced
 
 
 # --------------------------------------------------------------------------
@@ -739,7 +822,7 @@ def sha256(path):
 
 
 def write_report(path, rows, orphans, templates, renames, conflicts, unparsed, checks, sources,
-                 length_conflicts, excluded):
+                 length_conflicts, excluded, notes_with_rules, notes_misplaced):
     link_key_sheets = [s for s, i in templates.items() if any(
         re.sub(r"[^a-z0-9]", "", c.lower()) == "clientimportid" for c in i["columns"])]
     unvalidated = [r for r in rows if not r["validated"]]
@@ -848,6 +931,33 @@ def write_report(path, rows, orphans, templates, renames, conflicts, unparsed, c
     else:
         L.append("_None — sheets duplicated across workbooks are structurally identical._")
     L.append("")
+
+    L.append("### Scratch-column convention\n")
+    L.append("`Comments` (plural) is scratch space for whoever fills the sheet in and is never")
+    L.append("migrated; `Comment` (singular) is a real validated, imported field. Both are kept")
+    L.append("in the schema — the scratch column flagged `notesColumn` so the UI can say what")
+    L.append("it's for, and excluded as a mapping target so no data is ever routed into it.\n")
+    if notes_with_rules:
+        L.append("**Convention broken:** these `Comments` columns have validation rules, which")
+        L.append("means they are not scratch space after all.\n")
+        for n in notes_with_rules:
+            L.append("- `%s`.`%s`" % (n["sheet"], n["field"]))
+        L.append("")
+    else:
+        L.append("No `Comments` column carries a validation rule — the convention holds.\n")
+    if notes_misplaced:
+        L.append("**Column order worth a look.** Every other sheet puts the scratch column")
+        L.append("first, so these are a trap for anyone working across sheets — notes typed")
+        L.append("into the first column here *would* be migrated:\n")
+        L.append("| Sheet | Column | Position | |")
+        L.append("|---|---|---|---|")
+        for n in notes_misplaced:
+            why = ("migrated field sitting in the scratch column's usual place"
+                   if n.get("migratedFirst") else "scratch column is not first")
+            L.append("| `%s` | `%s` | index %d | %s |" % (n["sheet"], n["field"], n["index"], why))
+        L.append("")
+    else:
+        L.append("Scratch column is first on every sheet.\n")
 
     L.append("### Checks against import tables that are never created\n")
     live_tables = {t.lower() for ts in renames.values() for t in ts}
@@ -974,7 +1084,7 @@ def main():
     sql = strip_sql_comments(sql)
     renames = parse_renames(sql)
     checks, unparsed = parse_checks(sql)
-    rows, orphans, _, length_conflicts = merge(templates, renames, checks)
+    rows, orphans, _, length_conflicts, notes_with_rules, notes_misplaced = merge(templates, renames, checks)
 
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(rows, f, indent=2, ensure_ascii=False)
@@ -983,7 +1093,7 @@ def main():
     write_report(
         args.report, rows, orphans, templates, renames, conflicts, unparsed, checks,
         [("Templates", args.templates), ("Validation script", args.validation)],
-        length_conflicts, excluded,
+        length_conflicts, excluded, notes_with_rules, notes_misplaced,
     )
 
     print("Templates: %d workbooks, %d sheets" % (len(files), len(templates)))

@@ -7,9 +7,9 @@ Russ, who confirmed `target_schema_full.json` on 2026-08-04).
 ## Sources
 
 - **Templates** — `C:/Users/AlexanderButton/OneDrive - CaseWorthy/ETL Team/12. ServTracker/ExcelTemplates/Master Templates`
-  - SHA-256 `d53917221b3400e61a83926e79aa37542de8cf0af9230099d8b4d54f67092a44`
+  - SHA-256 `64415c643a1c9582c93472d722e0362fde961c6e330b5d70553bcf45418598a3`
 - **Validation script** — `C:/Users/AlexanderButton/OneDrive - CaseWorthy/ETL Team/12. ServTracker/Master Scripts/1 - Master Validation.sql`
-  - SHA-256 `4b009d3c5fb6e60a193d321f7bf9eec293f904a5879f78bbaa96aad383aba76f`
+  - SHA-256 `5508c2e01130bcf692c7807435793dd22d5667f112f21342f233983bd77ffc0e`
 
 Sources are live maintained documents, deliberately not copied into this repo.
 Re-run the extractor to detect drift against these hashes.
@@ -20,10 +20,10 @@ Re-run the extractor to detect drift against these hashes.
 |---|---|
 | Templates (workbooks) | 18 |
 | Sheets | 35 |
-| Fields extracted | 540 |
+| Fields extracted | 570 |
 | Validation checks parsed | 785 |
-| Fields with >=1 rule | 486 |
-| Fields with no rule (treated as optional) | 54 |
+| Fields with >=1 rule | 492 |
+| Fields with no rule (treated as optional) | 78 |
 | Required fields | 118 |
 | Fields with an allowed-value list | 62 |
 | Fields validated against a lookup table | 11 |
@@ -71,11 +71,9 @@ script still validates something customers are never asked for.
 
 | Import table | Field | Example message |
 |---|---|---|
-| `casemgmtintakeimport` | `comments` | Remarks are too long. Remarks max length is 250 characters. |
-| `casemgmtserviceplanimport` | `comments` | Comments are too long. Max length is 250 characters. |
 | `clientdaycareintakeimport` | `casemanagerid` | CaseManagerId is too long. CaseManagerId max length is 20 characters. |
 | `clientdaycareintakeimport` | `clientimportid` | ClientImportId is Missing. ClientImportId is required. |
-| `clientdaycareintakeimport` | `comments` | Comments are too long. Comments max length is 250 characters. |
+| `clientdaycareintakeimport` | `comment` | Comment is too long. Comment max length is 250 characters. |
 | `clientdaycareintakeimport` | `disabled` | Disabled is not a valid value. Valid options: Y or N |
 | `clientdaycarescheduleimport` | `authmonthlyunits` | Auth Monthly Units must be a number and is required. |
 | `clientdaycarescheduleimport` | `authorizationnumber` | Authorization # is too long. Max length is 15 characters. |
@@ -131,12 +129,25 @@ script still validates something customers are never asked for.
 | `clienthdmchoicemenuitemsimport` | `fri` | Fri value is not a valid value. Must be Yes or No. |
 | `clienthdmchoicemenuitemsimport` | `itemcode` | Duplicate Item Code detected. Item Code must be unique for each row. |
 | `clienthdmchoicemenuitemsimport` | `itemtype` | Item Type value is not a valid value. Must be Entree, Side, Bread, Beverage or D |
+| `clienthdmchoicemenuitemsimport` | `menuitem` | Menu Item is too long. Menu Item max length is 150 characters. |
+| `clienthdmchoicemenuitemsimport` | `mon` | Mon value is not a valid value. Must be Yes or No. |
 
-_...and 54 more._
+_...and 48 more._
 
 ### Same sheet with differing columns across workbooks
 
 _None — sheets duplicated across workbooks are structurally identical._
+
+### Scratch-column convention
+
+`Comments` (plural) is scratch space for whoever fills the sheet in and is never
+migrated; `Comment` (singular) is a real validated, imported field. Both are kept
+in the schema — the scratch column flagged `notesColumn` so the UI can say what
+it's for, and excluded as a mapping target so no data is ever routed into it.
+
+No `Comments` column carries a validation rule — the convention holds.
+
+Scratch column is first on every sheet.
 
 ### Checks against import tables that are never created
 
@@ -151,16 +162,7 @@ either.** Each looks like a near-miss of a real table name.
 
 ### `FieldName` label disagreeing with the column tested
 
-Every `ErrorLog` row carries a FieldName label *and* the expression actually
-tested. Where they disagree the label is wrong, so the live import reports the
-error against the wrong column -- a customer chasing a `ClientImportId` error
-is really looking at a different field. The tested column was used for the
-schema; without that, these land bogus rules on the link key.
-
-| Import table | Label says | Actually tests | Used | Message |
-|---|---|---|---|---|
-| `HomecareTasksImport` | `HomecareTasks` | `ClientImportId` | **`HomecareTasks`** | HomecareTasks is Missing. HomecareTasks is required. |
-| `HomecareTasksImport` | `HomecareTasks` | `ClientImportId` | **`HomecareTasks`** | HomecareTasks is too long. HomecareTasks max length is 50 ch |
+_None._
 
 ### Fields given two different max lengths
 
@@ -185,8 +187,9 @@ link a client across every sheet, and the UI should teach that.
 
 | Sheets | Field |
 |---|---|
+| 34 | `Comments` |
 | 32 | `ClientImportId` |
-| 14 | `Comment` |
+| 10 | `Comment` |
 | 9 | `Funding` |
 | 7 | `LastAssessment` |
 | 6 | `ProviderName` |
@@ -209,7 +212,6 @@ link a client across every sheet, and the UI should teach that.
 | 4 | `FirstName` |
 | 4 | `Email` |
 | 3 | `Sun` |
-| 3 | `ServiceStartDate` |
 
 ## Fields with no validation rule
 
@@ -217,22 +219,40 @@ Present in a template but never validated. Recorded as optional
 `Text` with `"validated": false` — absence of a rule is not evidence
 of a rule, so nothing was inferred about them.
 
-54 of 540 fields.
+78 of 570 fields.
 
-- **Case Mgmt Intake** (1): `Comment`
-- **Case Mgmt Service Plans** (1): `Comment`
-- **Client Demographics** (1): `SpecialNotes`
-- **Client Pets** (3): `CatComment`, `DogComment`, `OtherComment`
-- **Destination Options** (5): `DestinationName`, `DestinationAddress`, `DestinationCity`, `DestinationZipCode`, `DestinationPhone`
-- **HDM Schedules** (1): `CreateServicePlan`
-- **Homecare Assessments** (2): `Comment`, `Service`
-- **Homecare Client Schedule** (2): `Comment`, `HCType`
+- **Case Managers** (1): `Comments`
+- **Case Mgmt Case Notes** (1): `Comments`
+- **Case Mgmt Intake** (1): `Comments`
+- **Case Mgmt Service Plans** (1): `Comments`
+- **Client Demographics** (2): `Comments`, `SpecialNotes`
+- **Client Medical Main** (1): `Comments`
+- **Client Notes** (1): `Comments`
+- **Client Pets** (4): `Comments`, `CatComment`, `DogComment`, `OtherComment`
+- **Congregate Meal Schedule** (1): `Comments`
+- **Destination Options** (6): `Comments`, `DestinationName`, `DestinationAddress`, `DestinationCity`, `DestinationZipCode`, `DestinationPhone`
+- **Emergency Contacts** (1): `Comments`
+- **HDM Main** (1): `Comments`
+- **HDM Schedules** (2): `Comments`, `CreateServicePlan`
+- **Health Conditions** (1): `Comments`
+- **Homecare Assessments** (2): `Comments`, `Service`
+- **Homecare Client Schedule** (2): `Comments`, `HCType`
 - **Homecare Employees** (18): `EmployeePhone3`, `SupervisorFName`, `SupervisorLName`, `Location`, `SunHoursBegin`, `SunHoursEnd`, `MonHoursBegin`, `MonHoursEnd`, `TueHoursBegin`, `TueHoursEnd`, `WedHoursBegin`, `WedHoursEnd` ...
-- **Homecare Intake** (4): `Comment`, `SupervisorFName`, `SupervisorLName`, `SupervisorEmpId`
-- **Homecare Notes** (1): `Comment`
-- **Homecare Tasks** (2): `Comment`, `Service`
-- **Membership Details** (8): `MemberStartDate`, `MemberEndDate`, `MemberEndReason`, `MemberExpireDate`, `MembershipDuesAmount`, `ReceiveNewsletter`, `Site`, `MemberShipType`
-- **Membership Main** (1): `WeddingAnniversaryDate`
-- **Transportation Main** (1): `Comment`
-- **Volunteer Intake** (1): `Comment`
-- **Waiting List Schedules** (2): `Comment`, `ReferralOrg`
+- **Homecare Intake** (4): `Comments`, `SupervisorFName`, `SupervisorLName`, `SupervisorEmpId`
+- **Homecare Notes** (1): `Comments`
+- **Homecare Tasks** (2): `Comments`, `Service`
+- **ICD 10 CM Codes** (1): `Comments`
+- **Membership Details** (9): `Comments`, `MemberStartDate`, `MemberEndDate`, `MemberEndReason`, `MemberExpireDate`, `MembershipDuesAmount`, `ReceiveNewsletter`, `Site`, `MemberShipType`
+- **Membership Main** (2): `Comments`, `WeddingAnniversaryDate`
+- **Other Services Schedule** (1): `Comments`
+- **Outcome Scores** (1): `Comments`
+- **Physicians** (1): `Comments`
+- **Recreation Main** (1): `Comments`
+- **Recreation Schedule** (1): `Comments`
+- **Temporary Suspensions Holds** (1): `Comments`
+- **Transportation Main** (1): `Comments`
+- **Transportation Schedules** (1): `Comments`
+- **Volunteer Intake** (1): `Comments`
+- **Volunteer Schedule** (1): `Comments`
+- **Waiting List Main** (1): `Comments`
+- **Waiting List Schedules** (2): `Comments`, `ReferralOrg`

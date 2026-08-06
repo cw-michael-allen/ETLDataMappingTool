@@ -75,9 +75,10 @@ def build():
 
     ordered = sorted(by_module.items(), key=module_sort)
 
-    total = len(rows)
+    scratch = sum(1 for r in rows if r.get("notesColumn"))
+    total = len(rows) - scratch
     required = sum(1 for r in rows if r["required"])
-    unvalidated = sum(1 for r in rows if not r.get("validated"))
+    unvalidated = sum(1 for r in rows if not r.get("validated") and not r.get("notesColumn"))
     with_values = sum(1 for r in rows if r.get("decodeValues"))
     lookups = sum(1 for r in rows if r.get("lookupTable"))
     sheets = len({r["sheet"] for r in rows})
@@ -94,9 +95,9 @@ def build():
       'Review and sign off.</p>')
     a('<div class="stats">')
     for label, value in (
-        ("Fields", total), ("Sheets", sheets), ("Required", required),
+        ("Migratable fields", total), ("Sheets", sheets), ("Required", required),
         ("Allowed-value lists", with_values), ("Lookup-validated", lookups),
-        ("No rule found", unvalidated),
+        ("No rule found", unvalidated), ("Scratch columns", scratch),
     ):
         a(f'<div class="stat"><div class="n">{value}</div><div class="l">{esc(label)}</div></div>')
     a("</div></header>")
@@ -105,8 +106,12 @@ def build():
     a('<section class="card callout">')
     a("<h2>What you're signing off on</h2>")
     a("<ul class=\"check\">")
-    a(f"<li><strong>{total} fields across {sheets} sheets</strong> match the columns in the master "
-      "templates — the templates are the authority on which fields we offer to migrate.</li>")
+    a(f"<li><strong>{total} migratable fields across {sheets} sheets</strong> match the columns in "
+      "the master templates — the templates are the authority on which fields we offer to migrate.</li>")
+    a(f"<li><strong>{scratch} <code>Comments</code> scratch columns</strong> are shown but marked "
+      "<span class=\"badge b-notes\">scratch — not migrated</span>. They are free space for whoever "
+      "fills the template in, and are excluded as mapping destinations so no data can be routed "
+      "into them. <code>Comment</code> (singular) is the real, validated field.</li>")
     a(f"<li><strong>All 785 validation checks parsed</strong>, none unreadable. {required} fields are "
       "marked required; each was cross-checked against an independent parse with zero contradictions.</li>")
     a("<li><strong>Commented-out SQL was excluded</strong>, so retired blocks like "
@@ -167,11 +172,13 @@ def build():
               "<th>Allowed values / notes</th></tr></thead><tbody>")
             for f in fields:
                 flags = []
+                if f.get("notesColumn"):
+                    flags.append('<span class="badge b-notes">scratch — not migrated</span>')
                 if f.get("linkKey"):
                     flags.append('<span class="badge b-link">link key</span>')
                 if f.get("mergeOnly"):
                     flags.append('<span class="badge b-merge">merge only</span>')
-                if not f.get("validated"):
+                if not f.get("validated") and not f.get("notesColumn"):
                     flags.append('<span class="badge b-unval">no rule found</span>')
                 if f.get("unique"):
                     flags.append('<span class="badge b-uniq">unique</span>')
@@ -205,7 +212,7 @@ def build():
                     f' data-vals="{1 if f.get("decodeValues") else 0}"'
                     f' data-flag="{1 if (f.get("linkKey") or f.get("mergeOnly")) else 0}"'
                 )
-                a(f"<tr{attrs}>")
+                a(f'<tr{attrs}{" class=notes-row" if f.get("notesColumn") else ""}>')
                 a(f'<td class="fname"><code>{esc(f["field"])}</code> {" ".join(flags)}</td>')
                 a(f'<td class="req">{"●" if f["required"] else ""}</td>')
                 a(f'<td><span class="type {type_class(f["type"])}">{esc(f["type"])}</span></td>')
@@ -322,6 +329,8 @@ tbody tr:hover{background:var(--tint)}
 .b-uniq{background:transparent;color:var(--cw-green);border:1px solid var(--cw-green)}
 .b-warn{background:var(--cw-gold);color:#333}
 .b-base{background:var(--cw-blue);color:#fff}
+.b-notes{background:transparent;color:var(--muted);border:1px dashed var(--border)}
+tr.notes-row{opacity:.72}
 
 .foot{text-align:center;font-size:12px;color:var(--muted);margin-top:28px}
 tr.hide,.sheet.hide,.module.hide{display:none}
