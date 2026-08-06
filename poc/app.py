@@ -26,6 +26,7 @@ from urllib.parse import urlparse, parse_qs
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import db  # noqa: E402
 import field_matcher  # noqa: E402
+import file_import  # noqa: E402
 import llm_gateway  # noqa: E402
 import schema_rules  # noqa: E402
 import sql_export  # noqa: E402
@@ -145,6 +146,38 @@ class Handler(BaseHTTPRequestHandler):
         raw = self.rfile.read(length) if length else b"{}"
         return json.loads(raw or b"{}")
 
+    def _handle_import_fields(self):
+        # Bulk-import of Step 2 field names from a CSV/xlsx upload -- see
+        # file_import.py for the header-row-only parsing and why. Handled
+        # separately from the JSON POST routes below since the body here is
+        # multipart/form-data, not JSON.
+        length = int(self.headers.get("Content-Length", 0) or 0)
+        if length > file_import.MAX_UPLOAD_BYTES:
+            self.close_connection = True
+            limit_mb = file_import.MAX_UPLOAD_BYTES // (1024 * 1024)
+            return self._send_json(
+                {
+                    "error": (
+                        f"That file is larger than expected for a column list (limit {limit_mb} MB). "
+                        "This tool only needs field names, not data -- upload a smaller export."
+                    )
+                },
+                413,
+            )
+        body = self.rfile.read(length) if length else b""
+        try:
+            parts = file_import.parse_multipart(self.headers.get("Content-Type", ""), body)
+            upload = parts.get("file")
+            if not upload:
+                return self._send_json({"error": "No file was attached to the upload."}, 400)
+            filename, raw_bytes = upload
+            mode_field = parts.get("advancedMode")
+            advanced_mode = bool(mode_field) and mode_field[1].decode("utf-8", "replace").strip().lower() == "true"
+            result = file_import.import_fields_from_upload(filename, raw_bytes, advanced_mode)
+        except file_import.FileImportError as e:
+            return self._send_json({"error": str(e)}, 400)
+        return self._send_json(result)
+
     def do_GET(self):
         parsed = urlparse(self.path)
         query = parse_qs(parsed.query)
@@ -188,6 +221,10 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlparse(self.path).path
+
+        if path == "/api/import-fields":
+            return self._handle_import_fields()
+
         try:
             payload = self._read_json()
         except json.JSONDecodeError:

@@ -81,6 +81,16 @@ code path; don't special-case one database in the frontend when a `TARGET_DB_MET
    in the prompt — that was a real bug, fixed, see git history).
 4. `db.get_field_index` — cross-source-system boosting ("also mapped this way N times").
 
+**`file_import.py`** (Step 2 "Import fields") lets a customer upload a `.csv`/`.xlsx` export
+instead of typing each field in by hand. It only ever reads the **header row** — never the data
+underneath it, per the product boundary above, even if the uploaded file happens to have real
+rows in it. CSV stops at the first non-blank row; `.xlsx` is parsed by hand against the OOXML
+zip/XML format (`zipfile` + `xml.etree.ElementTree.iterparse`, not `openpyxl`, to keep the app
+pure-stdlib) and the parser returns as soon as the first `<row>` closes, so later rows are never
+even read off disk. Advanced mode expects each header as `Table.Column` (e.g. `Client.ClientID`)
+and splits on the first `.`; non-advanced mode expects a bare field name. Handled as the one
+multipart/form-data POST route in `app.py`, kept separate from the JSON-only routes.
+
 **`schema_rules.check_batch`** flags rule violations (missing required fields, unmapped FK
 dependencies, duplicate target assignments, decode/boolean/length format mismatches) against
 whatever the customer has mapped so far — heuristic checks against the typed-in description,

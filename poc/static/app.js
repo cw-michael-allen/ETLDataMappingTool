@@ -62,6 +62,11 @@ document.addEventListener("click", (e) => {
 
 initTheme();
 
+// Transient one-shot banner shown under the Step 2 import control after an
+// upload. Not part of `state` -- it's a render-only concern that should
+// clear itself the next time renderStep2 runs, not persist across steps.
+let lastImportNotice = null;
+
 let state = {
   step: 1,
   targetDatabase: "CaseWorthy",
@@ -330,6 +335,28 @@ async function renderStep1() {
   };
 }
 
+// Merges freshly-imported {name, desc, sourceTable} rows into state.fields:
+// drops the pattern's own blank rows first (so an import into an untouched
+// Step 2 doesn't leave an empty row mixed into real data), skips anything
+// that already matches an existing field name + source table (case-
+// insensitive), then leaves one trailing blank row for continued manual entry.
+function mergeImportedFields(imported) {
+  const merged = state.fields.filter(f => f.name.trim());
+  const key = f => `${f.name.trim().toLowerCase()}::${(f.sourceTable || "").trim().toLowerCase()}`;
+  const seen = new Set(merged.map(key));
+  let added = 0, skipped = 0;
+  for (const f of imported) {
+    const k = key(f);
+    if (seen.has(k)) { skipped++; continue; }
+    seen.add(k);
+    merged.push({ name: f.name, desc: f.desc || "", sourceTable: f.sourceTable || "" });
+    added++;
+  }
+  merged.push({ name: "", desc: "", sourceTable: "" });
+  state.fields = merged;
+  return { added, skipped };
+}
+
 function renderStep2() {
   const rows = state.fields.map((f, i) => `
     <div class="field-row" data-idx="${i}">
@@ -340,11 +367,30 @@ function renderStep2() {
     </div>
   `).join("");
 
+  const advancedInstructions = state.advancedMode
+    ? `Advanced options require table and column names, example: <strong>Client.ClientID</strong> or <strong>Client.DOB</strong>.`
+    : "";
+  const importFormatHint = state.advancedMode
+    ? `Header cells should use that same "Table.Column" form (e.g. Client.ClientID) so we can split out the table name.`
+    : `Header cells should just be the column name (e.g. ClientID).`;
+  const notice = lastImportNotice
+    ? `<div class="import-notice import-${lastImportNotice.kind}">${lastImportNotice.text}</div>`
+    : "";
+  lastImportNotice = null;
+
   app.innerHTML = `
     ${renderHeader()}
     <div class="card">
       <h3>List the Fields From ${state.sourceSystem}</h3>
-      <div style="color:var(--surface-text-muted);font-size:13px;margin-bottom:14px;">Add each field name from your export. A short description helps but isn't required.${state.advancedMode ? " Advanced mode is on — also enter each field's source table name so a SQL export can be generated later." : ""}</div>
+      <div style="color:var(--surface-text-muted);font-size:13px;margin-bottom:14px;">Add each field name from your export. A short description helps but isn't required.${state.advancedMode ? ` Advanced mode is on — also enter each field's source table name so a SQL export can be generated later. ${advancedInstructions}` : ""}</div>
+      <div class="import-panel">
+        <div class="import-row">
+          <input type="file" id="import-file" accept=".csv,.xlsx">
+          <button class="secondary" id="import-btn" disabled>Import fields</button>
+        </div>
+        <div class="import-hint">Only the header row (column names) is read — never the data underneath it. ${importFormatHint}</div>
+        <div id="import-status">${notice}</div>
+      </div>
       <div id="field-rows">${rows}</div>
       <button class="secondary" id="add-field">+ Add another field</button>
       <div class="step-nav">
@@ -387,6 +433,40 @@ function renderStep2() {
     state.fields = valid;
     state.step = 3;
     await renderStep3();
+  };
+
+  const importFileEl = document.getElementById("import-file");
+  const importBtn = document.getElementById("import-btn");
+  const importStatusEl = document.getElementById("import-status");
+  importFileEl.onchange = () => {
+    importBtn.disabled = !importFileEl.files.length;
+  };
+  importBtn.onclick = async () => {
+    const file = importFileEl.files[0];
+    if (!file) return;
+    importBtn.disabled = true;
+    importBtn.textContent = "Importing…";
+    importStatusEl.innerHTML = "";
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("advancedMode", state.advancedMode ? "true" : "false");
+      const res = await fetch("/api/import-fields", { method: "POST", body: formData });
+      const result = await res.json();
+      if (!res.ok || result.error) throw new Error(result.error || "Import failed.");
+
+      syncFieldsFromDOM();
+      const { added, skipped } = mergeImportedFields(result.fields);
+      const parts = [`Imported ${added} field${added === 1 ? "" : "s"} from ${result.sourceFile}.`];
+      if (skipped) parts.push(`${skipped} duplicate${skipped === 1 ? "" : "s"} skipped.`);
+      parts.push(...(result.warnings || []));
+      lastImportNotice = { kind: "success", text: parts.join(" ") };
+      renderStep2();
+    } catch (err) {
+      importStatusEl.innerHTML = `<div class="import-notice import-error">${err.message}</div>`;
+      importBtn.disabled = false;
+      importBtn.textContent = "Import fields";
+    }
   };
 }
 
