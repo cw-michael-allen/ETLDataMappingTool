@@ -16,6 +16,9 @@ Optional env vars:
 - `ANTHROPIC_MODEL` — defaults to `claude-sonnet-5`.
 - `CW_ETL_DB_PATH` — points the learned-mappings SQLite file at a shared location instead of the
   local `data/` folder; see "Shared learned-mappings library" below.
+- `CW_ETL_SHARED_XLSX` — path to a shared Excel append-log that the matching logic also reads
+  from and writes to; see "Shared mapping log (Excel)" below. Independent of `CW_ETL_DB_PATH` —
+  either, both, or neither can be set.
 
 ## Python version compatibility
 
@@ -35,6 +38,7 @@ Practical floor: any Python 3.x anyone would realistically still have installed 
 - `llm_gateway.py` — the one place that calls an LLM. Swap this file's implementation to point at the internal gateway in Phase 2.
 - `schema_rules.py` — owns the `TARGET_DATABASES` registry and per-database metadata (`TARGET_DB_META`: label, logo, module/tab-scoping behavior and copy), and flags violations against whichever one is active: missing required fields, unmapped FK-dependent tables, duplicate target assignments, and format mismatches — decode/list value mismatches, boolean fields described with more than two options, and text fields whose stated length exceeds the target's max. This is the "prevent a customer from breaking the rules" requirement from the phase plan. All of these are heuristic checks against the customer's typed-in field description, never against real data.
 - `file_import.py` — parses an uploaded CSV/xlsx into Step 2 field rows (see "Import fields from a file" below).
+- `shared_mappings.py` — reads/writes the shared Excel append-log of confirmed mappings (see "Shared mapping log (Excel)" below). Independent of `db.py`; `app.py` consults both.
 - `sql_export.py` — Advanced-mode SQL export. Turns confirmed mappings (source table + source field → target table.field) into one SELECT statement per (target table, source table) pair, aliased to the exact target field names, for a technical data person to run against the customer's live source system. See "Advanced mode" below for scope and limits.
 - `static/` — the frontend (vanilla HTML/CSS/JS), same 4-step interview flow as the original artifact POC (source system → fields → suggestions → summary), now calling this backend instead of `window.storage` / the Anthropic API directly from the browser. Step 1 now also asks which **Target Database** to map against, and has an **Advanced options** toggle (see below).
 - `static/assets/logos/` — CaseWorthy and ServTracker logos (originally bundled from the `caseworthy-brand-visual-identity` skill's snapshot, reprocessed into real transparent PNGs — see Branding below; see the skill for canonical/print versions), swapped in the header based on the selected target database.
@@ -121,6 +125,86 @@ to look at both and decide (or ask whoever confirmed last) which one to keep goi
 
 Not setting `CW_ETL_DB_PATH` keeps today's behavior exactly as-is — a private local library, no
 sharing, no risk of the above.
+
+## Shared mapping log (Excel)
+
+A second, independent sharing mechanism, on top of (not instead of) the SQLite option above:
+`shared_mappings.py` reads from and writes to a real `.xlsx` file — human-readable and directly
+reviewable in Excel by anyone, unlike `mappings.db`. `db.py`'s local SQLite cache is untouched and
+still handles every request as fast as it always has; this is an *additional* source the matching
+logic also checks, and an *additional* place every confirmation also gets written.
+
+**The shared workbook** — `MappingLibShared.xlsx` — lives in the CWCollaboration Team Site's
+`ETLSharedMappingLookup - HACKATHON26` document library, the same site used for the SQLite option
+above:
+https://caseworthyinc.sharepoint.com/:f:/s/CWCollaboration/IgCw4PgzxHzASIxq7JGqWQTtAZm6U86ExovJ8aSvWb-E6As?e=OfLMLF
+— sync that folder ("Add shortcut to OneDrive"), and the file is right there inside it. No
+separate per-file share link needed (an earlier per-file link to a copy of this workbook in one
+person's personal OneDrive has been retired — that copy no longer exists, its data was folded into
+this one before it was removed, so nothing was lost).
+
+**Enable it** by setting `CW_ETL_SHARED_XLSX` to wherever that folder actually lands once synced —
+find its real local path in File Explorer rather than assuming the one below, which is just this
+machine's actual path (the folder segment right after `OneDrive - CaseWorthy\` reflects this
+Team Site's library name, not something that varies per person the way a personal OneDrive path
+would):
+```
+set CW_ETL_SHARED_XLSX=C:\Users\<you>\OneDrive - CaseWorthy\CaseWorthy - ETLSharedMappingLookup - HACKATHON26\MappingLibShared.xlsx
+python app.py
+```
+This needs `openpyxl` installed (`pip install openpyxl`, or `pip install -r
+requirements-optional.txt`) — the one deliberate exception to this repo's pure-stdlib rule,
+because a hand-rolled `.xlsx` *writer* is a much bigger, riskier undertaking than the read-only
+header parser in `file_import.py`, and this file may also be opened directly in Excel by a human.
+If `CW_ETL_SHARED_XLSX` is set but `openpyxl` isn't installed, or the file can't be reached, the
+app logs a clear warning at startup and carries on without it — this feature degrading never
+takes the rest of the tool down with it.
+
+**Format — append-only log, one row per confirmation, never edited in place:**
+
+| TargetDatabase | SourceSystem | SourceField | TargetTable | TargetField | ConfirmedAt | ConfirmedBy |
+|---|---|---|---|---|---|---|
+
+Confirming the same mapping again adds another row rather than incrementing a counter in place;
+confirming a *different* target for a field previously confirmed differently also just adds a new
+row. `shared_mappings.SharedLog` derives both a `db.py`-equivalent "confirm_count" (the streak of
+consecutive rows, from the end, sharing the same target — i.e., changing your mind starts the
+count over, exactly like `db.py`'s incremental counter does) and a `db.py`-equivalent
+cross-system field-index count (every row counts, including repeats — also matching `db.py`) by
+aggregating over the whole log at read time, so nothing needs to be computed or stored
+incrementally. This — not update-in-place — is deliberate: an append is the one write shape that
+can't corrupt or silently overwrite an existing row if two consultants write within the same
+OneDrive sync window (see the concurrency caveat two sections up, which applies here too, in the
+same low-but-nonzero way).
+
+**How the matching logic actually uses it (`app.py`):** on `/api/suggest`, if `db.get_mapping`
+(local SQLite) finds nothing, `shared_mappings.SHARED.get_exact(...)` gets a turn before falling
+through to the rule matcher/LLM — a mapping only ever confirmed by someone else, via their own
+`CW_ETL_SHARED_XLSX`-enabled session, still comes back `confidence: "learned"` here, reasoning
+explicitly noting it's *"from the shared mapping library"* so it reads differently from a mapping
+this machine confirmed itself. Cross-system field-index boosting (`combined_field_index` in
+`app.py`) sums counts from `db.py`'s local index and the shared log's — two independent evidence
+pools for "also mapped this way N times," not one overriding the other. On `/api/confirm`, the
+shared-log append happens *after* the local SQLite save already succeeded, wrapped so a failure to
+reach the shared file (not configured, momentarily locked, OneDrive not syncing right now) can
+never fail or roll back the local confirm that already landed.
+
+The shared log is read into memory once at startup (`shared_mappings.init()`, called from
+`app.py: main()`) and kept current from there by mirroring this process's own appends straight
+into memory — it does not re-read the whole workbook on every suggestion request. A mapping
+confirmed by someone else *during* this process's run won't show up here until the app restarts;
+for how this tool is actually used (start it, use it, stop it — see `start.bat`/`stop.bat`) that's
+a reasonable enough cadence for a Phase 0 POC, not something worth a live-refresh mechanism yet.
+
+**Where the file lives, and why that changed:** `MappingLibShared.xlsx` originally started life in
+one person's *personal* OneDrive (confirmed directly from the file's own saved metadata —
+`personal/mallen_caseworthy_com`, Microsoft's naming for a personal, not Team Site, location),
+shared out via a per-file link. That setup doesn't give other testers a normal "sync it like a
+folder" experience the way a Team Site document library does. It's since been moved into the
+CWCollaboration Team Site's `ETLSharedMappingLookup - HACKATHON26` library above (a copy of its
+data was written there, verified identical, and the personal-OneDrive original was then removed)
+— every tester now gets a real synced local path just by syncing that one folder, the same way
+`CW_ETL_DB_PATH` already works for the SQLite option.
 
 ## Advanced mode (SQL export)
 

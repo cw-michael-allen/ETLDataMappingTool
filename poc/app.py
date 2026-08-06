@@ -29,6 +29,7 @@ import field_matcher  # noqa: E402
 import file_import  # noqa: E402
 import llm_gateway  # noqa: E402
 import schema_rules  # noqa: E402
+import shared_mappings  # noqa: E402
 import sql_export  # noqa: E402
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -97,6 +98,20 @@ def describe_target_databases():
             }
         )
     return out
+
+
+def combined_field_index(field_name, target_db):
+    """Cross-source-system boosting, merged from both db.py's local SQLite
+    index and the shared Excel log (shared_mappings.py) -- two independent
+    evidence pools for "also mapped this way N times", summed rather than
+    one overriding the other."""
+    merged = {}
+    for r in db.get_field_index(field_name, target_db):
+        merged[(r["target_table"], r["target_field"])] = r["count"]
+    for r in shared_mappings.SHARED.get_field_index(target_db, field_name):
+        key = (r["target_table"], r["target_field"])
+        merged[key] = merged.get(key, 0) + r["count"]
+    return [{"target_table": t, "target_field": f, "count": c} for (t, f), c in merged.items()]
 
 
 def get_candidates(target_db, modules=None):
@@ -242,6 +257,17 @@ class Handler(BaseHTTPRequestHandler):
                 )
             except KeyError as e:
                 return self._send_json({"error": f"missing field: {e}"}, 400)
+            # Best-effort: the shared log is an addition on top of the local
+            # SQLite confirm above (which already succeeded), not a
+            # replacement for it -- a shared-file write failure (not
+            # configured, file locked by OneDrive sync, etc.) must not lose
+            # or fail the confirm that already landed locally.
+            try:
+                shared_mappings.SHARED.append(
+                    target_db, payload["sourceSystem"], payload["fieldName"], payload["table"], payload["field"]
+                )
+            except Exception as e:  # noqa: BLE001
+                sys.stderr.write(f"WARNING: could not write to shared mapping log: {e}\n")
             return self._send_json({"ok": True})
         if path == "/api/rulecheck":
             return self._send_json(
@@ -269,6 +295,22 @@ class Handler(BaseHTTPRequestHandler):
                 "field": learned["target_field"],
                 "confidence": "learned",
                 "reasoning": f"Confirmed {learned['confirm_count']} time(s) before for {source_system}.",
+            }
+
+        # Nothing in this machine's local cache -- check the shared library
+        # before falling through to the rule matcher/LLM, so a mapping
+        # another consultant already confirmed (via the shared log) still
+        # short-circuits straight to "learned" here, exactly like a local one.
+        shared_learned = shared_mappings.SHARED.get_exact(target_db, source_system, field_name)
+        if shared_learned:
+            return {
+                "table": shared_learned["target_table"],
+                "field": shared_learned["target_field"],
+                "confidence": "learned",
+                "reasoning": (
+                    f"Confirmed {shared_learned['confirm_count']} time(s) before for {source_system} "
+                    "(from the shared mapping library)."
+                ),
             }
 
         if not schema:
@@ -302,7 +344,7 @@ class Handler(BaseHTTPRequestHandler):
                 if rule_sug and rule_sug["table"] == sug.get("table") and rule_sug["field"] == sug.get("field"):
                     sug["reasoning"] = (sug.get("reasoning") or "") + " Also matches by field-name pattern."
 
-        cross = db.get_field_index(field_name, target_db)
+        cross = combined_field_index(field_name, target_db)
         if cross and sug.get("confidence") not in (None, "none"):
             match = next(
                 (c for c in cross if c["target_table"] == sug.get("table") and c["target_field"] == sug.get("field")),
@@ -341,6 +383,15 @@ def main():
         print(f"Learned-mapping library: local only at {db.DB_PATH} (set CW_ETL_DB_PATH to share it across machines — see poc/README.md, 'Shared learned-mappings library')")
     if not os.environ.get("ANTHROPIC_API_KEY"):
         print("WARNING: ANTHROPIC_API_KEY not set — suggestions will come back as 'no confident match'.")
+
+    shared_mappings.init()
+    shared = shared_mappings.SHARED
+    if shared.status == "ok":
+        print(f"Shared mapping log: {shared.detail}")
+    elif shared.status == "disabled":
+        print("Shared mapping log: not configured (set CW_ETL_SHARED_XLSX to enable — see poc/README.md, 'Shared mapping log')")
+    else:
+        print(f"WARNING: shared mapping log ({shared.status}): {shared.detail} — continuing without it.")
 
     # Load every registered schema up front so unrecognised `type` strings are
     # reported at startup. Those fields silently skip all format checks, which

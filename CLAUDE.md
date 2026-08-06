@@ -73,7 +73,12 @@ code path; don't special-case one database in the frontend when a `TARGET_DB_MET
 1. `db.get_mapping` — an exact-match learned mapping for this source system, scoped per
    target database (`db.py`'s tables have a `target_db` column specifically so CaseWorthy and
    ServTracker mappings never collide).
-2. `field_matcher.match` — rule-based, deterministic, no network call. Exact name match → alias
+2. `shared_mappings.SHARED.get_exact` — only reached when step 1 finds nothing locally. Same
+   exact-match shape, sourced from the shared Excel log instead of local SQLite, so a mapping only
+   ever confirmed by someone *else* (via their own `CW_ETL_SHARED_XLSX`) still short-circuits here
+   — reasoning explicitly says "from the shared mapping library" so it reads differently from a
+   locally-confirmed one. See `poc/README.md`'s "Shared mapping log (Excel)".
+3. `field_matcher.match` — rule-based, deterministic, no network call. Exact name match → alias
    table (common ETL abbreviations) → exact substring/token match → generic similarity, all
    against the source **field name**. Only when the name alone matches nothing does the
    customer's typed **description** get a turn, as a separate, deliberately conservative fallback
@@ -83,10 +88,12 @@ code path; don't special-case one database in the frontend when a `TARGET_DB_MET
    an otherwise-tied same-named-on-multiple-tables match (e.g. "notes about the provider" prefers
    `Provider.Notes` over `Client.Notes`) — never to raise confidence past what the name earned. A
    `high`-confidence rule match short-circuits the LLM entirely.
-3. `llm_gateway.suggest_mapping` — only reached when the rule matcher isn't confident. Takes the
+4. `llm_gateway.suggest_mapping` — only reached when the rule matcher isn't confident. Takes the
    target application's label as a parameter (never hardcode which application it's mapping to
    in the prompt — that was a real bug, fixed, see git history).
-4. `db.get_field_index` — cross-source-system boosting ("also mapped this way N times").
+5. `app.combined_field_index` — cross-source-system boosting ("also mapped this way N times"),
+   summing `db.get_field_index` (local) and `shared_mappings.SHARED.get_field_index` (shared) —
+   two independent evidence pools, added together rather than one overriding the other.
 
 **`db.py`'s learned-mapping library is local-per-machine by default** (`data/mappings.db`,
 gitignored) but can be pointed at a shared file via the `CW_ETL_DB_PATH` env var — e.g. a
@@ -96,6 +103,20 @@ accumulate across everyone running the tool instead of resetting per machine. Se
 OneDrive/SharePoint sync isn't true shared-network file locking, so two people confirming a
 mapping in the same sync window can produce a conflicted-copy file instead of a clean merge —
 low risk for how this tool is actually used (sequential, occasional), not zero.
+
+**`shared_mappings.py`** is a second, independent sharing mechanism on top of (not instead of)
+`CW_ETL_DB_PATH` above — a real `.xlsx` append-only log, human-readable in Excel by anyone, that
+`app.py` reads from and writes to *in addition to* `db.py`'s local SQLite on every suggest/confirm.
+Enabled via `CW_ETL_SHARED_XLSX`; needs `openpyxl` (`poc/requirements-optional.txt`) — the one
+deliberate exception to this repo's pure-stdlib rule, because a hand-rolled `.xlsx` writer is a
+much bigger, corruption-prone undertaking than `file_import.py`'s read-only header parser, and
+this file may also be opened directly in Excel by a human. Never edits a row in place — every
+confirmation appends a new row, and `confirm_count`/field-index counts are derived by aggregating
+the whole log at read time (`SharedLog._reindex_row`), reproducing `db.py`'s exact semantics
+(a changed mind resets the streak; field-index counts every repeat) without ever needing an
+in-place edit, which is the one write shape immune to a same-moment two-writer collision short of
+true file locking. Degrades gracefully (logs a warning, keeps running) if `openpyxl` isn't
+installed or the file can't be reached. See `poc/README.md`'s "Shared mapping log (Excel)".
 
 **`file_import.py`** (Step 2 "Import fields") lets a customer upload a `.csv`/`.xlsx` export
 instead of typing each field in by hand. It only ever reads the **header row** — never the data

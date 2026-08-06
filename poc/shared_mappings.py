@@ -1,0 +1,209 @@
+"""
+Append-only shared learned-mappings log, kept in a real .xlsx file so it's
+directly readable/reviewable in Excel by anyone -- unlike db.py's SQLite
+mappings.db, which is opaque outside this tool. Every confirmation appends a
+new timestamped row rather than editing one in place: a same-moment write
+from two consultants can at worst produce OneDrive's usual conflicted-copy
+fork (see poc/README.md), but it can never silently overwrite someone else's
+row the way an update-in-place design could.
+
+db.py is untouched by this file and stays exactly as it is -- a fast,
+always-available per-machine cache. This module is a second, independent
+read+write path that app.py consults alongside it (see poc/README.md,
+"Shared mapping log").
+
+Optional dependency: openpyxl. Only imported if CW_ETL_SHARED_XLSX is set --
+an installation that doesn't use this feature never needs it.
+"""
+
+import datetime
+import getpass
+import os
+
+from db import normalize
+
+SHARED_XLSX_PATH = os.environ.get("CW_ETL_SHARED_XLSX")
+
+# (column header written to the sheet, key used in an in-memory row dict).
+# Single source of truth for both directions -- reading builds a row dict
+# keyed this way, writing emits values in this same header order.
+FIELDS = [
+    ("TargetDatabase", "targetDatabase"),
+    ("SourceSystem", "sourceSystem"),
+    ("SourceField", "sourceField"),
+    ("TargetTable", "targetTable"),
+    ("TargetField", "targetField"),
+    ("ConfirmedAt", "confirmedAt"),
+    ("ConfirmedBy", "confirmedBy"),
+]
+REQUIRED_KEYS = ("targetDatabase", "sourceSystem", "sourceField", "targetTable", "targetField")
+SHEET_NAME = "ConfirmedMappings"
+
+_openpyxl = None
+_unavailable_reason = None
+
+
+def _load_openpyxl():
+    """Imported lazily and only once -- most installations never touch this
+    feature, so most installations never need openpyxl on disk at all."""
+    global _openpyxl, _unavailable_reason
+    if _openpyxl is not None or _unavailable_reason is not None:
+        return _openpyxl
+    try:
+        import openpyxl
+        _openpyxl = openpyxl
+    except ImportError:
+        _unavailable_reason = "openpyxl isn't installed (run: pip install openpyxl, or see poc/requirements-optional.txt)"
+    return _openpyxl
+
+
+class SharedLog:
+    """In-process cache of the shared file's rows, built once by load() and
+    kept current in memory as this process appends its own confirmations --
+    avoids re-parsing the whole workbook on every suggestion lookup."""
+
+    def __init__(self):
+        self.rows = []          # raw row dicts, oldest first
+        self.exact = {}         # (target_db, source_system_norm, field_name_norm) -> {target, count, lastConfirmedAt}
+        self.field_index = {}   # (target_db, field_name_norm) -> {(table, field): count}
+        self.path = None
+        self.status = "disabled"  # disabled | missing-dependency | not-found | ok | error
+        self.detail = ""
+
+    def load(self, path):
+        self.path = path
+        self.rows = []
+        self.exact = {}
+        self.field_index = {}
+        if not path:
+            self.status = "disabled"
+            self.detail = "CW_ETL_SHARED_XLSX not set"
+            return
+        openpyxl = _load_openpyxl()
+        if openpyxl is None:
+            self.status = "missing-dependency"
+            self.detail = _unavailable_reason
+            return
+        if not os.path.exists(path):
+            self.status = "not-found"
+            self.detail = f"{path} does not exist yet"
+            return
+        try:
+            wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+            ws = wb.active
+            header = None
+            for raw_row in ws.iter_rows(values_only=True):
+                if header is None:
+                    header = [str(c).strip() if c else "" for c in raw_row]
+                    continue
+                if not any(raw_row):
+                    continue
+                self._ingest(dict(zip(header, raw_row)))
+            wb.close()
+            self.status = "ok"
+            self.detail = f"{len(self.rows)} row(s) from {path}"
+        except Exception as e:  # noqa: BLE001 -- a shared file we don't control must never be able to crash the server
+            self.status = "error"
+            self.detail = str(e)
+
+    def _ingest(self, record):
+        row = {key: (record.get(header) or "") for header, key in FIELDS}
+        if not all(row[k] for k in REQUIRED_KEYS):
+            return
+        self.rows.append(row)
+        self._reindex_row(row)
+
+    def _reindex_row(self, row):
+        tdb = row["targetDatabase"]
+        ss_norm = normalize(row["sourceSystem"])
+        fn_norm = normalize(row["sourceField"])
+        target = (row["targetTable"], row["targetField"])
+
+        # Exact match: track the running count for whichever target is most
+        # recent, resetting if a later confirmation named a different one --
+        # mirrors db.py's confirm_count semantics (changing your mind about a
+        # mapping starts its count over rather than piling onto the old one).
+        key = (tdb, ss_norm, fn_norm)
+        existing = self.exact.get(key)
+        if existing and existing["target"] == target:
+            existing["count"] += 1
+            existing["lastConfirmedAt"] = row["confirmedAt"] or existing["lastConfirmedAt"]
+        else:
+            self.exact[key] = {"target": target, "count": 1, "lastConfirmedAt": row["confirmedAt"]}
+
+        # Field index: every confirmation counts, including repeats of the
+        # same mapping -- matches db.py's unconditional field_index increment.
+        idx_key = (tdb, fn_norm)
+        bucket = self.field_index.setdefault(idx_key, {})
+        bucket[target] = bucket.get(target, 0) + 1
+
+    def get_exact(self, target_db, source_system, field_name):
+        entry = self.exact.get((target_db, normalize(source_system), normalize(field_name)))
+        if not entry:
+            return None
+        table, field = entry["target"]
+        return {
+            "target_table": table,
+            "target_field": field,
+            "confirm_count": entry["count"],
+            "last_confirmed_at": entry["lastConfirmedAt"],
+        }
+
+    def get_field_index(self, target_db, field_name):
+        bucket = self.field_index.get((target_db, normalize(field_name)))
+        if not bucket:
+            return []
+        return sorted(
+            ({"target_table": t, "target_field": f, "count": c} for (t, f), c in bucket.items()),
+            key=lambda r: r["count"],
+            reverse=True,
+        )
+
+    def append(self, target_db, source_system, field_name, target_table, target_field):
+        """Appends one confirmation to the shared file, then mirrors it into
+        this in-memory cache so this session's own confirmations are visible
+        to its own next lookup without re-reading the whole workbook. Raises
+        on failure -- callers decide whether that should block anything."""
+        row = {
+            "targetDatabase": target_db,
+            "sourceSystem": source_system,
+            "sourceField": field_name,
+            "targetTable": target_table,
+            "targetField": target_field,
+            "confirmedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "confirmedBy": getpass.getuser(),
+        }
+        self._write_row(row)
+        self.rows.append(row)
+        self._reindex_row(row)
+
+    def _write_row(self, row):
+        openpyxl = _load_openpyxl()
+        if openpyxl is None:
+            raise RuntimeError(_unavailable_reason)
+        if not self.path:
+            raise RuntimeError("no shared file path configured (set CW_ETL_SHARED_XLSX)")
+        if os.path.exists(self.path):
+            wb = openpyxl.load_workbook(self.path)
+        else:
+            wb = openpyxl.Workbook()
+        ws = wb.active
+        if ws.max_row <= 1 and ws.cell(1, 1).value is None:
+            # A brand-new (or truly empty, like the shared file starts out)
+            # worksheet still reports max_row=1 for a phantom blank row, which
+            # makes the *first* append() land on row 2 instead of row 1 --
+            # openpyxl quirk, verified directly. delete_rows resets that.
+            ws.delete_rows(1, 1)
+            ws.title = SHEET_NAME
+            ws.append([header for header, _ in FIELDS])
+        ws.append([row[key] for _, key in FIELDS])
+        wb.save(self.path)
+
+
+SHARED = SharedLog()
+
+
+def init():
+    """Call once at process startup. Safe to call again to force a re-read."""
+    SHARED.load(SHARED_XLSX_PATH)
+    return SHARED

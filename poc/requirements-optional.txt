@@ -1,0 +1,6 @@
+# Not needed to run the app at all -- only required if CW_ETL_SHARED_XLSX is
+# set (see poc/README.md, "Shared mapping log"). Everything else in this repo
+# is pure standard library by design; this is the one deliberate exception,
+# because a hand-rolled writer risks corrupting a file other people also open
+# directly in Excel.
+openpyxl
