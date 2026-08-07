@@ -97,8 +97,39 @@ async function api(path, opts) {
 
 const app = document.getElementById("app");
 
+// Full welcome/help panel (below) replaces what used to be a one-line "Phase
+// 0 POC" subtitle. Shown in full on Step 1 only -- that's the one place
+// "Welcome!" actually makes sense, and every other step already has its own
+// contextual instructions, so repeating this whole block there would just be
+// noise. The data-safety line is the one thing that has to persist on every
+// step regardless (see .safety-note below) -- it's a hard product boundary
+// (never real client data), not just onboarding copy.
 function renderHeader() {
   const meta = activeDb();
+  const helpBlock = state.step === 1 ? `
+    <div class="welcome-panel">
+      <p>Welcome! This tool helps you figure out where your data belongs. As you migrate to ${meta.label}, it maps fields from your old source system to the right destination fields in your new one.</p>
+      <h4>How It Works</h4>
+      <ol>
+        <li>Enter a field name from your existing source system.</li>
+        <li>Review the suggested destination fields.</li>
+        <li>Use the recommendations as a starting point for your ETL mapping documentation.</li>
+        <li>Validate every mapping against your own organization's needs before moving forward.</li>
+      </ol>
+      <h4>Important Notes</h4>
+      <ul>
+        <li>Suggestions are based on common field-mapping patterns and may need adjustment for your organization.</li>
+        <li>Only enter <strong>field names and formats</strong> here — never real client names, SSNs, or other personal data.</li>
+        <li>Always verify mappings before loading data into your production environment.</li>
+      </ul>
+      <h4>Need Assistance?</h4>
+      <p>Questions about a suggestion, an unrecognized field, or your ETL strategy in general — reach out to your Technical Consultant.</p>
+    </div>
+  ` : `
+    <div class="safety-note">
+      ⚠️ Only enter <strong>field names and formats</strong> below — never real client names, SSNs, or other personal data.
+    </div>
+  `;
   return `
     ${renderThemeToggle()}
     <div class="header-row">
@@ -106,12 +137,9 @@ function renderHeader() {
         <img class="brand-logo" src="${meta.logo}" alt="${meta.label}">
         <div class="eyebrow">${meta.label} • ETL Onboarding</div>
         <h1>Field Mapping Assistant</h1>
-        <div style="color:var(--surface-text-muted);font-size:13px;">Phase 0 POC — tells you where each of your fields lives in ${meta.label} today, and flags mappings that would break ${meta.label}'s import rules.</div>
       </div>
     </div>
-    <div class="safety-note">
-      ⚠️ Local POC. Only enter <strong>field names and formats</strong> below — never real client names, SSNs, or other personal data.
-    </div>
+    ${helpBlock}
   `;
 }
 
