@@ -687,6 +687,8 @@ function renderReadinessPanel(check) {
 
 function renderSqlExportSection(exportResult) {
   if (!exportResult) return "";
+  const headerBlock = exportResult.header ? `
+    <pre style="background:var(--surface-page);border:1px solid var(--surface-border);color:var(--surface-text);border-radius:6px;padding:12px;font-size:12px;overflow-x:auto;white-space:pre-wrap;margin-bottom:14px;">${exportResult.header.replace(/</g, "&lt;")}</pre>` : "";
   const blocks = exportResult.statements.map(s => `
     <div style="margin-bottom:14px;">
       <div style="font-family:var(--font-heading);font-weight:600;color:var(--surface-heading);margin-bottom:4px;">${s.targetTable} <span style="color:var(--surface-text-muted);font-weight:400;">(source: ${s.sourceTable})</span></div>
@@ -699,16 +701,13 @@ function renderSqlExportSection(exportResult) {
       <ul style="margin:6px 0 0 0;">${exportResult.multiSourceTables.map(m => `<li>${m.targetTable}: ${m.sourceTables.join(", ")}</li>`).join("")}</ul>
     </div>` : "";
 
-  const skipped = exportResult.skipped.length ? `
-    <div style="color:var(--surface-text-muted);font-size:12px;margin-top:8px;">${exportResult.skipped.length} field(s) excluded from the SQL export (${[...new Set(exportResult.skipped.map(s => s.reason))].join("; ")}).</div>` : "";
-
   return `
     <div class="card">
       <h3>SQL Export (${state.dialect})</h3>
-      <div style="color:var(--surface-text-muted);font-size:13px;margin-bottom:14px;">One SELECT statement per target table per source table, aliased to match ${dbLabel()}'s field names — for a technical data person to run against your source system. Comments call out required/decode constraints to double-check; this does not transform values for you.</div>
+      <div style="color:var(--surface-text-muted);font-size:13px;margin-bottom:14px;">One SELECT statement per target table per source table, aliased to match ${dbLabel()}'s field names — for a technical data person to run against your source system. This does not transform values for you; the header below lists everything still worth checking before running it.</div>
+      ${headerBlock}
       ${multiSource}
       ${blocks || '<div class="empty">No SQL to generate yet — confirm mappings with a source table name in Step 2.</div>'}
-      ${skipped}
       <div class="step-nav">
         <span></span>
         <button class="primary" id="download-sql-btn" ${exportResult.statements.length ? "" : "disabled"}>Download SQL (.sql)</button>
@@ -728,6 +727,7 @@ async function renderStep4() {
 
   const mappings = state.suggestions.map(s => ({
     sourceField: s.source, desc: s.desc, sourceTable: s.sourceTable || "", table: s.confirmedTable, field: s.confirmedField,
+    flagged: !!s.flagged,
   }));
   const check = await api("/api/rulecheck", {
     method: "POST",
@@ -740,7 +740,7 @@ async function renderStep4() {
     exportResult = await api("/api/sql-export", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ targetDatabase: state.targetDatabase, modules: effectiveModules(), dialect: state.dialect, mappings }),
+      body: JSON.stringify({ targetDatabase: state.targetDatabase, modules: effectiveModules(), dialect: state.dialect, sourceSystem: state.sourceSystem, mappings }),
     });
   }
 
@@ -796,7 +796,7 @@ async function renderStep4() {
   const downloadSqlBtn = document.getElementById("download-sql-btn");
   if (downloadSqlBtn) {
     downloadSqlBtn.onclick = () => {
-      const sqlText = exportResult.statements.map(s => s.sql).join("\n\n");
+      const sqlText = [exportResult.header, ...exportResult.statements.map(s => s.sql)].filter(Boolean).join("\n\n");
       const blob = new Blob([sqlText], { type: "text/plain" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");

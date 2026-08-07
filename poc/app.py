@@ -275,9 +275,16 @@ class Handler(BaseHTTPRequestHandler):
             )
         if path == "/api/sql-export":
             dialect = payload.get("dialect") or sql_export.DEFAULT_DIALECT
+            mappings = payload.get("mappings", [])
+            schema = scoped_schema(target_db, modules)
             return self._send_json(
                 sql_export.build_export(
-                    payload.get("mappings", []), scoped_schema(target_db, modules), dialect
+                    mappings,
+                    schema,
+                    dialect,
+                    check=schema_rules.check_batch(mappings, schema),
+                    target_label=schema_rules.db_meta(target_db)["label"],
+                    source_system=payload.get("sourceSystem"),
                 )
             )
         return self._send_json({"error": "not found"}, 404)
