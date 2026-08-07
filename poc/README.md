@@ -216,8 +216,19 @@ Deliberate scope limits (see the chat record / commit messages for the reasoning
 - **No JOINs are ever generated.** A target table whose fields come from more than one source table just gets multiple SELECT statements (one per source table) instead of one — the UI flags this ("split across N source tables") as an informational note, not an error. The data person is responsible for merging those result sets themselves; this tool doesn't collect join-key information or guess at how tables relate.
 - **No automatic value-transformation logic.** The tool will never generate `CASE WHEN` guesses about how a source system encodes a value (e.g. assuming source "Y"/"N" means target 1/2) — that's fabricating a fact about data it's never seen. Required/decode/type constraints are instead surfaced as SQL comments above each column, so the data person knows what to verify/handle themselves.
 - **Dialect-aware quoting only** (SQL Server `[x]`, MySQL `` `x` ``, PostgreSQL/Oracle `"x"`) — chosen per session via a dropdown that appears when Advanced mode is on. No dialect-specific query features beyond identifier quoting.
-- Fields with no source table entered, or not mapped to a target field, are silently excluded from the export and called out in a small note (not a rule-engine warning — they're an Advanced-mode-only concern).
+- Fields with no source table entered, or not mapped to a target field, are excluded from the export and itemized (with a reason) in the header below rather than silently dropped.
 - **Source table names are matched case-insensitively, nothing else.** `dbo.ClientExport`, `dbo.clientexport`, and `DBO.CLIENTEXPORT` are treated as the same table and merged into one SELECT statement (using whichever casing was entered first). Any other difference — extra whitespace, a different schema prefix, an actual typo — still counts as a genuinely different table and gets its own statement.
+
+**The export starts with a `-- TODO` header**, generated from the same `schema_rules.check_batch`
+results shown in the Step 4 readiness panel — required fields with no mapping, missing FK
+dependencies, duplicate target assignments, and description/format mismatches — plus every
+skipped field (including which ones were flagged for consultant review, distinct from ones that
+just were never mapped). The point is a downloaded `.sql` file that's self-contained: a technical
+data person working from just that file, with the web UI closed, still sees everything left to
+resolve before running it. Nothing new is inferred here — every line already came from a check
+this tool runs anyway; the header just collects them into one place instead of leaving them
+scattered across the UI. If nothing's outstanding, the header says so plainly instead of omitting
+itself, so "no header content" never gets mistaken for "this wasn't checked."
 
 ## Import fields from a file
 
