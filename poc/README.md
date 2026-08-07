@@ -33,13 +33,14 @@ Practical floor: any Python 3.x anyone would realistically still have installed 
 ## What's here
 
 - `app.py` — HTTP server (stdlib `http.server`), serves the static frontend and the JSON API. Every endpoint is scoped by `targetDatabase` (see below).
-- `db.py` — SQLite-backed mapping library: per-source-system confirmed mappings, plus a cross-system field index used to boost suggestion confidence. Scoped per target database, so CaseWorthy and ServTracker mappings never collide.
+- `db.py` — SQLite-backed mapping library: per-source-system confirmed mappings (including the field's typed description, used by `transform_draft.py`'s historical-pattern lookups), plus a cross-system field index used to boost suggestion confidence. Scoped per target database, so CaseWorthy and ServTracker mappings never collide.
 - `field_matcher.py` — rule-based confidence matcher, grounded entirely in the target database's extracted schema. Scores a source field name against every candidate field via exact match, a curated table of common ETL abbreviations (DOB, SSN, FName, ZipCode, ...), and exact-substring/token matches (e.g. `Enrollment_Begin_Date` → `Enrollment.BeginDate`), before falling back to generic name-similarity. This is what produces a real "high/medium/low" confidence match with no API key and no network call — the LLM (`llm_gateway.py`) is only consulted when this can't confidently resolve a name.
 - `llm_gateway.py` — the one place that calls an LLM. Swap this file's implementation to point at the internal gateway in Phase 2.
 - `schema_rules.py` — owns the `TARGET_DATABASES` registry and per-database metadata (`TARGET_DB_META`: label, logo, module/tab-scoping behavior and copy), and flags violations against whichever one is active: missing required fields, unmapped FK-dependent tables, duplicate target assignments, and format mismatches — decode/list value mismatches, boolean fields described with more than two options, and text fields whose stated length exceeds the target's max. This is the "prevent a customer from breaking the rules" requirement from the phase plan. All of these are heuristic checks against the customer's typed-in field description, never against real data.
 - `file_import.py` — parses an uploaded CSV/xlsx into Step 2 field rows (see "Import fields from a file" below).
 - `shared_mappings.py` — reads/writes the shared Excel append-log of confirmed mappings (see "Shared mapping log (Excel)" below). Independent of `db.py`; `app.py` consults both.
 - `sql_export.py` — Advanced-mode SQL export. Turns confirmed mappings (source table + source field → target table.field) into one SELECT statement per (target table, source table) pair, aliased to the exact target field names, for a technical data person to run against the customer's live source system. See "Advanced mode" below for scope and limits.
+- `transform_draft.py` — drafts a `CASE WHEN` value mapping, but only when the customer's own typed description and the target's own decode reconcile exactly; otherwise explains why in the export's TODO header instead. See "Drafted value mappings" below.
 - `static/` — the frontend (vanilla HTML/CSS/JS), same 4-step interview flow as the original artifact POC (source system → fields → suggestions → summary), now calling this backend instead of `window.storage` / the Anthropic API directly from the browser. Step 1 now also asks which **Target Database** to map against, and has an **Advanced options** toggle (see below).
 - `static/assets/logos/` — CaseWorthy and ServTracker logos (originally bundled from the `caseworthy-brand-visual-identity` skill's snapshot, reprocessed into real transparent PNGs — see Branding below; see the skill for canonical/print versions), swapped in the header based on the selected target database.
 - `start.bat` / `stop.bat` — double-clickable launcher (starts the server + opens it in a Chrome app window for demos) and a matching stop script.
@@ -214,7 +215,7 @@ Toggling "Advanced options" on Step 1 does two things:
 
 Deliberate scope limits (see the chat record / commit messages for the reasoning):
 - **No JOINs are ever generated.** A target table whose fields come from more than one source table just gets multiple SELECT statements (one per source table) instead of one — the UI flags this ("split across N source tables") as an informational note, not an error. The data person is responsible for merging those result sets themselves; this tool doesn't collect join-key information or guess at how tables relate.
-- **No automatic value-transformation logic.** The tool will never generate `CASE WHEN` guesses about how a source system encodes a value (e.g. assuming source "Y"/"N" means target 1/2) — that's fabricating a fact about data it's never seen. Required/decode/type constraints are instead surfaced as SQL comments above each column, so the data person knows what to verify/handle themselves.
+- **No automatic value-transformation logic gets *guessed*.** The tool will never generate `CASE WHEN` guesses about how a source system encodes a value (e.g. assuming source "Y"/"N" means target 1/2) — that's fabricating a fact about data it's never seen. Required/decode/type constraints that don't clear the bar described below still just surface as SQL comments above each column, so the data person knows what to verify/handle themselves. See "Drafted value mappings" below for the one deliberate, narrow exception.
 - **Dialect-aware quoting only** (SQL Server `[x]`, MySQL `` `x` ``, PostgreSQL/Oracle `"x"`) — chosen per session via a dropdown that appears when Advanced mode is on. No dialect-specific query features beyond identifier quoting.
 - Fields with no source table entered, or not mapped to a target field, are excluded from the export and itemized (with a reason) in the header below rather than silently dropped.
 - **Source table names are matched case-insensitively, nothing else.** `dbo.ClientExport`, `dbo.clientexport`, and `DBO.CLIENTEXPORT` are treated as the same table and merged into one SELECT statement (using whichever casing was entered first). Any other difference — extra whitespace, a different schema prefix, an actual typo — still counts as a genuinely different table and gets its own statement.
@@ -229,6 +230,44 @@ resolve before running it. Nothing new is inferred here — every line already c
 this tool runs anyway; the header just collects them into one place instead of leaving them
 scattered across the UI. If nothing's outstanding, the header says so plainly instead of omitting
 itself, so "no header content" never gets mistaken for "this wasn't checked."
+
+## Drafted value mappings
+
+The one deliberate, narrow exception to "no automatic value-transformation logic" above:
+`transform_draft.py` will draft a real `CASE WHEN` for a column, but only when two facts already
+on record for *this* migration agree with each other:
+
+1. **What the customer told us** — their typed Step 2 description for that field (e.g. `1=Yes, 2=No`).
+2. **What the target requires** — the signed-off schema's own decode/allowed-values for that field.
+
+Both get parsed into code/label pairs (the same parser either side, so there's no separate
+"guessing" logic for one side vs. the other), and a draft only gets written when *every* source
+label matches a target label exactly — case-insensitive, but never a fuzzy or synonym match
+("Yes" is never assumed to mean "True", "M" is never assumed to mean "Male" unless the customer's
+own note actually says so). That's why this doesn't cross the product's own line: it's a
+mechanical join of two things we were already told, not the tool inferring anything about the
+customer's actual data. If even one source value doesn't match, **nothing gets drafted at all** —
+a partial `CASE WHEN` silently missing a branch would be worse than no draft, so it's all-or-
+nothing, and the column falls back to a plain alias plus a comment explaining exactly why — most
+likely a real mismatch worth resolving, not a bug in the tool. The point is you find out from the
+ToDo list, not from the script silently producing wrong data.
+
+There's a second signal, used more cautiously: **patterns from past confirmed mappings.** Every
+confirmed mapping's description is now kept (in `db.py`'s local table and the shared Excel log
+alike — this is the same "established patterns across past migrations" idea as the shared learned-
+mappings library above, just applied to decode notation instead of field names). When *this*
+field has no usable description of its own, but other confirmed mappings to that same target
+field have — and that historical description would itself reconcile cleanly against the target —
+the header surfaces it as a plain-text suggestion: *"no description given, but N past confirmed
+mapping(s) described their source as '...' — verify against your own source data first."* That
+suggestion is never turned into generated SQL on its own. There's no confirmation behind it for
+*this* migration, only precedent from other ones, so it stays something a human reads and decides
+on, not code that runs unreviewed.
+
+Every outcome gets its own labeled TODO section in the header — drafted (review before running),
+failed (a real mismatch to resolve), or suggested (a pattern worth considering) — so mismatches
+surface as errors to fix, exactly like a normal build's warnings, rather than getting silently
+smoothed over.
 
 ## Import fields from a file
 

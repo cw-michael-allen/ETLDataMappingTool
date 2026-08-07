@@ -52,6 +52,7 @@ def get_conn():
             target_field TEXT NOT NULL,
             confirm_count INTEGER NOT NULL DEFAULT 1,
             last_confirmed_at TEXT NOT NULL,
+            desc TEXT NOT NULL DEFAULT '',
             UNIQUE(target_db, source_system_norm, field_name_norm)
         )"""
     )
@@ -66,6 +67,12 @@ def get_conn():
             UNIQUE(target_db, field_name_norm, target_table, target_field)
         )"""
     )
+    # Unlike the target_db migration above, this one runs ALTER TABLE instead
+    # of drop-and-recreate: real confirmed mappings from actual tool usage
+    # exist in local databases now, and losing that history just to add a
+    # column isn't worth it the way it was when this table was still empty.
+    if not _has_column(conn, "mappings", "desc"):
+        conn.execute("ALTER TABLE mappings ADD COLUMN desc TEXT NOT NULL DEFAULT ''")
     conn.commit()
     return conn
 
@@ -95,10 +102,29 @@ def get_field_index(field_name, target_db=DEFAULT_TARGET_DATABASE):
         conn.close()
 
 
-def save_mapping(source_system, field_name, target_table, target_field, target_db=DEFAULT_TARGET_DATABASE):
+def get_decode_patterns(target_table, target_field, target_db=DEFAULT_TARGET_DATABASE):
+    """Descriptions other confirmed mappings (any source system) have used for
+    this exact target field, most-common first -- the "established patterns"
+    signal for transform_draft.py. Only ever field-name/format text a
+    consultant typed in, never anything from a source system's real data."""
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            """SELECT desc, COUNT(*) c FROM mappings
+               WHERE target_db=? AND target_table=? AND target_field=? AND desc != ''
+               GROUP BY desc ORDER BY c DESC""",
+            (target_db, target_table, target_field),
+        ).fetchall()
+        return [{"desc": r["desc"], "count": r["c"]} for r in rows]
+    finally:
+        conn.close()
+
+
+def save_mapping(source_system, field_name, target_table, target_field, target_db=DEFAULT_TARGET_DATABASE, desc=""):
     conn = get_conn()
     try:
         now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        desc = desc or ""
         ss_norm, fn_norm = normalize(source_system), normalize(field_name)
         existing = conn.execute(
             "SELECT * FROM mappings WHERE target_db=? AND source_system_norm=? AND field_name_norm=?",
@@ -106,22 +132,22 @@ def save_mapping(source_system, field_name, target_table, target_field, target_d
         ).fetchone()
         if existing and existing["target_table"] == target_table and existing["target_field"] == target_field:
             conn.execute(
-                "UPDATE mappings SET confirm_count = confirm_count + 1, last_confirmed_at=? WHERE id=?",
-                (now, existing["id"]),
+                "UPDATE mappings SET confirm_count = confirm_count + 1, last_confirmed_at=?, desc=? WHERE id=?",
+                (now, desc, existing["id"]),
             )
         elif existing:
             conn.execute(
                 """UPDATE mappings SET target_table=?, target_field=?, confirm_count=1,
-                   last_confirmed_at=?, source_system=?, field_name=? WHERE id=?""",
-                (target_table, target_field, now, source_system, field_name, existing["id"]),
+                   last_confirmed_at=?, source_system=?, field_name=?, desc=? WHERE id=?""",
+                (target_table, target_field, now, source_system, field_name, desc, existing["id"]),
             )
         else:
             conn.execute(
                 """INSERT INTO mappings
                    (target_db, source_system, source_system_norm, field_name, field_name_norm,
-                    target_table, target_field, confirm_count, last_confirmed_at)
-                   VALUES (?,?,?,?,?,?,?,1,?)""",
-                (target_db, source_system, ss_norm, field_name, fn_norm, target_table, target_field, now),
+                    target_table, target_field, confirm_count, last_confirmed_at, desc)
+                   VALUES (?,?,?,?,?,?,?,1,?,?)""",
+                (target_db, source_system, ss_norm, field_name, fn_norm, target_table, target_field, now, desc),
             )
 
         idx_row = conn.execute(
