@@ -86,7 +86,12 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--surface-heading); ma
 }
 .header-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
 .brand-logo {
-  height: auto; max-height: 104px; width: auto; max-width: 100%;
+  /* max-width caps ServTracker's wordmark, which is proportionally much
+     wider than CaseWorthy's -- height-only sizing let it balloon out far
+     larger than CaseWorthy at the same 104px height. 390px is CaseWorthy's
+     own natural rendered width at that height, so this doesn't change
+     CaseWorthy's size at all, only reins ServTracker in to match it. */
+  height: auto; max-height: 104px; width: auto; max-width: min(390px, 100%);
   display: block; margin-bottom: 8px;
 }
 .theme-toggle {
