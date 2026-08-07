@@ -141,6 +141,14 @@ overall (flagged informationally, not blocked). Deliberately never generates val
 decode constraints surface as SQL comments instead. Source table names are matched case-
 insensitively (only casing — nothing else — is treated as "the same table").
 
+**`build_export`'s `"header"`** turns the export into a self-contained starter script: a SQL-comment
+preamble listing every `schema_rules.check_batch` finding (required-missing, FK gaps, duplicates,
+format-hint mismatches) plus every skipped field, as `-- TODO` items — so a data person working from
+just the downloaded `.sql` file, with the web UI closed, still sees everything left to resolve.
+Still nothing invented: every line is a fact `check_batch` or the skip list already produced
+elsewhere: `build_export` only formats them. A flagged-for-review mapping (no confirmed table/field)
+reports a distinct skip reason ("flagged for consultant review") instead of the generic "not mapped."
+
 **Frontend (`poc/static/app.js`)** is a single-file, hand-rolled state machine (`state` object +
 `renderStepN()` functions that replace `#app`'s `innerHTML` wholesale). No framework, no build
 step. Event handlers are rebound after every re-render except the theme toggle, which is
