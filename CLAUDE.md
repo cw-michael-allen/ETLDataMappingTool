@@ -160,6 +160,26 @@ it and decide, not code that runs unreviewed. All three outcomes (`"drafted"`, `
 `"suggested"`) get their own TODO section in `build_export`'s header — the point (a direct request,
 not an assumption) is that mismatches surface as errors to fix, not silent gaps.
 
+**`format_rules.py`** bakes a second, narrower kind of rule straight into a mapped field's SELECT
+expression — no draft/review step, unlike `transform_draft.py` above. SSN dashing, phone/fax
+cleanup, zip default+truncation, and first/last/middle name truncation (with the exact
+`ISNULL(...,'FirstName')` null-fallback the source script uses) apply outright whenever a source
+field is mapped to one of those target fields. Safe to apply without review because they're
+sourced from CaseWorthy's own production migration scripts (`reference/MASTER_*.sql`, genericized
+from real CW ETL engineer templates — see `reference/00_Staging_EXCEL_Validation_Script_v3.sql`
+for the pre-existing companion file), not inferred from this customer's data — and for that same
+reason, **CaseWorthy-only**: `sql_export.build_export`'s new `target_database` parameter (passed
+from `app.py`'s already-known `target_db`, distinct from `target_label`'s display name) gates
+every call into this module, so it's never applied when exporting for ServTracker or any future
+target whose own validation script hasn't sourced these patterns. Also synthesizes a second
+*companion* column (`SSNDataQuality` from `SSN`, `DOBDataQuality` from `BirthDate`) when the anchor
+field is mapped but the companion target field isn't separately mapped — mirroring how the source
+script derives both from the same one source column, since a customer's source system rarely
+tracks a separate "how good is this SSN" field. An explicit mapping to the companion field, if the
+customer has one, always wins over the synthesized version. Every baked rule and synthesized
+column gets its own `-- TODO` header line (`build_export`'s new "Formatting rule(s) baked into the
+SELECT columns below" section) so a data person sees it was applied without needing the web UI open.
+
 **Storage implication:** `db.py`'s local `mappings` table and the shared Excel log both gained a
 `desc`/`Description` column to support this — descriptions weren't being kept anywhere before.
 `db.py` migrates via `ALTER TABLE ADD COLUMN` (not the drop-and-recreate pattern used for the
