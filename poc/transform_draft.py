@@ -27,38 +27,47 @@ the TODO header when this field's own description isn't usable. It never
 becomes generated SQL on its own -- there's no confirmation behind it for
 *this* migration, just precedent from others, so it stays a suggestion a
 human reads and decides on, not code that runs.
+
+A fourth input, Advanced mode's structured "source values" list (a per-field
+box the customer fills in alongside desc, e.g. "M, F, U" or "1=Yes, 2=No"),
+takes priority over desc when both are present -- see _source_pairs below.
+It's not fabricated either: same rule, a deliberate customer-entered fact,
+just entered as a structured list instead of parsed out of a sentence.
+
+A fifth input, and the highest priority of all: a *confirmed* value map from
+the Advanced-mode value-matching step (app.js's renderValueMatchStep), where
+the customer picked each of their source values' target code from a dropdown
+of the target's own approved values one at a time. This isn't reconciled
+against target_pairs at all here -- it was already built *from* target_pairs
+in that step, so there's nothing left to verify; it's used as-is. That step
+is itself only shown for fields with a decode/list-constrained target, so a
+confirmed_value_map should never arrive for a field with no target_pairs.
 """
 
-from schema_rules import parse_decode
+from schema_rules import parse_decode, parse_value_list, target_value_pairs as _target_pairs
 
 
 def _normalize_label(label):
     return (label or "").strip().lower()
 
 
-def _target_pairs(meta):
-    """(code, label) pairs the target actually accepts, regardless of which
-    of the two decode styles this schema row uses.
-
-    CaseWorthy-style: `decode` is a real "code=label" string -- parse it.
-    ServTracker-style: `decodeValues` is bare labels with no separate code at
-    all (the label *is* what gets typed into the sheet) -- so each value
-    pairs with itself; there's nothing to translate on the target side.
+def _source_pairs(desc, source_values):
+    """What the customer told us about their own source encoding, preferring
+    the structured Advanced-mode list (parse_value_list, which never drops a
+    bare entry) over the free-text desc (parse_decode, which does) when both
+    are present -- a deliberate structured list is a stronger fact than a
+    sentence we're pattern-matching. Returns (pairs, origin_text) so the
+    caller's note can say which one actually got used.
     """
-    if meta.get("decode"):
-        pairs = parse_decode(meta["decode"])
+    if source_values:
+        pairs = parse_value_list(source_values)
         if pairs:
-            return pairs
-    if meta.get("decodeValues"):
-        return [(v, v) for v in meta["decodeValues"]]
-    return []
-
-
-def _source_pairs(desc):
-    """What the customer told us about their own source encoding. Reuses the
-    exact same "code=label, code=label" parser as the target side -- same
-    format, same tolerance, no separate guessing logic for either side."""
-    return parse_decode(desc) if desc else []
+            return pairs, ("your listed source values", source_values)
+    if desc:
+        pairs = parse_decode(desc)
+        if pairs:
+            return pairs, ("this session's own note", desc)
+    return [], (None, None)
 
 
 def _reconcile(source_pairs, target_pairs):
@@ -106,7 +115,10 @@ def build_case_when(dialect, source_field_quoted, mapping, source_pairs, target_
     return "\n".join(lines)
 
 
-def draft_or_explain(dialect, source_field_quoted, target_field, meta, desc, historical_patterns):
+def draft_or_explain(
+    dialect, source_field_quoted, target_field, meta, desc, historical_patterns, source_values="",
+    confirmed_value_map="",
+):
     """Returns a dict with an explicit "kind" so callers never need to sniff
     the note text to decide where it belongs:
       kind="drafted"    -- sql is the CASE WHEN fragment to use as the column
@@ -114,10 +126,30 @@ def draft_or_explain(dialect, source_field_quoted, target_field, meta, desc, his
       kind="suggested"  -- plain alias stands; note is a historical-pattern
                            suggestion, never generated as code
       kind=None         -- nothing to say (target has no decode constraint)
+
+    source_values: Advanced mode's structured per-field list (e.g. "M, F, U"
+    or "1=Yes, 2=No") -- takes priority over desc when both are present, see
+    _source_pairs.
+
+    confirmed_value_map: the customer's own explicit source-value -> target-
+    code choices from the value-matching step (e.g. "M=1,F=2,U=3") -- takes
+    priority over everything else below. Not a draft to review; it's already
+    a human decision, so it's used outright.
     """
     target_pairs = _target_pairs(meta)
     if not target_pairs:
         return {"sql": None, "note": None, "kind": None}
+
+    if confirmed_value_map:
+        mapping = dict(parse_value_list(confirmed_value_map))
+        if mapping:
+            sql = build_case_when(dialect, source_field_quoted, mapping, None, target_pairs)
+            note = (
+                f"Built from your confirmed value mapping for {target_field} -- you matched each of your "
+                f"source values to one of its approved values yourself, so this isn't a guess to verify, "
+                f"just a record of that choice."
+            )
+            return {"sql": sql, "note": note, "kind": "drafted"}
 
     # ServTracker-style pairs are (label, label) -- showing "Monthly=Monthly"
     # would just be noise; show the bare label list instead in that case.
@@ -125,13 +157,13 @@ def draft_or_explain(dialect, source_field_quoted, target_field, meta, desc, his
         target_shown = ", ".join(l for _, l in target_pairs)
     else:
         target_shown = ", ".join(f"{c}={l}" for c, l in target_pairs)
-    source_pairs = _source_pairs(desc)
+    source_pairs, (origin_label, origin_value) = _source_pairs(desc, source_values)
     if source_pairs:
         mapping, reason = _reconcile(source_pairs, target_pairs)
         if mapping:
             sql = build_case_when(dialect, source_field_quoted, mapping, source_pairs, target_pairs)
             note = (
-                f"Drafted from this session's own note ('{desc}') matched against {target_field}'s "
+                f"Drafted from {origin_label} ('{origin_value}') matched against {target_field}'s "
                 f"required values ({target_shown}). This is a draft, not a verified fact about your "
                 f"data -- confirm it against real source values before running."
             )
@@ -144,7 +176,7 @@ def draft_or_explain(dialect, source_field_quoted, target_field, meta, desc, his
 
     if historical_patterns:
         top = historical_patterns[0]
-        hist_pairs = _source_pairs(top["desc"])
+        hist_pairs, _origin = _source_pairs(top["desc"], "")
         if hist_pairs:
             mapping, _reason = _reconcile(hist_pairs, target_pairs)
             if mapping:

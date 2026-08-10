@@ -131,7 +131,15 @@ multipart/form-data POST route in `app.py`, kept separate from the JSON-only rou
 **`schema_rules.check_batch`** flags rule violations (missing required fields, unmapped FK
 dependencies, duplicate target assignments, decode/boolean/length format mismatches) against
 whatever the customer has mapped so far — heuristic checks against the typed-in description,
-never against real data.
+never against real data. A mapping's Advanced-mode `sourceValues` (a structured per-field list the
+customer deliberately types, e.g. `M, F, U` or `1=Yes, 2=No` — see `schema_rules.parse_value_list`,
+which unlike `parse_decode` never drops a bare entry, self-pairing it instead) takes priority over
+`desc`'s free-text heuristics when present: `SOURCE_VALUE_CHECKS` (`_source_values_mismatch` for
+decode/list exact-set, `_source_values_boolean_mismatch` for Boolean arity,
+`_source_values_length_mismatch` for max length — the same three shapes `FORMAT_CHECKS` covers for
+`desc`, just against a deliberate list instead of a sentence being pattern-matched) run first, one
+hit wins. `desc`'s checks still run afterward as a secondary pass. Still never real data — a
+customer-typed enumeration of the field's own encoding, same category as `desc`, just structured.
 
 **`sql_export.py`** (Advanced mode) turns confirmed mappings into SELECT statements a technical
 data person runs against the live source system. Deliberately never generates a JOIN — a target
@@ -143,11 +151,15 @@ that don't clear that bar still just surface as SQL comments. Source table names
 case-insensitively (only casing — nothing else — is treated as "the same table").
 
 **`transform_draft.py`** drafts a `CASE WHEN` only when two facts already on record for *this*
-migration agree: the customer's own typed Step 2 description (e.g. `1=Yes, 2=No`) and the target
-schema's own signed-off decode/`decodeValues`, both parsed into code/label pairs
-(`schema_rules.parse_decode`, reused for both sides), with every source label matching a target
+migration agree: what the customer told us about the source, and the target schema's own signed-
+off decode/`decodeValues` (`schema_rules.target_value_pairs`, shared with `check_batch` above so
+there's one definition of "what the target accepts"), with every source label matching a target
 label exactly — case-insensitive, no fuzzy/synonym guessing ("Yes" is never assumed to mean
-"True"). That's a mechanical join of two things we were already told, not an inference about the
+"True"). "What the customer told us" prefers Advanced mode's structured `sourceValues` list over
+the free-text Step 2 description when both are present (`_source_pairs`, using
+`schema_rules.parse_value_list`) — a deliberate list outranks a sentence being pattern-matched;
+falls back to `schema_rules.parse_decode` on `desc` otherwise, unchanged from before this field
+existed. That's a mechanical join of two things we were already told, not an inference about the
 customer's actual data, which is why it doesn't cross the line the rest of this file draws.
 Anything short of an exact match on *every* source pair aborts the whole draft (never a partial
 CASE WHEN silently missing a branch) and becomes a `"failed"`-kind explanation instead. A third
@@ -159,6 +171,46 @@ confirmation behind it for *this* migration, only precedent from others, so a hu
 it and decide, not code that runs unreviewed. All three outcomes (`"drafted"`, `"failed"`,
 `"suggested"`) get their own TODO section in `build_export`'s header — the point (a direct request,
 not an assumption) is that mismatches surface as errors to fix, not silent gaps.
+`sourceValues` itself is never persisted (unlike `desc`, which `db.py`/the shared Excel log both
+keep) — it's session-scoped, re-entered per migration, so historical patterns above are always
+sourced from `desc` alone. A fifth, highest-priority input — `confirmed_value_map`, the customer's
+own explicit source-value → target-code choices from the value-matching step below — outranks
+everything else in this function: it was already built *from* `target_pairs` in that step, so
+there's nothing left to reconcile; `draft_or_explain` uses it outright rather than re-verifying it.
+Unlike `sourceValues`, a confirmed value map *is* persisted — see below.
+
+**The value-matching step (`app.js: renderValueMatchStep`, inserted between Mapping Suggestions and
+Summary in Advanced mode)** is what actually produces `confirmed_value_map` above. Gated by
+`fieldsNeedingValueMatch`: a field only lands here if it's mapped (and not flagged for review) to a
+target with real approved values (`targetPairsJs(s.targetMeta)` non-empty) *and* the customer typed
+a `sourceValues` list for it — a field with no listed values has nothing to match here, and one
+whose target has no decode/`decodeValues` has nothing to match *against*. For every distinct source
+value, a required `<select>` of the target's own approved values (plus an explicit "Leave unmapped
+(NULL)" option — never a silent default) gates the "Continue to Summary" button; nothing moves
+forward until every value has a deliberate answer. Pre-selects, in priority order: this render
+pass's own edits > a previously-confirmed value map for this *exact* source field (surfaced by
+`/api/suggest`'s learned/shared-learned paths, see below) > an exact label match (the same
+reconciliation `transform_draft.py` would do automatically) > unselected. Confirmed via
+`POST /api/confirm-value-mapping`, which creates the underlying `mappings` row first if the field
+was never explicitly confirmed in Step 3 (a high-confidence auto-suggestion can reach this step
+without that click) so `db.save_value_map`'s plain `UPDATE` has something to land on, then persists
+the map without touching that row's `confirm_count`/`desc` — a value-map confirmation is a distinct
+decision from confirming the target field, not a re-confirmation of it.
+
+**Storage for the value map, mirroring `desc`'s pattern:** `db.py`'s `mappings` table gained a
+`value_map` column (`ALTER TABLE`, non-destructive, same reasoning as `desc`'s own migration) and a
+standalone `save_value_map` (a plain `UPDATE`, deliberately not `save_mapping`, for the reason
+above). `shared_mappings.py` gained a `ValueMap` column (appended at the end, same rule as
+`Description`) and `append_value_map`, a distinct append from `append` that writes its own row
+without bumping `field_index`/exact-match counts. One known imprecision from this split: on a
+*reload* of the shared file, `_ingest` still counts every row — including a value-map-only
+row — as a confirmation via `_reindex_row`, so `confirm_count` ends up one higher per value-map
+confirmation than the number of times the field mapping itself was actually reconfirmed. Doesn't
+affect which table/field/value_map `get_exact` returns, only that display counter, so it's left
+alone rather than adding a row-type column to distinguish the two append kinds. `_handle_suggest`'s
+learned/shared-learned paths both now return `valueMap` alongside `table`/`field`, which is what
+lets the value-matching step above pre-fill a repeat migration's choices instead of asking the
+customer to redo a decision already on record.
 
 **`format_rules.py`** bakes a second, narrower kind of rule straight into a mapped field's SELECT
 expression — no draft/review step, unlike `transform_draft.py` above. SSN dashing, phone/fax
