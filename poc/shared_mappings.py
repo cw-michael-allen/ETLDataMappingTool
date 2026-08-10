@@ -41,6 +41,12 @@ FIELDS = [
     # would misalign them against a header that no longer matches where
     # their values actually sit.
     ("Description", "desc"),
+    # Same append-at-the-end rule. Holds the customer's confirmed source-
+    # value -> target-code mapping from the Advanced-mode value-matching
+    # step (e.g. "M=1,F=2,U=3"), written by append_value_map -- a distinct
+    # confirmation from the field-mapping one above, so most rows leave this
+    # blank until/unless that step is confirmed for that field.
+    ("ValueMap", "valueMap"),
 ]
 REQUIRED_KEYS = ("targetDatabase", "sourceSystem", "sourceField", "targetTable", "targetField")
 SHEET_NAME = "ConfirmedMappings"
@@ -73,6 +79,7 @@ class SharedLog:
         self.exact = {}            # (target_db, source_system_norm, field_name_norm) -> {target, count, lastConfirmedAt}
         self.field_index = {}      # (target_db, field_name_norm) -> {(table, field): count}
         self.decode_patterns = {}  # (target_db, target_table, target_field) -> {desc: count}
+        self.value_maps = {}       # (target_db, source_system_norm, field_name_norm) -> {valueMap, confirmedAt}
         self.path = None
         self.status = "disabled"  # disabled | missing-dependency | not-found | ok | error
         self.detail = ""
@@ -83,6 +90,7 @@ class SharedLog:
         self.exact = {}
         self.field_index = {}
         self.decode_patterns = {}
+        self.value_maps = {}
         if not path:
             self.status = "disabled"
             self.detail = "CW_ETL_SHARED_XLSX not set"
@@ -119,7 +127,27 @@ class SharedLog:
         if not all(row[k] for k in REQUIRED_KEYS):
             return
         self.rows.append(row)
+        # Known minor imprecision: a row written by append_value_map (not
+        # append) still has a real targetTable/targetField, so a reload
+        # counts it as a second confirmation of that same mapping on top of
+        # the field-confirm row that already exists -- confirm_count ends up
+        # one higher than the number of times the *field mapping itself* was
+        # actually reconfirmed. Doesn't affect which table/field/value_map
+        # get_exact returns, only that display counter, so left as-is rather
+        # than adding a row-type column to distinguish the two append kinds.
         self._reindex_row(row)
+        self._reindex_value_map(row)
+
+    def _reindex_value_map(self, row):
+        """Tracks the latest confirmed value_map per (target_db, source
+        system, field) -- last-write-wins, same as how a changed field-
+        mapping decision overwrites the running count in _reindex_row,
+        except there's no count here: a value map is either the current
+        confirmed one or it isn't."""
+        if not row.get("valueMap"):
+            return
+        key = (row["targetDatabase"], normalize(row["sourceSystem"]), normalize(row["sourceField"]))
+        self.value_maps[key] = {"valueMap": row["valueMap"], "confirmedAt": row.get("confirmedAt") or ""}
 
     def _reindex_row(self, row):
         tdb = row["targetDatabase"]
@@ -175,7 +203,12 @@ class SharedLog:
             "target_field": field,
             "confirm_count": entry["count"],
             "last_confirmed_at": entry["lastConfirmedAt"],
+            "value_map": self.get_value_map(target_db, source_system, field_name) or "",
         }
+
+    def get_value_map(self, target_db, source_system, field_name):
+        entry = self.value_maps.get((target_db, normalize(source_system), normalize(field_name)))
+        return entry["valueMap"] if entry else None
 
     def get_field_index(self, target_db, field_name):
         bucket = self.field_index.get((target_db, normalize(field_name)))
@@ -201,10 +234,34 @@ class SharedLog:
             "confirmedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "confirmedBy": getpass.getuser(),
             "desc": desc or "",
+            "valueMap": "",
         }
         self._write_row(row)
         self.rows.append(row)
         self._reindex_row(row)
+
+    def append_value_map(self, target_db, source_system, field_name, target_table, target_field, value_map):
+        """Appends a row recording a confirmed value map -- a distinct
+        confirmation from append() above (which value goes to which approved
+        code, not which target field this source field goes to), so it's
+        its own append rather than reusing append()'s field-index/exact-
+        count bookkeeping, which shouldn't be bumped just for this. desc is
+        left blank on this row; the field-mapping row that already exists
+        (from a prior append()) carries whatever desc was confirmed there."""
+        row = {
+            "targetDatabase": target_db,
+            "sourceSystem": source_system,
+            "sourceField": field_name,
+            "targetTable": target_table,
+            "targetField": target_field,
+            "confirmedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "confirmedBy": getpass.getuser(),
+            "desc": "",
+            "valueMap": value_map or "",
+        }
+        self._write_row(row)
+        self.rows.append(row)
+        self._reindex_value_map(row)
 
     def _ensure_header_columns(self, ws):
         """Extends an existing header with any FIELDS columns it predates

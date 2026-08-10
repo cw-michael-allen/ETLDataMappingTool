@@ -210,7 +210,7 @@ data was written there, verified identical, and the personal-OneDrive original w
 ## Advanced mode (SQL export)
 
 Toggling "Advanced options" on Step 1 does two things:
-1. Adds a **source table name** input to each field row on Step 2, alongside the existing field name/description.
+1. Adds a **source table name** input, and a **known source values** input, to each field row on Step 2, alongside the existing field name/description. The source-values box is for a deliberate, structured list of this field's known values (e.g. `M, F, U` or `1=Yes, 2=No`) — not free text to guess at, and never real per-record data (see "Drafted value mappings" below for how it's used, and the product boundary at the top of this file for why it's never row data). Filling it in for a field mapped to a target with approved values also means a required "Value matching" step (see below) between Mapping Suggestions and Summary — no value conversion ships without the customer explicitly confirming it.
 2. On the Step 4 summary, generates one SQL SELECT statement per **(target table, source table)** pair — e.g. if `Client`'s fields come from two different source tables, you get two separate SELECT statements for `Client`, each producing just the columns sourced from that table — columns aliased to the exact target field names, ready for a technical data person to run against the customer's live source system and produce data shaped like our staging templates.
 
 Deliberate scope limits (see the chat record / commit messages for the reasoning):
@@ -237,7 +237,13 @@ The one deliberate, narrow exception to "no automatic value-transformation logic
 `transform_draft.py` will draft a real `CASE WHEN` for a column, but only when two facts already
 on record for *this* migration agree with each other:
 
-1. **What the customer told us** — their typed Step 2 description for that field (e.g. `1=Yes, 2=No`).
+1. **What the customer told us** — either their typed Step 2 description for that field (e.g.
+   `1=Yes, 2=No`), or, when Advanced mode's structured **known source values** box for that field
+   is filled in (e.g. `M, F, U`), that list instead — it takes priority over the free-text
+   description whenever both are present, because a deliberate structured list is a stronger fact
+   than a sentence the tool is pattern-matching. Unlike the description parser, a bare entry with
+   no `code=label` isn't dropped — it's the customer directly naming one of the field's own values
+   (their source already stores `Yes`/`No`, not a numeric code), so it self-pairs.
 2. **What the target requires** — the signed-off schema's own decode/allowed-values for that field.
 
 Both get parsed into code/label pairs (the same parser either side, so there's no separate
@@ -251,6 +257,18 @@ a partial `CASE WHEN` silently missing a branch would be worse than no draft, so
 nothing, and the column falls back to a plain alias plus a comment explaining exactly why — most
 likely a real mismatch worth resolving, not a bug in the tool. The point is you find out from the
 ToDo list, not from the script silently producing wrong data.
+
+The same structured list, when present, also replaces the free-text heuristics in the Step 4
+readiness panel's format-mismatch check (`schema_rules.check_batch` / `_source_values_mismatch`)
+with an exact-set comparison against the target's allowed values — more reliable than
+pattern-matching a sentence, since every entry was deliberately typed as a value. And regardless
+of whether a draft was produced, every field with a known-source-values list gets echoed into the
+SQL export's header under its own "for reference" section, so a data person sees exactly what the
+customer said this field contains even when nothing could be auto-drafted. **This list itself is
+session-scoped only** — unlike the free-text description, it is not persisted into `db.py`'s
+learned-mapping library or the shared Excel log, so it has to be re-entered for a repeat migration
+on the same source system. (The customer's *confirmed match* against it, from the value-matching
+step below, is a different thing and is persisted — see "Value matching.")
 
 There's a second signal, used more cautiously: **patterns from past confirmed mappings.** Every
 confirmed mapping's description is now kept (in `db.py`'s local table and the shared Excel log
@@ -268,6 +286,47 @@ Every outcome gets its own labeled TODO section in the header — drafted (revie
 failed (a real mismatch to resolve), or suggested (a pattern worth considering) — so mismatches
 surface as errors to fix, exactly like a normal build's warnings, rather than getting silently
 smoothed over.
+
+## Value matching (forcing a real decision, not a guess)
+
+Auto-drafting above only fires on an *exact* label match — anything short of that leaves a plain
+column alias and an explanation. That's deliberately conservative, but it also means the customer
+never gets a chance to just tell the tool what a mismatched value actually means. **Value matching**
+closes that gap without crossing the "never guess" line: instead of the tool inferring anything, it
+inserts a required step (`app.js: renderValueMatchStep`, between Mapping Suggestions and Summary,
+Advanced mode only) where the customer matches each of their own listed source values to one of the
+target's approved values themselves, one dropdown at a time.
+
+**When it appears:** `fieldsNeedingValueMatch` gates it on two things — the field is mapped (and not
+flagged for review) to a target with real approved values, *and* the customer already typed a known
+source values list for it in Step 2. It doesn't matter whether that list would have auto-matched
+exactly or not — if a value's list is there, its step shows up, so the customer is always the one
+who explicitly decided (even a clean "Yes/No → 1/2" match still gets a visible, confirmed choice
+rather than a silent auto-draft). No list, or a target with no approved values to match against, and
+there's nothing to show — the field just flows through as before.
+
+**Nothing is optional.** Every distinct source value gets its own dropdown of the target's approved
+values, plus an explicit "Leave unmapped (NULL)" option — never a silent default. "Continue to
+Summary" stays disabled until every value across every field on the page has a deliberate answer.
+
+**What gets pre-selected**, in priority order: an edit already made this render pass, then a value
+map already confirmed for this *exact* source field in an earlier session (see persistence below),
+then an exact label match (the same reconciliation the auto-draft above would do on its own) as a
+starting suggestion, then nothing — forcing an explicit look.
+
+**The result outranks everything else in `transform_draft.py`.** Once confirmed, it's sent to
+`/api/confirm-value-mapping` and becomes the mapping's `valueMap` (e.g. `"M=1,F=2,U=3"`), which
+`draft_or_explain` uses outright as the CASE WHEN — no re-verification against the target's decode,
+because it was already built *from* that decode in the dropdown; it's a customer decision on record,
+not a draft to double-check.
+
+**Persisted, unlike the source values list itself:** `db.py`'s `mappings` table and the shared Excel
+log both gained a `value_map` column, written by a dedicated `save_value_map` / `append_value_map`
+(deliberately separate from the functions that confirm the target field mapping itself, so this
+doesn't reset that mapping's own confirm streak or description). A repeat migration on the *same*
+source system sees its past value-map choices pre-filled instead of being asked to redo them —
+`/api/suggest`'s learned/shared-learned paths now return `valueMap` alongside the target
+table/field for exactly this reason.
 
 ## Import fields from a file
 

@@ -73,6 +73,14 @@ def get_conn():
     # column isn't worth it the way it was when this table was still empty.
     if not _has_column(conn, "mappings", "desc"):
         conn.execute("ALTER TABLE mappings ADD COLUMN desc TEXT NOT NULL DEFAULT ''")
+    # Same non-destructive ALTER pattern as desc above, for the same reason:
+    # real confirmed mappings exist now, so dropping the table to add a
+    # column isn't an option. Holds the customer's confirmed source-value ->
+    # target-code mapping from the Advanced-mode value-matching step (e.g.
+    # "M=1,F=2,U=3"), parsed with schema_rules.parse_value_list -- same
+    # "code=label" mini-language used everywhere else in this codebase.
+    if not _has_column(conn, "mappings", "value_map"):
+        conn.execute("ALTER TABLE mappings ADD COLUMN value_map TEXT NOT NULL DEFAULT ''")
     conn.commit()
     return conn
 
@@ -162,6 +170,25 @@ def save_mapping(source_system, field_name, target_table, target_field, target_d
                    VALUES (?,?,?,?,1)""",
                 (target_db, fn_norm, target_table, target_field),
             )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def save_value_map(source_system, field_name, target_db, value_map):
+    """Records the customer's *confirmed* source-value -> target-code mapping
+    from the Advanced-mode value-matching step, separately from save_mapping
+    above -- this is a distinct confirmation (which value goes to which
+    approved code), not a re-confirmation of the target field itself, so it
+    doesn't touch confirm_count or overwrite desc. Requires a mappings row to
+    already exist for this (target_db, source_system, field_name); the caller
+    (app.py) is responsible for creating one first if it's missing."""
+    conn = get_conn()
+    try:
+        conn.execute(
+            "UPDATE mappings SET value_map=? WHERE target_db=? AND source_system_norm=? AND field_name_norm=?",
+            (value_map, target_db, normalize(source_system), normalize(field_name)),
+        )
         conn.commit()
     finally:
         conn.close()

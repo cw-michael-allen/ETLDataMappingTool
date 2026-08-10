@@ -289,6 +289,31 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:  # noqa: BLE001
                 sys.stderr.write(f"WARNING: could not write to shared mapping log: {e}\n")
             return self._send_json({"ok": True})
+        if path == "/api/confirm-value-mapping":
+            try:
+                source_system, field_name, table, field, value_map = (
+                    payload["sourceSystem"], payload["fieldName"], payload["table"], payload["field"],
+                    payload["valueMap"],
+                )
+            except KeyError as e:
+                return self._send_json({"error": f"missing field: {e}"}, 400)
+            # This is a distinct confirmation from /api/confirm above (which
+            # value goes to which approved code, not which target field this
+            # source field goes to) and can arrive without /api/confirm ever
+            # having been called for this field -- Step 3 lets a high-
+            # confidence auto-suggestion flow through to the SQL export
+            # without an explicit click. Create the mappings row here if it
+            # doesn't exist yet so save_value_map (a plain UPDATE) has
+            # something to land on; leave it alone if it does, so this never
+            # resets an already-confirmed mapping's confirm_count/desc.
+            if not db.get_mapping(source_system, field_name, target_db):
+                db.save_mapping(source_system, field_name, table, field, target_db, desc=payload.get("desc", ""))
+            db.save_value_map(source_system, field_name, target_db, value_map)
+            try:
+                shared_mappings.SHARED.append_value_map(target_db, source_system, field_name, table, field, value_map)
+            except Exception as e:  # noqa: BLE001
+                sys.stderr.write(f"WARNING: could not write value map to shared mapping log: {e}\n")
+            return self._send_json({"ok": True})
         if path == "/api/rulecheck":
             return self._send_json(
                 schema_rules.check_batch(payload.get("mappings", []), scoped_schema(target_db, modules))
@@ -329,6 +354,11 @@ class Handler(BaseHTTPRequestHandler):
                 "field": learned["target_field"],
                 "confidence": "learned",
                 "reasoning": f"Confirmed {learned['confirm_count']} time(s) before for {source_system}.",
+                # A previously-confirmed value map for THIS exact source
+                # field, if the value-matching step was ever completed for
+                # it -- lets the frontend pre-fill that step instead of
+                # asking the customer to redo a decision already on record.
+                "valueMap": learned["value_map"] or "",
             }
 
         # Nothing in this machine's local cache -- check the shared library
@@ -345,6 +375,7 @@ class Handler(BaseHTTPRequestHandler):
                     f"Confirmed {shared_learned['confirm_count']} time(s) before for {source_system} "
                     "(from the shared mapping library)."
                 ),
+                "valueMap": shared_learned["value_map"] or "",
             }
 
         if not schema:

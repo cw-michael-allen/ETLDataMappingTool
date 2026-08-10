@@ -84,7 +84,7 @@ let state = {
   dialect: "SQL Server",
   dialects: null,
   sourceSystem: "",
-  fields: [{ name: "", desc: "", sourceTable: "" }],
+  fields: [{ name: "", desc: "", sourceTable: "", sourceValues: "" }],
   suggestions: [],
   schema: null,
   schemaKey: null,
@@ -403,10 +403,10 @@ function mergeImportedFields(imported) {
     const k = key(f);
     if (seen.has(k)) { skipped++; continue; }
     seen.add(k);
-    merged.push({ name: f.name, desc: f.desc || "", sourceTable: f.sourceTable || "" });
+    merged.push({ name: f.name, desc: f.desc || "", sourceTable: f.sourceTable || "", sourceValues: f.sourceValues || "" });
     added++;
   }
-  merged.push({ name: "", desc: "", sourceTable: "" });
+  merged.push({ name: "", desc: "", sourceTable: "", sourceValues: "" });
   state.fields = merged;
   return { added, skipped };
 }
@@ -417,6 +417,7 @@ function renderStep2() {
       ${state.advancedMode ? `<input type="text" class="fsrctable" placeholder="Source table name (e.g. dbo.ClientExport)" value="${f.sourceTable || ""}">` : ""}
       <input type="text" class="fname" placeholder="Source field name (e.g. Client_DOB)" value="${f.name}">
       <input type="text" class="fdesc" placeholder="Optional: short description or format (e.g. MM/DD/YYYY, 1=Yes/2=No)" value="${f.desc}">
+      ${state.advancedMode ? `<input type="text" class="fsrcvalues" placeholder="Optional: this field's known source values (e.g. M, F, U or 1=Yes, 2=No)" value="${f.sourceValues || ""}">` : ""}
       <button class="ghost remove-field">Remove</button>
     </div>
   `).join("");
@@ -436,7 +437,7 @@ function renderStep2() {
     ${renderHeader()}
     <div class="card">
       <h3>List the Fields From ${state.sourceSystem}</h3>
-      <div style="color:var(--surface-text-muted);font-size:13px;margin-bottom:14px;">Add each field name from your export. A short description helps but isn't required.${state.advancedMode ? ` Advanced mode is on — also enter each field's source table name so a SQL export can be generated later. ${advancedInstructions}` : ""}</div>
+      <div style="color:var(--surface-text-muted);font-size:13px;margin-bottom:14px;">Add each field name from your export. A short description helps but isn't required.${state.advancedMode ? ` Advanced mode is on — also enter each field's source table name so a SQL export can be generated later. ${advancedInstructions} If a field has a known, limited set of values (e.g. a code or category), list them in "known source values" so they can be matched against the target's allowed values and considered for value-mapping in the SQL export.` : ""}</div>
       <div class="import-panel">
         <div class="import-row">
           <input type="file" id="import-file" accept=".csv,.xlsx">
@@ -444,6 +445,13 @@ function renderStep2() {
         </div>
         <div class="import-hint">Only the header row (column names) is read — never the data underneath it. ${importFormatHint}</div>
         <div id="import-status">${notice}</div>
+      </div>
+      <div class="field-row field-row-header">
+        ${state.advancedMode ? `<span>Source table</span>` : ""}
+        <span>Field name</span>
+        <span>Description</span>
+        ${state.advancedMode ? `<span>Known source values</span>` : ""}
+        <button class="ghost" style="visibility:hidden;" tabindex="-1">Remove</button>
       </div>
       <div id="field-rows">${rows}</div>
       <button class="secondary" id="add-field">+ Add another field</button>
@@ -461,13 +469,14 @@ function renderStep2() {
     state.fields = rowEls.map(r => ({
       name: r.querySelector(".fname").value.trim(),
       desc: r.querySelector(".fdesc").value.trim(),
-      sourceTable: state.advancedMode ? r.querySelector(".fsrctable").value.trim() : ""
+      sourceTable: state.advancedMode ? r.querySelector(".fsrctable").value.trim() : "",
+      sourceValues: state.advancedMode ? r.querySelector(".fsrcvalues").value.trim() : ""
     }));
   }
 
   document.getElementById("add-field").onclick = () => {
     syncFieldsFromDOM();
-    state.fields.push({ name: "", desc: "", sourceTable: "" });
+    state.fields.push({ name: "", desc: "", sourceTable: "", sourceValues: "" });
     renderStep2();
   };
   document.querySelectorAll(".remove-field").forEach(btn => {
@@ -475,7 +484,7 @@ function renderStep2() {
       syncFieldsFromDOM();
       const idx = parseInt(btn.closest(".field-row").dataset.idx, 10);
       state.fields.splice(idx, 1);
-      if (state.fields.length === 0) state.fields.push({ name: "", desc: "", sourceTable: "" });
+      if (state.fields.length === 0) state.fields.push({ name: "", desc: "", sourceTable: "", sourceValues: "" });
       renderStep2();
     };
   });
@@ -543,7 +552,7 @@ async function renderStep3() {
       body: JSON.stringify({ targetDatabase: state.targetDatabase, modules: effectiveModules(), sourceSystem: state.sourceSystem, fieldName: f.name, desc: f.desc }),
     });
     const targetMeta = state.schema.find(t => t.table === sug.table && t.field === sug.field);
-    state.suggestions.push({ source: f.name, desc: f.desc, sourceTable: f.sourceTable || "", suggestion: sug, targetMeta, confirmedTable: sug.table, confirmedField: sug.field });
+    state.suggestions.push({ source: f.name, desc: f.desc, sourceTable: f.sourceTable || "", sourceValues: f.sourceValues || "", suggestion: sug, targetMeta, confirmedTable: sug.table, confirmedField: sug.field });
   }
   renderStep3Results();
 }
@@ -571,6 +580,7 @@ function renderStep3Results() {
     return `
       <div class="suggestion-card" data-idx="${i}">
         <div class="src">${s.source}${s.desc ? ` <span style="font-weight:400;color:var(--surface-text-muted);">— ${s.desc}</span>` : ""}</div>
+        ${s.sourceValues ? `<div class="decode">Known source values: ${s.sourceValues}</div>` : ""}
         ${hasMatch ? `<div class="target">${shownTarget} → ${s.confirmedField}</div>` : `<div class="target" style="color:var(--cw-orange);">No confident match</div>`}
         <span class="pill ${pillClass}">${pillLabel}</span>
         <div class="reason" style="margin-top:6px;">${s.suggestion.reasoning || ""}</div>
@@ -627,17 +637,27 @@ function renderStep3Results() {
       s.suggestion = { table, field, confidence: "medium", reasoning: "Manually selected by consultant." };
       s.targetMeta = state.schema.find(t => t.table === table && t.field === field);
       s.confirmed = false;
+      s.valueMap = ""; s.valueMapDraft = null; // a different target field invalidates any prior value match
       renderStep3Results();
     };
     card.querySelector(".flag-btn").onclick = () => {
       s.flagged = true;
       s.confirmed = false;
       s.confirmedTable = null; s.confirmedField = null;
+      s.valueMap = ""; s.valueMapDraft = null;
       renderStep3Results();
     };
   });
   document.getElementById("back-3").onclick = () => { state.step = 2; renderStep2(); };
-  document.getElementById("next-3").onclick = () => { state.step = 4; renderStep4(); };
+  document.getElementById("next-3").onclick = () => {
+    if (fieldsNeedingValueMatch().length) {
+      state.step = 3.5;
+      renderValueMatchStep();
+    } else {
+      state.step = 4;
+      renderStep4();
+    }
+  };
 }
 
 // Rule-engine results come back keyed by target *table*. For ServTracker the
@@ -647,6 +667,183 @@ function renderStep3Results() {
 function tableDisplayName(table) {
   const row = (state.schema || []).find(r => r.table === table && r.sheet);
   return row ? row.sheet : table;
+}
+
+// Mirrors schema_rules.parse_decode exactly -- a bare entry with no "=" is
+// dropped, not self-paired. Only used for a target's own `decode` string,
+// which is always properly "code=label" pairs by the time it's in the
+// schema (see reference/SCHEMA_FORMAT.md); kept separate from
+// parseValueListJs below rather than reusing it, so this side stays in sync
+// with parse_decode's semantics specifically, not parse_value_list's.
+function parseDecodeJs(str) {
+  const pairs = [];
+  for (const part of (str || "").split(",")) {
+    const p = part.trim();
+    const eq = p.indexOf("=");
+    if (eq !== -1) pairs.push([p.slice(0, eq).trim(), p.slice(eq + 1).trim()]);
+  }
+  return pairs;
+}
+
+// Mirrors schema_rules.parse_value_list exactly -- a bare entry self-pairs
+// (code === label) instead of being dropped, since it's the customer
+// directly naming one of their field's own values. Used for the customer's
+// own sourceValues/valueMap strings, both of which use this more tolerant
+// parsing.
+function parseValueListJs(str) {
+  const pairs = [];
+  for (const part of (str || "").split(",")) {
+    const p = part.trim();
+    if (!p) continue;
+    const eq = p.indexOf("=");
+    if (eq !== -1) pairs.push([p.slice(0, eq).trim(), p.slice(eq + 1).trim()]);
+    else pairs.push([p, p]);
+  }
+  return pairs;
+}
+
+// Mirrors schema_rules.target_value_pairs: decode (CaseWorthy-style
+// code=label) wins if present and parses to anything, else decodeValues
+// (ServTracker-style bare labels, self-paired) -- same fallback order,
+// same reasoning (see that function's own docstring).
+function targetPairsJs(meta) {
+  if (!meta) return [];
+  if (meta.decode) {
+    const pairs = parseDecodeJs(meta.decode);
+    if (pairs.length) return pairs;
+  }
+  if (meta.decodeValues && meta.decodeValues.length) return meta.decodeValues.map(v => [v, v]);
+  return [];
+}
+
+// Gate for the value-matching step (renderValueMatchStep): only fields the
+// customer both (a) gave a known-source-values list for, and (b) mapped to
+// a target field that actually has approved values to match against. A
+// flagged-for-review field is deferred to a consultant entirely, so it's
+// excluded here too -- forcing a value match on a mapping nobody's
+// confirmed the target field for yet would be asking for a decision that
+// might get thrown away.
+function fieldsNeedingValueMatch() {
+  return state.suggestions.filter(s =>
+    !s.flagged && s.confirmedTable && s.confirmedField && s.sourceValues &&
+    targetPairsJs(s.targetMeta).length > 0
+  );
+}
+
+// Inserted between Mapping Suggestions and Summary (Advanced mode only,
+// and only when fieldsNeedingValueMatch() is non-empty -- see next-3's
+// handler). Every field mapped to a target with approved values, where the
+// customer already listed their own source values, gets a required
+// dropdown per distinct source value: no automatic guessing, the customer
+// picks the match themselves, and that becomes the CASE WHEN in the SQL
+// export outright (transform_draft.py's confirmed_value_map, highest
+// priority there) rather than something to double-check.
+function renderValueMatchStep() {
+  const fields = fieldsNeedingValueMatch();
+
+  const cards = fields.map((s, i) => {
+    const targetPairs = targetPairsJs(s.targetMeta);
+    const targetIsSelfPaired = targetPairs.every(([c, l]) => c === l);
+    const targetOptionsHtml = (preselect) => targetPairs.map(([code, label]) =>
+      `<option value="${code}" ${preselect === code ? "selected" : ""}>${targetIsSelfPaired ? label : `${code} = ${label}`}</option>`
+    ).join("");
+
+    // Priority for the pre-filled selection: this render pass's own edits >
+    // a previously-confirmed value map for this exact source field (from
+    // /api/suggest's learned/shared-learned paths) > an exact label match
+    // (same reconciliation transform_draft.js would do automatically) >
+    // unselected, forcing an explicit choice.
+    const draft = s.valueMapDraft || Object.fromEntries(parseValueListJs(s.suggestion.valueMap || ""));
+    const targetByLabel = Object.fromEntries(targetPairs.map(([c, l]) => [l.trim().toLowerCase(), c]));
+
+    const srcPairs = parseValueListJs(s.sourceValues);
+    const seen = new Set();
+    const rows = srcPairs.filter(([code]) => {
+      if (seen.has(code)) return false;
+      seen.add(code);
+      return true;
+    }).map(([code, label]) => {
+      const preselect = draft[code] !== undefined ? draft[code] : (targetByLabel[label.trim().toLowerCase()] || "");
+      return `
+        <div class="value-match-row" data-code="${code}">
+          <span class="value-match-src">${label !== code ? `${code} (${label})` : code}</span>
+          <span class="value-match-arrow">→</span>
+          <select class="value-match-select">
+            <option value="" disabled ${preselect === "" ? "selected" : ""}>Choose a match…</option>
+            <option value="__NULL__" ${preselect === "__NULL__" ? "selected" : ""}>Leave unmapped (NULL)</option>
+            ${targetOptionsHtml(preselect)}
+          </select>
+        </div>`;
+    }).join("");
+
+    const targetName = s.targetMeta.sheet || s.targetMeta.table;
+    return `
+      <div class="suggestion-card value-match-card" data-idx="${i}">
+        <div class="src">${s.source} <span style="font-weight:400;color:var(--surface-text-muted);">→ ${targetName} → ${s.confirmedField}</span></div>
+        <div class="decode">Approved values: ${targetIsSelfPaired ? targetPairs.map(p => p[1]).join(", ") : targetPairs.map(([c, l]) => `${c}=${l}`).join(", ")}</div>
+        <div class="value-match-rows">${rows}</div>
+      </div>`;
+  }).join("");
+
+  app.innerHTML = `
+    ${renderHeader()}
+    <div class="card">
+      <h3>Match Your Values to ${dbLabel()}'s Approved Values</h3>
+      <div style="color:var(--surface-text-muted);font-size:13px;margin-bottom:14px;">These fields have a limited set of approved values in ${dbLabel()}. Match each of your own listed source values to the one it corresponds to -- this becomes the value-conversion logic in your SQL export. Choose "Leave unmapped (NULL)" for a value with no real equivalent.</div>
+      ${cards || '<div class="empty">Nothing to match.</div>'}
+      <div class="step-nav">
+        <button class="secondary" id="back-3b">← Back</button>
+        <button class="primary" id="continue-3b" disabled>Continue to Summary →</button>
+      </div>
+    </div>
+    ${renderFooter()}
+  `;
+  refreshLibStat();
+
+  function updateContinueState() {
+    const allChosen = [...document.querySelectorAll(".value-match-select")].every(sel => sel.value !== "");
+    document.getElementById("continue-3b").disabled = !allChosen;
+  }
+  updateContinueState();
+
+  document.querySelectorAll(".value-match-card").forEach(card => {
+    const idx = parseInt(card.dataset.idx, 10);
+    const s = fields[idx];
+    s.valueMapDraft = s.valueMapDraft || {};
+    card.querySelectorAll(".value-match-row").forEach(row => {
+      const code = row.dataset.code;
+      const select = row.querySelector(".value-match-select");
+      select.onchange = () => {
+        s.valueMapDraft[code] = select.value;
+        updateContinueState();
+      };
+      // Selects rendered with a pre-selected option don't fire onchange on
+      // their own -- seed the draft from what's actually showing so a
+      // field the customer never touches still serializes correctly below.
+      if (select.value) s.valueMapDraft[code] = select.value;
+    });
+  });
+
+  document.getElementById("back-3b").onclick = () => { state.step = 3; renderStep3Results(); };
+  document.getElementById("continue-3b").onclick = async () => {
+    for (const s of fields) {
+      const mapping = s.valueMapDraft || {};
+      s.valueMap = Object.entries(mapping)
+        .filter(([, tgt]) => tgt && tgt !== "__NULL__")
+        .map(([code, tgt]) => `${code}=${tgt}`)
+        .join(",");
+      await api("/api/confirm-value-mapping", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          targetDatabase: state.targetDatabase, sourceSystem: state.sourceSystem, fieldName: s.source,
+          table: s.confirmedTable, field: s.confirmedField, valueMap: s.valueMap, desc: s.desc || "",
+        }),
+      });
+    }
+    state.step = 4;
+    renderStep4();
+  };
 }
 
 function renderReadinessPanel(check) {
@@ -726,8 +923,8 @@ async function renderStep4() {
   refreshLibStat();
 
   const mappings = state.suggestions.map(s => ({
-    sourceField: s.source, desc: s.desc, sourceTable: s.sourceTable || "", table: s.confirmedTable, field: s.confirmedField,
-    flagged: !!s.flagged,
+    sourceField: s.source, desc: s.desc, sourceTable: s.sourceTable || "", sourceValues: s.sourceValues || "",
+    valueMap: s.valueMap || "", table: s.confirmedTable, field: s.confirmedField, flagged: !!s.flagged,
   }));
   const check = await api("/api/rulecheck", {
     method: "POST",
