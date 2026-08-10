@@ -21,12 +21,20 @@ Scope, deliberately (see docs/PHASE_PLAN.md and chat record for why):
   match (no description, an unparseable one, an unmatched label) stays a
   plain column alias plus a comment, same as always. Required/decode
   constraints in general are still just surfaced as SQL comments.
+- format_rules.py bakes a second, narrower kind of rule straight into the
+  column expression, with no draft/review step: SSN dashing, phone/fax
+  cleanup, zip default+truncation, and name truncation/null-fallback. These
+  are safe to apply outright (not just draft) because they're sourced from
+  CaseWorthy's own production migration scripts (reference/MASTER_*.sql),
+  not inferred from this customer's data -- and for that same reason they're
+  CaseWorthy-only, never applied when exporting for another target database.
 - Column aliases match the target field name exactly, so each result set can
   be dropped directly into that target table's staging data.
 """
 
 from collections import defaultdict
 
+import format_rules
 import transform_draft
 
 DIALECTS = {
@@ -55,7 +63,10 @@ def _normalize_table_name(name):
     return name.lower()
 
 
-def _build_todo_header(check, skipped, dialect, target_label, source_system, drafted, draft_failures, draft_suggestions):
+def _build_todo_header(
+    check, skipped, dialect, target_label, source_system, drafted, draft_failures, draft_suggestions,
+    formats_applied,
+):
     """Assembles a SQL-comment preamble out of facts already computed
     elsewhere (schema_rules.check_batch, the skip list below) -- nothing
     here is inferred or fabricated, it's just organized so a data person
@@ -95,6 +106,8 @@ def _build_todo_header(check, skipped, dialect, target_label, source_system, dra
             "Possible value/format mismatches to double-check",
             [f"{h['sourceField']}: {h['hint']}" for h in check["formatHints"]],
         ))
+    if formats_applied:
+        sections.append(("Formatting rule(s) baked into the SELECT columns below", formats_applied))
     if drafted:
         sections.append(("Value mapping(s) drafted below — review before running", drafted))
     if draft_failures:
@@ -120,7 +133,7 @@ def _build_todo_header(check, skipped, dialect, target_label, source_system, dra
 
 def build_export(
     mappings, schema, dialect=DEFAULT_DIALECT, check=None, target_label=None, source_system=None,
-    decode_patterns=None,
+    decode_patterns=None, target_database=None,
 ):
     """
     mappings: list of {"sourceTable":str, "sourceField":str, "desc":str,
@@ -138,6 +151,11 @@ def build_export(
     see transform_draft.py. Only ever used as a fallback when a mapping's own
     `desc` doesn't itself produce a usable value-transform draft.
 
+    target_database: the schema_rules.TARGET_DATABASES key (e.g. "CaseWorthy"),
+    not target_label's display name -- gates format_rules.py, whose baked
+    formatting rules are sourced only from CaseWorthy's own migration scripts
+    and must never be applied when exporting for another target database.
+
     Returns {"statements": [{"targetTable", "sourceTable", "sql"}],
              "multiSourceTables": [{"targetTable", "sourceTables": [...]}],
              "skipped": [{"sourceField", "reason"}],
@@ -151,6 +169,15 @@ def build_export(
         dialect = DEFAULT_DIALECT
 
     by_table_field = {(f["table"], f["field"]): f for f in schema}
+
+    # Exact-case field name per (table, lowercased field name) -- lets the
+    # companion-field synthesis below look up "does Client have a
+    # SSNDataQuality column" without caring how the customer capitalized SSN.
+    fields_by_table_lower = defaultdict(dict)
+    for f in schema:
+        fields_by_table_lower[f["table"]][f["field"].lower()] = f["field"]
+
+    bake_formats = target_database == "CaseWorthy"
 
     usable = defaultdict(list)  # (target_table, normalized_source_table) -> [mapping,...]
     source_table_display = {}  # (target_table, normalized_source_table) -> first-seen casing
@@ -169,7 +196,7 @@ def build_export(
         source_table_display.setdefault(key, source_table)
 
     decode_patterns = decode_patterns or {}
-    drafted, draft_failures, draft_suggestions = [], [], []
+    drafted, draft_failures, draft_suggestions, formats_applied = [], [], [], []
 
     statements = []
     tables_by_target = defaultdict(set)
@@ -179,11 +206,13 @@ def build_export(
 
         lines = [f"-- Target table: {target_table}  (source: {source_table})"]
         select_parts = []
+        mapped_fields_lower = {}  # field.lower() -> quoted source, for companion synthesis below
         for e in entries:
             meta = by_table_field.get((target_table, e["field"]))
             quoted_source = _quote_qualified(dialect, e["sourceField"])
             quoted_target = DIALECTS[dialect]["quote"](e["field"])
             column_expr = quoted_source
+            mapped_fields_lower[e["field"].lower()] = quoted_source
             if meta:
                 target_field_label = f"{target_table}.{e['field']}"
                 notes = []
@@ -208,7 +237,30 @@ def build_export(
                     draft_failures.append(f"via {e['sourceField']}: {draft['note']}")
                 elif draft["kind"] == "suggested":
                     draft_suggestions.append(f"via {e['sourceField']}: {draft['note']}")
+                elif bake_formats:
+                    fmt = format_rules.column_rule(quoted_source, meta)
+                    if fmt:
+                        column_expr = fmt["sql"]
+                        lines.append(f"--   {target_field_label}: formatting rule baked in — {fmt['note']}")
+                        formats_applied.append(f"{target_field_label} (via {e['sourceField']}): {fmt['note']}")
             select_parts.append(f"    {column_expr} AS {quoted_target}")
+
+        if bake_formats:
+            for anchor_lower, quoted_anchor in list(mapped_fields_lower.items()):
+                companion_lower = format_rules.companion_field_lower(anchor_lower)
+                if not companion_lower or companion_lower in mapped_fields_lower:
+                    continue
+                companion_field = fields_by_table_lower.get(target_table, {}).get(companion_lower)
+                if not companion_field:
+                    continue
+                fmt = format_rules.companion_rule(anchor_lower, quoted_anchor)
+                if not fmt:
+                    continue
+                target_field_label = f"{target_table}.{companion_field}"
+                quoted_target = DIALECTS[dialect]["quote"](companion_field)
+                select_parts.append(f"    {fmt['sql']} AS {quoted_target}")
+                lines.append(f"--   {target_field_label}: derived from the same source value as its anchor field — {fmt['note']}")
+                formats_applied.append(f"{target_field_label} (derived, no source field of its own): {fmt['note']}")
 
         lines.append("SELECT")
         lines.append(",\n".join(select_parts))
@@ -226,7 +278,8 @@ def build_export(
     multi_source_tables.sort(key=lambda m: m["targetTable"])
 
     header = _build_todo_header(
-        check, skipped, dialect, target_label, source_system, drafted, draft_failures, draft_suggestions
+        check, skipped, dialect, target_label, source_system, drafted, draft_failures, draft_suggestions,
+        formats_applied,
     )
 
     return {"statements": statements, "multiSourceTables": multi_source_tables, "skipped": skipped, "header": header}
