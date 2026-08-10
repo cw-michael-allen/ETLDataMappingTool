@@ -214,6 +214,48 @@ def parse_decode(decode_str):
     return pairs
 
 
+def parse_value_list(values_str):
+    """'M, F, U' or '1=Yes, 2=No' -> [("M","M"), ("F","F"), ("U","U")] or
+    [("1","Yes"), ("2","No")]. Unlike parse_decode, a bare entry with no '='
+    is never dropped -- it's the customer directly naming one of the field's
+    own values (e.g. their source already stores 'Yes'/'No', not a code), so
+    it gets self-paired (code == label) rather than silently discarded. Used
+    for the Advanced-mode "source values" list, which is a deliberate,
+    customer-entered enumeration -- not free text to guess at."""
+    pairs = []
+    for part in (values_str or "").split(","):
+        part = part.strip()
+        if not part:
+            continue
+        if "=" in part:
+            k, v = part.split("=", 1)
+            pairs.append((k.strip(), v.strip()))
+        else:
+            pairs.append((part, part))
+    return pairs
+
+
+def target_value_pairs(meta):
+    """(code, label) pairs a target field actually accepts, regardless of
+    which of the two decode styles this schema row uses.
+
+    CaseWorthy-style: `decode` is a real "code=label" string -- parse it.
+    ServTracker-style: `decodeValues` is bare labels with no separate code at
+    all (the label *is* what gets typed into the sheet) -- so each value
+    pairs with itself; there's nothing to translate on the target side.
+
+    Shared by transform_draft.py's CASE WHEN drafting and this module's own
+    _source_values_mismatch -- one definition of "what does the target
+    accept" for both."""
+    if meta.get("decode"):
+        pairs = parse_decode(meta["decode"])
+        if pairs:
+            return pairs
+    if meta.get("decodeValues"):
+        return [(v, v) for v in meta["decodeValues"]]
+    return []
+
+
 def _decode_mismatch(meta, desc):
     """Target is a List with known decode values; flag if the customer's own
     note names specific codes/labels that don't appear in that decode set.
@@ -266,6 +308,77 @@ def _decode_mismatch(meta, desc):
     return None
 
 
+def _source_values_mismatch(meta, source_values):
+    """Exact-set comparison against the customer's own structured "source
+    values" list (Advanced mode) -- every entry there was deliberately typed
+    as a value, not inferred from a sentence like the free-text desc checks
+    below, so this reports any listed value with no exact matching target
+    label rather than the heuristic pattern-matching _decode_mismatch does.
+    No-ops (returns None) when the target has no decode/decodeValues to
+    compare against, same scope target_value_pairs already has."""
+    target_pairs = target_value_pairs(meta)
+    if not target_pairs:
+        return None
+    source_pairs = parse_value_list(source_values)
+    if not source_pairs:
+        return None
+    target_labels = {label.strip().lower() for _, label in target_pairs}
+    unmatched = [
+        (f"{code}={label}" if code != label else label)
+        for code, label in source_pairs
+        if label.strip().lower() not in target_labels
+    ]
+    if unmatched:
+        target_shown = ", ".join(l for _, l in target_pairs) if all(c == l for c, l in target_pairs) else (
+            ", ".join(f"{c}={l}" for c, l in target_pairs)
+        )
+        return (
+            f"Your listed source value(s) {', '.join(unmatched)} don't exactly match any of "
+            f"{meta['table']}.{meta['field']}'s allowed values ({target_shown})."
+        )
+    return None
+
+
+def _source_values_boolean_mismatch(meta, source_values):
+    """Same idea as _source_values_mismatch but for Boolean targets, which
+    have no decode/decodeValues to compare against (target_value_pairs
+    returns nothing for them) -- so this checks arity directly against the
+    structured list instead: a Boolean target only accepts two values, and
+    every entry in source_values was deliberately typed as one of this
+    field's actual values, not inferred."""
+    if not meta.get("type", "").startswith("Boolean"):
+        return None
+    pairs = parse_value_list(source_values)
+    distinct = {label.strip().lower() for _, label in pairs}
+    if len(distinct) > 2:
+        return (
+            f"{meta['table']}.{meta['field']} only accepts two values (0/1), but your listed source "
+            f"values ({source_values}) name {len(distinct)} distinct options."
+        )
+    return None
+
+
+def _source_values_length_mismatch(meta, source_values):
+    """Same idea as _source_values_mismatch but for a max-length constraint:
+    flags any listed value whose own text is already longer than the target
+    allows, since that's a fact about the value itself, not a guess."""
+    m = re.match(r"Text \(max (\d+)\)", meta.get("type", ""))
+    if not m:
+        return None
+    max_len = int(m.group(1))
+    pairs = parse_value_list(source_values)
+    too_long = [label for _, label in pairs if len(label) > max_len]
+    if too_long:
+        return (
+            f"Your listed source value(s) {', '.join(repr(v) for v in too_long)} are already longer than "
+            f"{meta['table']}.{meta['field']}'s max length ({max_len} characters)."
+        )
+    return None
+
+
+SOURCE_VALUE_CHECKS = (_source_values_mismatch, _source_values_boolean_mismatch, _source_values_length_mismatch)
+
+
 def _boolean_arity_mismatch(meta, desc):
     """Target only accepts two values (0/1), but the customer's note lists more than two options."""
     if not meta.get("type", "").startswith("Boolean") or not desc:
@@ -311,6 +424,15 @@ def check_batch(mappings, schema):
     script. They never touch real data — only the format notes the customer
     typed in during the interview. False negatives are expected; each check
     is written to avoid false positives rather than catch every mismatch.
+
+    A mapping's Advanced-mode `sourceValues` (a structured list the customer
+    deliberately typed, e.g. "M, F, U" or "1=Yes, 2=No" -- see
+    parse_value_list) takes priority over desc's heuristics when present:
+    SOURCE_VALUE_CHECKS (decode/list exact-set, Boolean arity, max length --
+    the same three shapes FORMAT_CHECKS covers for desc, just against a
+    deliberate list instead of a sentence being pattern-matched) run first;
+    desc's own checks still run afterward as a secondary pass -- a clean
+    sourceValues match doesn't mean desc has nothing else to flag.
     """
     by_table = schema_by_table(schema)
     known_tables = set(by_table.keys())
@@ -340,19 +462,29 @@ def check_batch(mappings, schema):
 
     format_hints = []
     for m in mappings:
-        if not (m.get("table") and m.get("field")) or not m.get("desc"):
+        if not (m.get("table") and m.get("field")):
+            continue
+        if not m.get("desc") and not m.get("sourceValues"):
             continue
         meta = next((f for f in by_table.get(m["table"], []) if f["field"] == m["field"]), None)
         if not meta:
             continue
         meta = dict(meta, table=m["table"], field=m["field"])
-        for check in FORMAT_CHECKS:
-            hint = check(meta, m["desc"])
-            if hint:
-                format_hints.append(
-                    {"sourceField": m["sourceField"], "table": m["table"], "field": m["field"], "hint": hint}
-                )
-                break  # one hint per mapping is plenty; avoid piling on
+        hint = None
+        if m.get("sourceValues"):
+            for check in SOURCE_VALUE_CHECKS:
+                hint = check(meta, m["sourceValues"])
+                if hint:
+                    break
+        if not hint and m.get("desc"):
+            for check in FORMAT_CHECKS:
+                hint = check(meta, m["desc"])
+                if hint:
+                    break  # one desc-based hint per mapping is plenty; avoid piling on
+        if hint:
+            format_hints.append(
+                {"sourceField": m["sourceField"], "table": m["table"], "field": m["field"], "hint": hint}
+            )
 
     return {
         "requiredMissing": required_missing,

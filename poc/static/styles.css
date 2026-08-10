@@ -155,6 +155,10 @@ button.ghost { background: none; color: var(--cw-orange); border: 1px solid var(
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 .field-row { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
 .field-row input { flex: 1; }
+.field-row-header span {
+  flex: 1; font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.03em; color: var(--surface-text-muted);
+}
 .pill {
   display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px;
   font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
@@ -173,6 +177,11 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .suggestion-card .actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .override-row { display: none; margin-top: 10px; gap: 8px; }
 .override-row.show { display: flex; }
+.value-match-rows { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.value-match-row { display: flex; align-items: center; gap: 10px; }
+.value-match-src { font-family: var(--font-heading); font-weight: 600; color: var(--surface-heading); min-width: 160px; }
+.value-match-arrow { color: var(--surface-text-muted); }
+.value-match-select { flex: 1; max-width: 320px; }
 table.summary { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.summary th { text-align: left; background: var(--surface-hover-tint); color: var(--surface-heading); padding: 8px 10px; font-family: var(--font-heading); }
 table.summary td { padding: 8px 10px; border-bottom: 1px solid var(--surface-border); color: var(--surface-text); }
