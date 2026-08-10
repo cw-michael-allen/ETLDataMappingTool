@@ -35,6 +35,12 @@ FIELDS = [
     ("TargetField", "targetField"),
     ("ConfirmedAt", "confirmedAt"),
     ("ConfirmedBy", "confirmedBy"),
+    # Added after the log already had real rows -- always append new fields
+    # here at the end, never insert in the middle. Existing rows' cells stay
+    # in their original physical columns; inserting a header in the middle
+    # would misalign them against a header that no longer matches where
+    # their values actually sit.
+    ("Description", "desc"),
 ]
 REQUIRED_KEYS = ("targetDatabase", "sourceSystem", "sourceField", "targetTable", "targetField")
 SHEET_NAME = "ConfirmedMappings"
@@ -63,9 +69,10 @@ class SharedLog:
     avoids re-parsing the whole workbook on every suggestion lookup."""
 
     def __init__(self):
-        self.rows = []          # raw row dicts, oldest first
-        self.exact = {}         # (target_db, source_system_norm, field_name_norm) -> {target, count, lastConfirmedAt}
-        self.field_index = {}   # (target_db, field_name_norm) -> {(table, field): count}
+        self.rows = []             # raw row dicts, oldest first
+        self.exact = {}            # (target_db, source_system_norm, field_name_norm) -> {target, count, lastConfirmedAt}
+        self.field_index = {}      # (target_db, field_name_norm) -> {(table, field): count}
+        self.decode_patterns = {}  # (target_db, target_table, target_field) -> {desc: count}
         self.path = None
         self.status = "disabled"  # disabled | missing-dependency | not-found | ok | error
         self.detail = ""
@@ -75,6 +82,7 @@ class SharedLog:
         self.rows = []
         self.exact = {}
         self.field_index = {}
+        self.decode_patterns = {}
         if not path:
             self.status = "disabled"
             self.detail = "CW_ETL_SHARED_XLSX not set"
@@ -137,6 +145,26 @@ class SharedLog:
         bucket = self.field_index.setdefault(idx_key, {})
         bucket[target] = bucket.get(target, 0) + 1
 
+        # Decode patterns: what consultants typed as the source-side format
+        # note for this exact target field, across any source system --
+        # never anything from a source system's real data, just field-format
+        # text a human typed in. Feeds transform_draft.py's "established
+        # pattern" signal the same way db.get_decode_patterns does locally.
+        if row.get("desc"):
+            pattern_key = (tdb, row["targetTable"], row["targetField"])
+            pattern_bucket = self.decode_patterns.setdefault(pattern_key, {})
+            pattern_bucket[row["desc"]] = pattern_bucket.get(row["desc"], 0) + 1
+
+    def get_decode_patterns(self, target_db, target_table, target_field):
+        bucket = self.decode_patterns.get((target_db, target_table, target_field))
+        if not bucket:
+            return []
+        return sorted(
+            ({"desc": d, "count": c} for d, c in bucket.items()),
+            key=lambda r: r["count"],
+            reverse=True,
+        )
+
     def get_exact(self, target_db, source_system, field_name):
         entry = self.exact.get((target_db, normalize(source_system), normalize(field_name)))
         if not entry:
@@ -159,7 +187,7 @@ class SharedLog:
             reverse=True,
         )
 
-    def append(self, target_db, source_system, field_name, target_table, target_field):
+    def append(self, target_db, source_system, field_name, target_table, target_field, desc=""):
         """Appends one confirmation to the shared file, then mirrors it into
         this in-memory cache so this session's own confirmations are visible
         to its own next lookup without re-reading the whole workbook. Raises
@@ -172,10 +200,24 @@ class SharedLog:
             "targetField": target_field,
             "confirmedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "confirmedBy": getpass.getuser(),
+            "desc": desc or "",
         }
         self._write_row(row)
         self.rows.append(row)
         self._reindex_row(row)
+
+    def _ensure_header_columns(self, ws):
+        """Extends an existing header with any FIELDS columns it predates
+        (e.g. Description, added after this log already had real rows) --
+        always at the next free column, never touching existing header
+        cells or shifting already-written data."""
+        existing = [c.value for c in ws[1]]
+        next_col = len(existing) + 1
+        for header, _ in FIELDS:
+            if header not in existing:
+                ws.cell(row=1, column=next_col, value=header)
+                existing.append(header)
+                next_col += 1
 
     def _write_row(self, row):
         openpyxl = _load_openpyxl()
@@ -196,6 +238,8 @@ class SharedLog:
             ws.delete_rows(1, 1)
             ws.title = SHEET_NAME
             ws.append([header for header, _ in FIELDS])
+        else:
+            self._ensure_header_columns(ws)
         ws.append([row[key] for _, key in FIELDS])
         wb.save(self.path)
 
