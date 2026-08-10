@@ -114,6 +114,24 @@ def combined_field_index(field_name, target_db):
     return [{"target_table": t, "target_field": f, "count": c} for (t, f), c in merged.items()]
 
 
+def combined_decode_patterns(target_db, target_table, target_field):
+    """Every description text past confirmed mappings have used for this
+    exact target field, merged from db.py's local history and the shared
+    Excel log's, most-common first -- the "established patterns" signal
+    transform_draft.py falls back on when the current field's own
+    description isn't usable on its own."""
+    merged = {}
+    for r in db.get_decode_patterns(target_table, target_field, target_db):
+        merged[r["desc"]] = merged.get(r["desc"], 0) + r["count"]
+    for r in shared_mappings.SHARED.get_decode_patterns(target_db, target_table, target_field):
+        merged[r["desc"]] = merged.get(r["desc"], 0) + r["count"]
+    return sorted(
+        ({"desc": d, "count": c} for d, c in merged.items()),
+        key=lambda r: r["count"],
+        reverse=True,
+    )
+
+
 def get_candidates(target_db, modules=None):
     # Same exclusion the rule matcher applies: a column that is never migrated
     # is not a valid destination, so the LLM must not see it as one either.
@@ -253,7 +271,8 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/confirm":
             try:
                 db.save_mapping(
-                    payload["sourceSystem"], payload["fieldName"], payload["table"], payload["field"], target_db
+                    payload["sourceSystem"], payload["fieldName"], payload["table"], payload["field"], target_db,
+                    desc=payload.get("desc", ""),
                 )
             except KeyError as e:
                 return self._send_json({"error": f"missing field: {e}"}, 400)
@@ -264,7 +283,8 @@ class Handler(BaseHTTPRequestHandler):
             # or fail the confirm that already landed locally.
             try:
                 shared_mappings.SHARED.append(
-                    target_db, payload["sourceSystem"], payload["fieldName"], payload["table"], payload["field"]
+                    target_db, payload["sourceSystem"], payload["fieldName"], payload["table"], payload["field"],
+                    desc=payload.get("desc", ""),
                 )
             except Exception as e:  # noqa: BLE001
                 sys.stderr.write(f"WARNING: could not write to shared mapping log: {e}\n")
@@ -277,6 +297,11 @@ class Handler(BaseHTTPRequestHandler):
             dialect = payload.get("dialect") or sql_export.DEFAULT_DIALECT
             mappings = payload.get("mappings", [])
             schema = scoped_schema(target_db, modules)
+            decode_patterns = {
+                (m["table"], m["field"]): combined_decode_patterns(target_db, m["table"], m["field"])
+                for m in mappings
+                if m.get("table") and m.get("field")
+            }
             return self._send_json(
                 sql_export.build_export(
                     mappings,
@@ -285,6 +310,7 @@ class Handler(BaseHTTPRequestHandler):
                     check=schema_rules.check_batch(mappings, schema),
                     target_label=schema_rules.db_meta(target_db)["label"],
                     source_system=payload.get("sourceSystem"),
+                    decode_patterns=decode_patterns,
                 )
             )
         return self._send_json({"error": "not found"}, 404)

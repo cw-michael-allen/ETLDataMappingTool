@@ -10,15 +10,24 @@ Scope, deliberately (see docs/PHASE_PLAN.md and chat record for why):
   overall, each producing whichever subset of that table's columns came
   from that source table. The data person is responsible for merging those
   result sets themselves; this tool doesn't guess at how to join them.
-- No automatic value-transformation logic (e.g. guessing that source "Y"/"N"
+- No value-transformation logic gets *guessed* (e.g. assuming source "Y"/"N"
   means target 1/2) — this tool never fabricates rules about the customer's
-  actual data. Required/decode constraints are surfaced as SQL comments for
-  the data person to handle, not as generated CASE WHEN logic.
+  actual data. The one narrow exception, transform_draft.py: when the
+  customer's own typed description for a field and the target's own signed-
+  off decode both parse into code=label pairs and every source label matches
+  a target label exactly, that's not a guess — it's a mechanical join of two
+  facts already on record for this migration, so a CASE WHEN gets drafted
+  and clearly marked as a draft to verify. Anything short of that exact
+  match (no description, an unparseable one, an unmatched label) stays a
+  plain column alias plus a comment, same as always. Required/decode
+  constraints in general are still just surfaced as SQL comments.
 - Column aliases match the target field name exactly, so each result set can
   be dropped directly into that target table's staging data.
 """
 
 from collections import defaultdict
+
+import transform_draft
 
 DIALECTS = {
     "SQL Server": {"quote": lambda ident: f"[{ident}]"},
@@ -46,7 +55,7 @@ def _normalize_table_name(name):
     return name.lower()
 
 
-def _build_todo_header(check, skipped, dialect, target_label, source_system):
+def _build_todo_header(check, skipped, dialect, target_label, source_system, drafted, draft_failures, draft_suggestions):
     """Assembles a SQL-comment preamble out of facts already computed
     elsewhere (schema_rules.check_batch, the skip list below) -- nothing
     here is inferred or fabricated, it's just organized so a data person
@@ -86,6 +95,12 @@ def _build_todo_header(check, skipped, dialect, target_label, source_system):
             "Possible value/format mismatches to double-check",
             [f"{h['sourceField']}: {h['hint']}" for h in check["formatHints"]],
         ))
+    if drafted:
+        sections.append(("Value mapping(s) drafted below — review before running", drafted))
+    if draft_failures:
+        sections.append(("Decode mapping(s) that could not be auto-drafted", draft_failures))
+    if draft_suggestions:
+        sections.append(("Possible source-value pattern(s) from past confirmed mappings", draft_suggestions))
     if skipped:
         sections.append((
             "Field(s) not included in the SELECT statements below",
@@ -103,7 +118,10 @@ def _build_todo_header(check, skipped, dialect, target_label, source_system):
     return "\n".join(lines)
 
 
-def build_export(mappings, schema, dialect=DEFAULT_DIALECT, check=None, target_label=None, source_system=None):
+def build_export(
+    mappings, schema, dialect=DEFAULT_DIALECT, check=None, target_label=None, source_system=None,
+    decode_patterns=None,
+):
     """
     mappings: list of {"sourceTable":str, "sourceField":str, "desc":str,
                         "table":str|None, "field":str|None, "flagged":bool}
@@ -114,6 +132,11 @@ def build_export(mappings, schema, dialect=DEFAULT_DIALECT, check=None, target_l
     mappings/schema, folded into the returned "header" text as TODOs --
     this function never computes rule violations itself, just reports
     ones already found elsewhere so the downloaded script is self-contained.
+
+    decode_patterns: optional {(target_table, target_field): [{"desc","count"}]}
+    of past confirmed mappings' descriptions for fields being exported here --
+    see transform_draft.py. Only ever used as a fallback when a mapping's own
+    `desc` doesn't itself produce a usable value-transform draft.
 
     Returns {"statements": [{"targetTable", "sourceTable", "sql"}],
              "multiSourceTables": [{"targetTable", "sourceTables": [...]}],
@@ -145,6 +168,9 @@ def build_export(mappings, schema, dialect=DEFAULT_DIALECT, check=None, target_l
         usable[key].append(m)
         source_table_display.setdefault(key, source_table)
 
+    decode_patterns = decode_patterns or {}
+    drafted, draft_failures, draft_suggestions = [], [], []
+
     statements = []
     tables_by_target = defaultdict(set)
     for (target_table, norm_source), entries in usable.items():
@@ -155,7 +181,11 @@ def build_export(mappings, schema, dialect=DEFAULT_DIALECT, check=None, target_l
         select_parts = []
         for e in entries:
             meta = by_table_field.get((target_table, e["field"]))
+            quoted_source = _quote_qualified(dialect, e["sourceField"])
+            quoted_target = DIALECTS[dialect]["quote"](e["field"])
+            column_expr = quoted_source
             if meta:
+                target_field_label = f"{target_table}.{e['field']}"
                 notes = []
                 if meta.get("required"):
                     notes.append("required")
@@ -164,10 +194,21 @@ def build_export(mappings, schema, dialect=DEFAULT_DIALECT, check=None, target_l
                 elif meta.get("type"):
                     notes.append(meta["type"])
                 if notes:
-                    lines.append(f"--   {target_table}.{e['field']}: {'; '.join(notes)} — verify source values match.")
-            select_parts.append(
-                f"    {_quote_qualified(dialect, e['sourceField'])} AS {DIALECTS[dialect]['quote'](e['field'])}"
-            )
+                    lines.append(f"--   {target_field_label}: {'; '.join(notes)} — verify source values match.")
+
+                draft = transform_draft.draft_or_explain(
+                    dialect, quoted_source, target_field_label, meta, e.get("desc", ""),
+                    decode_patterns.get((target_table, e["field"]), []),
+                )
+                if draft["kind"] == "drafted":
+                    column_expr = draft["sql"]
+                    lines.append(f"--   {target_field_label}: value mapping drafted below — review before running.")
+                    drafted.append(f"via {e['sourceField']}: {draft['note']}")
+                elif draft["kind"] == "failed":
+                    draft_failures.append(f"via {e['sourceField']}: {draft['note']}")
+                elif draft["kind"] == "suggested":
+                    draft_suggestions.append(f"via {e['sourceField']}: {draft['note']}")
+            select_parts.append(f"    {column_expr} AS {quoted_target}")
 
         lines.append("SELECT")
         lines.append(",\n".join(select_parts))
@@ -184,6 +225,8 @@ def build_export(mappings, schema, dialect=DEFAULT_DIALECT, check=None, target_l
     ]
     multi_source_tables.sort(key=lambda m: m["targetTable"])
 
-    header = _build_todo_header(check, skipped, dialect, target_label, source_system)
+    header = _build_todo_header(
+        check, skipped, dialect, target_label, source_system, drafted, draft_failures, draft_suggestions
+    )
 
     return {"statements": statements, "multiSourceTables": multi_source_tables, "skipped": skipped, "header": header}

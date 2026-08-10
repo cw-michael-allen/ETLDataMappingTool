@@ -136,10 +136,38 @@ never against real data.
 **`sql_export.py`** (Advanced mode) turns confirmed mappings into SELECT statements a technical
 data person runs against the live source system. Deliberately never generates a JOIN — a target
 table sourced from multiple source tables just gets one SELECT per source table instead of one
-overall (flagged informationally, not blocked). Deliberately never generates value-transform
-`CASE WHEN` logic — that would be fabricating a fact about data the tool has never seen; required/
-decode constraints surface as SQL comments instead. Source table names are matched case-
-insensitively (only casing — nothing else — is treated as "the same table").
+overall (flagged informationally, not blocked). Value-transform `CASE WHEN` logic is never
+*guessed* — that would be fabricating a fact about data the tool has never seen — but see
+`transform_draft.py` below for the one narrow, deliberate exception. Required/decode constraints
+that don't clear that bar still just surface as SQL comments. Source table names are matched
+case-insensitively (only casing — nothing else — is treated as "the same table").
+
+**`transform_draft.py`** drafts a `CASE WHEN` only when two facts already on record for *this*
+migration agree: the customer's own typed Step 2 description (e.g. `1=Yes, 2=No`) and the target
+schema's own signed-off decode/`decodeValues`, both parsed into code/label pairs
+(`schema_rules.parse_decode`, reused for both sides), with every source label matching a target
+label exactly — case-insensitive, no fuzzy/synonym guessing ("Yes" is never assumed to mean
+"True"). That's a mechanical join of two things we were already told, not an inference about the
+customer's actual data, which is why it doesn't cross the line the rest of this file draws.
+Anything short of an exact match on *every* source pair aborts the whole draft (never a partial
+CASE WHEN silently missing a branch) and becomes a `"failed"`-kind explanation instead. A third
+input — **historical patterns**: descriptions *other* confirmed mappings to this same target field
+have used, from `db.get_decode_patterns` / `shared_mappings.SHARED.get_decode_patterns`, merged by
+`app.combined_decode_patterns` — is used only to *suggest* a pattern in the TODO header text when
+this field's own description isn't usable. It never becomes generated SQL: there's no
+confirmation behind it for *this* migration, only precedent from others, so a human has to read
+it and decide, not code that runs unreviewed. All three outcomes (`"drafted"`, `"failed"`,
+`"suggested"`) get their own TODO section in `build_export`'s header — the point (a direct request,
+not an assumption) is that mismatches surface as errors to fix, not silent gaps.
+
+**Storage implication:** `db.py`'s local `mappings` table and the shared Excel log both gained a
+`desc`/`Description` column to support this — descriptions weren't being kept anywhere before.
+`db.py` migrates via `ALTER TABLE ADD COLUMN` (not the drop-and-recreate pattern used for the
+`target_db` column) specifically because real confirmed mappings exist in local databases now;
+dropping the table would have destroyed them. The shared log's `_ensure_header_columns` extends an
+existing header non-destructively — new columns always append at the end, never inserted mid-list,
+since existing rows' cells stay in their original physical columns and a mid-list insert would
+misalign a header that no longer matches where their values actually sit.
 
 **`build_export`'s `"header"`** turns the export into a self-contained starter script: a SQL-comment
 preamble listing every `schema_rules.check_batch` finding (required-missing, FK gaps, duplicates,
