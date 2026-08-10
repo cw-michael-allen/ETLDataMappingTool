@@ -65,7 +65,7 @@ def _normalize_table_name(name):
 
 def _build_todo_header(
     check, skipped, dialect, target_label, source_system, drafted, draft_failures, draft_suggestions,
-    formats_applied,
+    formats_applied, source_values_listed,
 ):
     """Assembles a SQL-comment preamble out of facts already computed
     elsewhere (schema_rules.check_batch, the skip list below) -- nothing
@@ -106,6 +106,8 @@ def _build_todo_header(
             "Possible value/format mismatches to double-check",
             [f"{h['sourceField']}: {h['hint']}" for h in check["formatHints"]],
         ))
+    if source_values_listed:
+        sections.append(("Source value list(s) you provided (for reference, not applied automatically)", source_values_listed))
     if formats_applied:
         sections.append(("Formatting rule(s) baked into the SELECT columns below", formats_applied))
     if drafted:
@@ -150,6 +152,20 @@ def build_export(
     of past confirmed mappings' descriptions for fields being exported here --
     see transform_draft.py. Only ever used as a fallback when a mapping's own
     `desc` doesn't itself produce a usable value-transform draft.
+
+    A mapping's Advanced-mode `sourceValues` (a structured list the customer
+    typed for this field, e.g. "M, F, U" or "1=Yes, 2=No") takes priority
+    over `desc` for transform_draft's CASE WHEN drafting when both are
+    present, and is always echoed into the header's own reference section
+    regardless of whether a draft was produced -- see transform_draft.py's
+    module docstring for why a deliberate structured list outranks a
+    sentence being pattern-matched.
+
+    A mapping's `valueMap` (the customer's own confirmed source-value ->
+    target-code choices from the value-matching step, e.g. "M=1,F=2,U=3")
+    outranks all of the above -- it's not a draft to verify, it's already a
+    human decision, so transform_draft uses it outright rather than
+    re-reconciling it against the target's decode.
 
     target_database: the schema_rules.TARGET_DATABASES key (e.g. "CaseWorthy"),
     not target_label's display name -- gates format_rules.py, whose baked
@@ -196,7 +212,7 @@ def build_export(
         source_table_display.setdefault(key, source_table)
 
     decode_patterns = decode_patterns or {}
-    drafted, draft_failures, draft_suggestions, formats_applied = [], [], [], []
+    drafted, draft_failures, draft_suggestions, formats_applied, source_values_listed = [], [], [], [], []
 
     statements = []
     tables_by_target = defaultdict(set)
@@ -225,9 +241,14 @@ def build_export(
                 if notes:
                     lines.append(f"--   {target_field_label}: {'; '.join(notes)} — verify source values match.")
 
+                if e.get("sourceValues"):
+                    source_values_listed.append(f"{target_field_label} (via {e['sourceField']}): {e['sourceValues']}")
+
                 draft = transform_draft.draft_or_explain(
                     dialect, quoted_source, target_field_label, meta, e.get("desc", ""),
                     decode_patterns.get((target_table, e["field"]), []),
+                    source_values=e.get("sourceValues", ""),
+                    confirmed_value_map=e.get("valueMap", ""),
                 )
                 if draft["kind"] == "drafted":
                     column_expr = draft["sql"]
@@ -279,7 +300,7 @@ def build_export(
 
     header = _build_todo_header(
         check, skipped, dialect, target_label, source_system, drafted, draft_failures, draft_suggestions,
-        formats_applied,
+        formats_applied, source_values_listed,
     )
 
     return {"statements": statements, "multiSourceTables": multi_source_tables, "skipped": skipped, "header": header}
