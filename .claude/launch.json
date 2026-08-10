@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "cw-etl-fieldmap",
+      "runtimeExecutable": "py",
+      "runtimeArgs": ["-3", "poc/app.py"],
+      "port": 8000
+    }
+  ]
+}

@@ -311,6 +311,7 @@ class Handler(BaseHTTPRequestHandler):
                     target_label=schema_rules.db_meta(target_db)["label"],
                     source_system=payload.get("sourceSystem"),
                     decode_patterns=decode_patterns,
+                    target_database=target_db,
                 )
             )
         return self._send_json({"error": "not found"}, 404)
