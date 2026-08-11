@@ -140,14 +140,20 @@ def draft_or_explain(
     if not target_pairs:
         return {"sql": None, "note": None, "kind": None}
 
+    # Lets a data person cross-reference the source ListItem table directly
+    # instead of just trusting the label text -- see schema_rules.py's own
+    # _list_id_suffix, mirrored here rather than imported since it's a
+    # private helper local to that module.
+    list_suffix = f" (List ID: {meta['listId']})" if meta.get("listId") is not None else ""
+
     if confirmed_value_map:
         mapping = dict(parse_value_list(confirmed_value_map))
         if mapping:
             sql = build_case_when(dialect, source_field_quoted, mapping, None, target_pairs)
             note = (
-                f"Built from your confirmed value mapping for {target_field} -- you matched each of your "
-                f"source values to one of its approved values yourself, so this isn't a guess to verify, "
-                f"just a record of that choice."
+                f"Built from your confirmed value mapping for {target_field}{list_suffix} -- you matched "
+                f"each of your source values to one of its approved values yourself, so this isn't a guess "
+                f"to verify, just a record of that choice."
             )
             return {"sql": sql, "note": note, "kind": "drafted"}
 
@@ -164,13 +170,13 @@ def draft_or_explain(
             sql = build_case_when(dialect, source_field_quoted, mapping, source_pairs, target_pairs)
             note = (
                 f"Drafted from {origin_label} ('{origin_value}') matched against {target_field}'s "
-                f"required values ({target_shown}). This is a draft, not a verified fact about your "
-                f"data -- confirm it against real source values before running."
+                f"required values ({target_shown}){list_suffix}. This is a draft, not a verified fact "
+                f"about your data -- confirm it against real source values before running."
             )
             return {"sql": sql, "note": note, "kind": "drafted"}
         return {
             "sql": None,
-            "note": f"Could not auto-draft a value mapping for {target_field}: {reason}.",
+            "note": f"Could not auto-draft a value mapping for {target_field}{list_suffix}: {reason}.",
             "kind": "failed",
         }
 
@@ -184,9 +190,9 @@ def draft_or_explain(
                     "sql": None,
                     "note": (
                         f"No description given for this field, but {top['count']} past confirmed mapping(s) "
-                        f"to {target_field} described their source encoding as '{top['desc']}'. If your "
-                        f"source system matches, consider mapping it the same way -- verify against your "
-                        f"own source data first, this was never applied automatically."
+                        f"to {target_field}{list_suffix} described their source encoding as '{top['desc']}'. "
+                        f"If your source system matches, consider mapping it the same way -- verify against "
+                        f"your own source data first, this was never applied automatically."
                     ),
                     "kind": "suggested",
                 }
