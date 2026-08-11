@@ -459,8 +459,10 @@ function renderFormTemplateTable(form) {
       <td>${r.characterMaxLength != null ? escapeHtml(String(r.characterMaxLength)) : ""}</td>
       <td class="ft-comments">${r.comments ? escapeHtml(r.comments).replace(/\n/g, "<br>") : ""}</td>
     </tr>`).join("");
+  // A plain informational tint, not import-error's red/orange -- this is an
+  // honest "we don't have this fact yet" gap, not the tool malfunctioning.
   const unresolvedNote = form.unresolvedColumns && form.unresolvedColumns.length
-    ? `<div class="import-notice import-error">Data type unresolved for: ${form.unresolvedColumns.map(escapeHtml).join(", ")} — their table isn't described in this export's own &lt;Tables&gt; section (likely a field from an already-existing base table, e.g. a Service or Entity lookup).</div>`
+    ? `<div class="import-notice import-info">Data type not found for: ${form.unresolvedColumns.map(escapeHtml).join(", ")} — their table isn't described in this export's own &lt;Tables&gt; section or in the base CaseWorthy schema.</div>`
     : "";
   return `
     <div class="field-def-block">
