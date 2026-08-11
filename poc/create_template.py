@@ -22,10 +22,21 @@ Review", Delaware People in Need) rather than guessed at:
   XKioskIntake table has ~50 columns, only 9 are on this form). <Tables> is
   used purely to enrich a matching column with its real SQL data type/length.
 - A FormElement whose table isn't described in this export's own <Tables>
-  section (a field pointing at an already-existing base table, e.g. a
-  Service or Entity lookup) gets no DataType -- an honest gap, not a guess.
-  Falling back to this repo's own base schema_rules schema for those isn't
-  built yet.
+  section falls back to this repo's own base CaseWorthy schema
+  (reference/target_schema_full.json, via schema_rules.load_schema) --
+  added 2026-08-11 after a real "Add Client Demographics" export showed why
+  the export-only lookup wasn't enough: CaseWorthy's Form export only
+  includes <Tables> metadata for genuinely CUSTOM columns/tables (one
+  export's <Tables> block described exactly one custom column added to
+  Client, plus one fully-custom table -- nothing else), never redundantly
+  re-describing its own standard schema (Client.FirstName, SSN, Gender,
+  etc.), which this repo already has from the field-mapping side of the
+  tool. Read-only reference lookup -- doesn't fold Create Template's own
+  custom fields into that schema (Michael's call, 2026-08-11: keep Create
+  Template decoupled from the mapping flow). A field that resolves in
+  neither place (e.g. Family, FamilyMember -- tables outside both this
+  export's <Tables> and the 28-table base schema) stays a genuine,
+  reported gap, not a guess.
 - System/audit columns (CreatedBy, CreatedDate, etc.) are NOT filtered out
   by name -- tried that first, but the sample export disproved it: its
   CreatedDate field is Usage="3" (a normal, visible field with its own
@@ -56,10 +67,14 @@ import re
 import xml.etree.ElementTree as ET
 
 import form_xml
+import schema_rules
 
 REFERENCE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "reference")
 ELEMENT_TYPES_PATH = os.path.join(REFERENCE_DIR, "cw_element_types.json")
 _ELEMENT_TYPES_CACHE = None
+_BASE_SCHEMA_COLUMNS_CACHE = None
+
+_TEXT_MAX_RE = re.compile(r"Text \(max (\d+)\)")
 
 
 def load_element_types():
@@ -71,6 +86,21 @@ def load_element_types():
         else:
             _ELEMENT_TYPES_CACHE = {}
     return _ELEMENT_TYPES_CACHE
+
+
+def _base_schema_columns():
+    """(table_lower, field_lower) -> schema row, from schema_rules' own
+    CaseWorthy schema -- see this module's docstring for why this fallback
+    exists. schema_rules.load_schema() already re-reads+re-enriches the
+    schema file fresh each call, so this cache is just this module's own
+    keying of that same data, not a second source of truth."""
+    global _BASE_SCHEMA_COLUMNS_CACHE
+    if _BASE_SCHEMA_COLUMNS_CACHE is None:
+        _BASE_SCHEMA_COLUMNS_CACHE = {
+            (row["table"].lower(), row["field"].lower()): row
+            for row in schema_rules.load_schema("CaseWorthy")
+        }
+    return _BASE_SCHEMA_COLUMNS_CACHE
 
 # Same "Table.Column" convention file_import.py already parses for Advanced-
 # mode headers -- duplicated rather than imported, matching this repo's own
@@ -173,16 +203,44 @@ def _form_element_type(usage, element_type_id):
     return entry["description"] if entry else f"Unknown (ElementTypeID={element_type_id})"
 
 
-def _comments_for_list(list_id, lists):
+def _comments_for_list(list_id, lists, base_row=None):
     entry = lists.get(list_id) if list_id else None
-    if not entry or not entry.get("values"):
+    pairs = entry["values"] if entry and entry.get("values") else None
+    if not pairs and base_row is not None:
+        # This export's own <Lists> block has been comprehensive in every
+        # sample seen so far (it covers every ListID any FormElement here
+        # actually references), so this only matters if a future export
+        # omits one -- falls back to the base schema's own decode/
+        # decodeValues, same source _decode_mismatch/target_value_pairs use.
+        pairs = schema_rules.target_value_pairs(base_row)
+    if not pairs:
         return None
     # "{code} - {label}" newline-joined matches the reference Field
     # Definition examples' own Comments convention exactly (e.g. WFDEmployment's
     # "1 - Full Time\n5 - Part Time") -- deliberately not schema_rules.py's
     # "code=label, code=label" SQL-export decode format, a different
     # convention for a different document.
-    return "\n".join(f"{code} - {label}" for code, label in entry["values"])
+    return "\n".join(f"{code} - {label}" for code, label in pairs)
+
+
+def _base_schema_lookup(table_name, column_name):
+    """Fallback col_meta-equivalent from the base CaseWorthy schema, shaped
+    just enough like table_columns' own entries for the caller to use either
+    interchangeably. dataType is the schema's own `type` annotation (e.g.
+    "Text (max 512)", "List", "Date") -- a different vocabulary than this
+    export's own <Tables> SQL types ("nvarchar", "int"), but never translated
+    into a SQL type that wasn't actually confirmed anywhere."""
+    row = _base_schema_columns().get((table_name.lower(), column_name.lower()))
+    if not row:
+        return None
+    type_str = row.get("type") or ""
+    m = _TEXT_MAX_RE.match(type_str)
+    return {
+        "dataType": type_str,
+        "characterMaxLength": int(m.group(1)) if m else None,
+        "listId": row.get("listId"),
+        "row": row,
+    }
 
 
 def extract_form_templates(raw_bytes):
@@ -243,11 +301,23 @@ def extract_form_templates(raw_bytes):
             field_label = label_el.text if label_el is not None and label_el.text else column_name
 
             list_id = fe.get("ListID")
+            base_row = None
             col_meta = table_columns.get((table_name.lower(), column_name.lower()))
-            if col_meta is None:
-                unresolved.append(f"{table_name}.{column_name}")
-            data_type = col_meta["dataType"] if col_meta else None
-            char_max = _character_max_length(data_type, col_meta["length"]) if col_meta else None
+            if col_meta is not None:
+                data_type = col_meta["dataType"]
+                char_max = _character_max_length(data_type, col_meta["length"])
+            else:
+                fallback = _base_schema_lookup(table_name, column_name)
+                if fallback is not None:
+                    data_type = fallback["dataType"]
+                    char_max = fallback["characterMaxLength"]
+                    base_row = fallback["row"]
+                    if not list_id and fallback["listId"] is not None:
+                        list_id = str(fallback["listId"])
+                else:
+                    data_type = None
+                    char_max = None
+                    unresolved.append(f"{table_name}.{column_name}")
 
             rows.append({
                 "columnName": column_name,
@@ -258,7 +328,7 @@ def extract_form_templates(raw_bytes):
                 "required": "Required" if fe.get("Required") == "1" else "Optional",
                 "listId": list_id,
                 "characterMaxLength": char_max,
-                "comments": _comments_for_list(list_id, lists),
+                "comments": _comments_for_list(list_id, lists, base_row),
             })
 
         forms_out.append({
