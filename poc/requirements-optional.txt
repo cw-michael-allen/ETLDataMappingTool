@@ -1,6 +1,9 @@
-# Not needed to run the app at all -- only required if CW_ETL_SHARED_XLSX is
-# set (see poc/README.md, "Shared mapping log"). Everything else in this repo
-# is pure standard library by design; this is the one deliberate exception,
-# because a hand-rolled writer risks corrupting a file other people also open
-# directly in Excel.
+# Not needed to run the app at all. Two independent optional features need
+# this, each lazy-imported so most installations never need it on disk:
+#   - CW_ETL_SHARED_XLSX (see poc/README.md, "Shared mapping log")
+#   - Create Template's downloadable Field Definition / Staging Excel output
+#     (poc/create_template.py)
+# Everything else in this repo is pure standard library by design; this is
+# the one deliberate exception, because a hand-rolled writer risks
+# corrupting a file other people also open directly in Excel.
 openpyxl

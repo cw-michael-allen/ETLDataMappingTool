@@ -1,0 +1,178 @@
+ElementTypeID	ClassName	Description	CategoryID	EffectsLayout	IsTabbable	VideoLink	FormAPIEnabled
+1	ESG.WebUI.TextBox	Text Box	1	1	1	FHYL5M7kjko	1
+2	ESG.WebUI.LongTextBox	Large Text Box	1	1	1	FHYL5M7kjko	1
+3	ESG.WebUI.RichTextBox	Rich Text Box	2	1	0	NULL	1
+4	ESG.WebUI.DropDownList	Drop Down List	1	1	1	Yaf5xUYkQ8c	1
+5	ESG.WebUI.DropDownTable	Drop Down Table	2	1	0	jusJ3efyelM	1
+6	ESG.WebUI.HiddenField	Hidden Field	1	0	0	x1WcWm_KEqI	1
+7	ESG.WebUI.Button	Button	1	1	0	L0h6BBl-KWk	1
+8	ESG.WebUI.Checkbox	Checkbox	1	1	1	9rn_Iejh1ig	1
+9	ESG.WebUI.DateChooser	Date Chooser	1	1	1	nldFOPLos2s	1
+10	ESG.WebUI.FormulaField	Formula	2	1	0	atMNgfqN8Ms	1
+11	ESG.WebUI.Lookup	Lookup	1	1	1	8XzqBEOI5pk	1
+12	ESG.WebUI.SelectButton	Select Button	2	0	0	NULL	1
+13	ESG.WebUI.SectionBreak	Section Break	1	1	0	NULL	1
+14	ESG.WebUI.PageText	Page Text	1	1	0	kyEzkOK_aM4	1
+15	ESG.WebUI.RunStoredProcedure	Run Stored Proc	3	0	0	NULL	1
+16	ESG.WebUI.ReportFolderChooser	CaseBot Report Folder Chooser	5	1	1	NULL	0
+17	ESG.WebUI.PasswordBox	Password Box	5	1	1	NULL	1
+18	ESG.WebUI.RaceMultiSelect	Race Multi-Select	5	1	0	NULL	1
+19	ESG.WebUI.MultiSelect	Multi-Select	2	1	0	NULL	1
+20	ESG.WebUI.OrgGroupMultiSelect	Org Group Multi-Select	2	1	0	NULL	1
+21	ESG.WebUI.AssessmentChooser	Assessment Manager	2	1	0	NULL	1
+22	ESG.WebUI.DataQuality	Data Quality	4	0	0	NULL	0
+23	ESG.WebUI.ResourceUsagePatternBasic	Resource Usage Pattern	5	1	0	NULL	0
+24	ESG.WebUI.DateRangeChooser	Date Range	4	1	0	zGh0oqeLrjc	1
+25	ESG.WebUI.ResourcePatternChooser	Resource Pattern Chooser	5	1	0	NULL	0
+26	ESG.WebUI.FormulaHidden	Hidden Formula	4	0	0	NULL	0
+27	ESG.WebUI.ResourcePatternData	Resource Pattern Data	5	0	0	NULL	0
+28	ESG.WebUI.CopyFromHeader	Copy value from header	4	0	0	NULL	0
+29	ESG.WebUI.QueryDatabind	Query Databind	2	0	0	NULL	1
+30	ESG.WebUI.ResourceSummary	Resource Summary	5	1	0	NULL	0
+31	ESG.WebUI.AppointmentAttendees	Appointment Attendees	5	1	0	NULL	0
+32	ESG.WebUI.LongTextBox	Long Text Box	2	1	0	NULL	1
+33	ESG.WebUI.AssessmentRuleEditor	Assessment Rule Editor	5	1	0	NULL	0
+34	ESG.WebUI.RichTextEditor	Rich Text Editor	2	1	0	k04lWN1G3g4	1
+35	ESG.WebUI.RichTextEditorFullLine	Rich Text Editor-Full Line	2	1	0	NULL	1
+36	ESG.WebUI.CaseNotePreview	Case Note Preview	5	1	0	NULL	1
+37	ESG.WebUI.CaseNotePopup	Case Note Popup	4	1	0	jUccSm7tfo0	1
+38	ESG.WebUI.IssuesData	Default From Issue	3	0	0	NULL	0
+39	ESG.WebUI.CategoryListDisplay	Category List Display	5	1	0	NULL	0
+40	ESG.WebUI.MathByCategoryTypes	Math on spreadsheet column	4	0	0	naS1MGhsgMg	0
+41	ESG.WebUI.EnrollmentStatus	Enrollment Status	3	1	0	NULL	1
+42	ESG.WebUI.ButtonIcon	Icon Button	2	1	0	NULL	1
+43	ESG.WebUI.RadioList	Radio List	2	1	0	NULL	0
+44	ESG.WebUI.DataShimFamily	Data Shim Family	3	0	0	NULL	1
+45	ESG.WebUI.EnrollmentVerify	Enrollment Verify	5	0	0	NULL	0
+46	ESG.WebUI.DataShimEnrollment	Data Shim Enrollment	3	0	0	NULL	0
+47	ESG.WebUI.DataShimAssessment	Data Shim Assessment	3	0	0	NULL	0
+48	ESG.WebUI.DuplicateCheck	Duplicate Check	4	1	0	NULL	1
+49	ESG.WebUI.ResourceSlotAssignment	Resource Slot Assignment	5	1	0	NULL	0
+50	ESG.WebUI.FileUpload	Small File Upload	4	1	0	NULL	0
+51	ESG.WebUI.HiddenPlaceholder	Hidden Placeholder	3	0	0	NULL	0
+52	ESG.WebUI.AppointmentFollowup	Follow-up	4	1	0	NULL	0
+53	ESG.WebUI.AfterSaveGoURL	After save go url	4	0	0	NULL	0
+54	ESG.WebUI.QueryParameterList	Query Parameter List	5	1	0	NULL	0
+55	ESG.WebUI.DataShimFamilyMember	Family Member Data Shim	3	0	0	NULL	0
+56	ESG.WebUI.CaseNoteTemplateChooser	Case note Template Chooser	5	1	0	NULL	0
+57	ESG.WebUI.ValidateFacilityConstraints	Validate Facility Constraints	5	0	0	NULL	0
+58	ESG.WebUI.TimeEntry	Time Entry	4	1	0	NULL	0
+59	ESG.WebUI.SignatureCapture	Signature Capture Old	4	1	0	bmIvndxxOyA	0
+60	ESG.WebUI.BatchTaskParameters	Batch Task Parameters	5	1	0	NULL	0
+61	ESG.WebUI.DataShimFinancialAssess	Data Shim Financial Assessment	3	0	0	NULL	0
+62	ESG.WebUI.ResourceEndReservation	Resource End Reservation	5	1	0	NULL	0
+63	ESG.WebUI.EnrollmentEntryStatus	Enrollment Default Entry Status	5	0	0	NULL	0
+64	ESG.WebUI.ServicePost	Service Post	4	0	0	NULL	0
+65	ESG.WebUI.ValidateServiceConstraints	Validate Service Constraints	5	0	0	NULL	0
+66	ESG.WebUI.CreateEmailPopup	Create Email Popup	4	1	0	4Z3cihNzz5M	1
+67	ESG.WebUI.EnrollmentEligibleRuleEditor	Enrollment Eligibility Rule Editor	5	1	0	NULL	0
+68	ESG.WebUI.FullLineTextBox	Full Line Text Box	2	1	0	NULL	0
+69	ESG.WebUI.EmailSearchTextBox	Email Search Text Box	4	1	0	NULL	0
+70	ESG.WebUI.MultiSearch	Multi-Search Box	4	1	0	NULL	0
+71	ESG.WebUI.EnrollmentMemberStatus	Enrollment Member Status	3	1	0	NULL	1
+72	ESG.WebUI.AccountPost	Account Transaction	4	1	0	NULL	0
+73	ESG.WebUI.FieldSetGrouping	Field Set Grouping	4	1	0	NULL	0
+74	ESG.WebUI.ValidateReferralConstraints	Validate Referral Constraints	5	1	0	NULL	0
+75	ESG.WebUI.AddToSearchParameters	Add to search parameters	4	0	0	NULL	0
+76	ESG.WebUI.ApprovalHold	Approval Hold	5	1	0	NULL	0
+77	ESG.WebUI.ReadOnlyForm	Read Only Form	5	1	0	NULL	0
+78	ESG.WebUI.GeoCoder	Geo Coder	4	1	0	NULL	1
+79	ESG.WebUI.FormTimer	Form Timer	4	1	0	NULL	0
+80	ESG.WebUI.ScanCardMultiPurpose	ScanCard Viewer	4	1	0	NULL	0
+81	ESG.WebUI.Hyperlink	Hyperlink	2	1	0	u7jkLSgz3Ko	1
+82	ESG.WebUI.PostData	Post Data	4	1	0	tnQVtVfl6qQ	1
+83	ESG.WebUI.PostDataHidden	Post Data Hidden	4	0	0	L2IFOlW5Lfg	0
+84	ESG.WebUI.FileUploadNew	File Upload New	4	1	0	KLn-Cb7wpLA	0
+85	ESG.WebUI.SilverlightWebCam	Silverlight WebCam	5	1	0	NULL	1
+86	ESG.WebUI.ClientAccountSummary	Client Account Summary	5	0	0	NULL	0
+87	ESG.WebUI.StoredProcedureDatabind	Stored Procedure Databind	2	0	0	NULL	1
+88	ESG.WebUI.CombineFields	Combine Fields	2	1	0	zGh0oqeLrjc	1
+89	ESG.WebUI.FormDefaultValueSetPicker	Default Form Values	5	1	0	NULL	0
+90	ESG.WebUI.SSNField	SSN	2	1	1	NULL	1
+91	ESG.WebUI.NumberRange	Number Range filter	3	1	0	NULL	0
+92	ESG.WebUI.RefreshClientFamily	Refresh Client Family	3	0	0	NULL	1
+93	ESG.WebUI.CustomTemplateFieldList	Custom Template Field List	5	1	0	NULL	0
+94	ESG.WebUI.PhotoViewer	Photo Viewer	5	1	0	wbl9PBZ_nag	0
+95	ESG.WebUI.HiddenEmail	Hidden Email	2	0	0	NULL	0
+96	ESG.WebUI.VideoViewer	Video Viewer	5	1	0	NULL	0
+97	ESG.WebUI.ProgramEnrollmentEligibility	Program Enrollment Eligibility	3	0	0	NULL	0
+98	ESG.WebUI.AlertRuleEditor	Alert Rule Editor	5	1	0	NULL	0
+99	ESG.WebUI.AlertTypeChooser	Alert Type Chooser	5	1	0	NULL	0
+100	ESG.WebUI.AlertTemplateChooser	Alert Template Chooser	5	1	0	NULL	0
+101	ESG.WebUI.AlertActionTypeChooser	Alert Action Type Chooser	5	1	0	NULL	0
+102	ESG.WebUI.SpeechRecognizer	Speech Recognizer	5	1	0	NULL	0
+103	ESG.WebUI.DOBDateChooser	Date Of Birth Date Chooser	5	1	1	NULL	1
+104	ESG.WebUI.AlertParameterEditor	Alert Parameter Editor	5	1	0	NULL	0
+105	ESG.WebUI.SQLQueryField	SQL Query Field	2	1	0	NULL	0
+106	ESG.WebUI.InlineDataGrid	Inline Data Grid	2	1	0	4_Ci19W6yQM	1
+107	ESG.WebUI.ChartViewer	Chart	2	1	0	NULL	0
+108	ESG.WebUI.AutoComplete	Find As You Type	2	1	0	T7wCC40OgLQ	0
+109	ESG.WebUI.OutcomesStar	Outcomes Star	5	1	0	NULL	0
+110	ESG.WebUI.MapControlButton	Map It	5	1	0	NULL	1
+111	ESG.WebUI.ResourceUsagePattern	Resource Usage Pattern Advanced	5	1	0	NULL	0
+112	ESG.WebUI.Map	Map	2	1	0	NULL	1
+113	ESG.WebUI.EmailBox	Email Box	5	1	1	NULL	1
+114	ESG.WebUI.DataShimResourceUsageDefaults	Data Shim ResourceUsageDefaults	3	0	0	NULL	0
+115	ESG.WebUI.SignatureCaptureNew	Signature Capture	4	1	0	NULL	1
+116	ESG.WebUI.TemplatePrint	Template Print	2	1	0	NULL	0
+117	ESG.WebUI.DataShimWorkflowDelegation	Data Shim Workflow Delegation	3	0	0	NULL	0
+118	ESG.WebUI.MatchClientJobs	Match Client Jobs	2	0	0	NULL	0
+119	ESG.WebUI.MatchJobClients	Match Job Clients	2	0	0	NULL	0
+120	ESG.WebUI.ClientNameDataQuality	Client Name Data Quality	5	1	0	NULL	0
+121	ESG.WebUI.XmlForm	Xml Form	4	1	0	NULL	0
+122	ESG.WebUI.PDFExportButton	PDF Export Button	2	1	0	NULL	0
+123	ESG.WebUI.HiddenPhoneTexting	Hidden Phone Texting	2	1	0	NULL	0
+124	ESG.WebUI.ReportDownload	Report Download	4	1	0	NULL	0
+125	ESG.WebUI.MultiSelectTree	Multi-Select Tree	4	1	0	NULL	0
+126	ESG.WebUI.SharedLinkButton	Shared Link	4	1	0	NULL	0
+127	ESG.WebUI.TimePhaseControl	Time Phase Control	4	1	0	NULL	0
+128	ESG.WebUI.DebtPayoffCalculator	Debt Payoff Calculator	4	1	0	NULL	0
+129	ESG.WebUI.AffordabilityAnalyzer	Affordability Analyzer	4	1	0	NULL	0
+130	ESG.WebUI.AmortizationScheduler	Amortization Scheduler	4	1	0	NULL	0
+131	ESG.WebUI.CardScanner	Card Scanner	4	0	0	NULL	0
+132	ESG.WebUI.IconRuleFormElement	Icon Rule	4	1	0	NULL	0
+133	ESG.WebUI.LogoElement	Logo	4	1	0	NULL	0
+134	ESG.WebUI.CredcoIntegration	Credco Integration	4	0	0	NULL	0
+135	ESG.WebUI.PostKeyword	Post Keywords	4	0	0	NULL	0
+136	ESG.WebUI.PostService	Post Service	4	0	0	NULL	0
+137	ESG.WebUI.RefreshCurrentContext	Refresh Current Context	3	0	0	NULL	0
+138	ESG.WebUI.LocationGeoCode	Location GeoCode	4	0	0	NULL	0
+139	ESG.WebUI.SortOrder	Sort Order	4	1	0	NULL	1
+140	ESG.WebUI.MultiField	Multi Field	2	1	0	NULL	0
+141	ESG.WebUI.ActivityStatus	Activity Status	4	1	0	NULL	0
+142	ESG.WebUI.PaymentIntegration	Payment Integration	4	1	1	NULL	0
+143	ESG.WebUI.MailChimpCampaign	MailChimp Campaign	4	0	0	NULL	0
+144	ESG.WebUI.FormLookup	Form Lookup	4	1	0	NULL	0
+145	ESG.WebUI.ImportIntegration	Import Integration	4	1	1	NULL	0
+146	ESG.WebUI.ClientGender	Client Gender	5	1	0	NULL	1
+149	ESG.WebUI.ReadWriteOrgGroup	Read/Write Org Group	2	1	0	NULL	1
+150	ESG.WebUI.MultiSelectGenericTable	Multi-Select (Generic Table)	2	1	1	jpg41-lUKLM	1
+151	ESG.WebUI.VoiceToText	Voice To Text	2	1	0	siiapZ5fzUU	1
+152	ESG.WebUI.CCPayment	Credit Card Payment	2	1	0	NULL	0
+153	ESG.WebUI.ACHPayment	ACH Payment	2	1	0	NULL	0
+154	ESG.WebUI.EmbeddedReport	Embeddable Report Viewer	2	1	0	NULL	0
+155	ESG.WebUI.SendEncryptedFax	Send Encrypted Fax	2	1	0	NULL	0
+156	ESG.WebUI.FaxNumberSearchTextBox	Fax Number Search TextBox	2	1	0	NULL	0
+157	ESG.WebUI.Attachments	Attachments	2	1	0	NULL	0
+158	ESG.WebUI.DocumentChooser	Document Chooser	2	1	0	NULL	0
+159	ESG.WebUI.EnrollmentSubStatus	Enrollment Sub Status	3	1	0	NULL	0
+160	ESG.WebUI.GenericRecurrencePattern	Generic Recurrence Pattern	2	1	0	NULL	0
+161	ESG.WebUI.DateLock	Date Lock	2	0	0	NULL	0
+162	ESG.WebUI.UserCategoryAccess	User Category Access	4	0	0	NULL	0
+163	ESG.WebUI.DatabasePassword	Database Password	4	1	0	NULL	0
+170	ESG.WebUI.PasswordReset	Password Reset	5	1	0	NULL	0
+171	ESG.WebUI.NonAssessmentRuleEditor	Non Assessment Rule Editor	5	1	0	NULL	0
+173	ESG.WebUI.GoogleAddressAutoComplete	Google Address Auto Complete	1	1	1	NULL	1
+174	ESG.WebUI.CRMPostData	CRM Post	4	0	0	KdRPkskiAAo	1
+176	ESG.WebUI.GeoTracking	Geo Tracking	1	1	1	NULL	0
+177	ESG.WebUI.ChecklistPostData	Checklist Post	2	0	0	NULL	0
+178	ESG.WebUI.ChecklistValidation	Checklist Validation	2	0	0	NULL	0
+179	ESG.WebUI.CSDParcelLookup	CSD Parcel Lookup	5	0	0	NULL	0
+182	ESG.WebUI.DocuSignSendEnvelope	DocuSign Send Envelope	5	1	0	NULL	0
+183	ESG.WebUI.Matrix	Matrix Survey	2	1	0	KBA4gUgy0zc	0
+184	ESG.WebUI.SectionText	Section Text	1	1	0	NULL	1
+185	ESG.WebUI.WebServiceDatabind	Web Service Databind	2	0	0	NULL	0
+186	ESG.WebUI.WebServicePostData	Web Service Post Data	2	0	0	NULL	0
+187	ESG.WebUI.AutoCompleteTask	Auto Complete Task	1	1	1		0
+188	ESG.WebUI.PlannedEncounter	Planned Encounter	2	1	1		0
+189	ESG.WebUI.GeoLocation	Location Capture	4	1	1		0
