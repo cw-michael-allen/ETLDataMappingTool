@@ -399,46 +399,147 @@ def _safe_sheet_name(name, used):
     return cleaned
 
 
-def build_field_definition_workbook(form_templates):
+# Colors below are literal sRGB hex, not theme+tint references, so the
+# generated file looks the same regardless of what theme it opens under --
+# extracted by resolving the ICS reference workbook's own theme+tint values
+# (Michael's "3. Staging Database Field Definition - ICS v8.xlsx", 2026-08-12)
+# against its actual theme1.xml color scheme:
+#   tab color:        theme 5 (accent2)  @ tint 0.7999816888943144 -> FBE5D6
+#                      (Excel's built-in "Orange, Accent 2, Lighter 80%")
+#   row-label fill:    theme 7 (accent4) @ tint 0.7999816888943144 -> FFF2CC
+#                      (used consistently for the attribute-label column
+#                      across every pink-tab sheet checked: WFDEmployment,
+#                      WFDCheckIn)
+#   ColumnName fill:   a pastel blue highlighting the row that identifies
+#                      each field-column -- the reference varies which exact
+#                      accent it starts from per sheet (WFDEmployment:
+#                      theme 8/accent5 @ 0.5999938962981048 -> B4C7E7;
+#                      WFDCheckIn: theme 4/accent1 @ same tint -> B7D6F2),
+#                      so rather than copy that inconsistency this always
+#                      uses B4C7E7 for a uniform look across every
+#                      generated sheet.
+_TAB_COLOR_PINK = "FBE5D6"
+_ROW_LABEL_FILL = "FFF2CC"
+_COLUMN_NAME_FILL = "B4C7E7"
+
+
+def _style_field_definition_sheet(ws, num_fields):
+    """Applies the ICS reference's formatting: bold gold row-label column,
+    bold blue ColumnName header row, thin grid borders, wrapped text, frozen
+    panes so both the attribute labels and the field-identifying row stay
+    visible while scrolling a wide sheet. See build_field_definition_workbook
+    for where the actual color values came from. Imports openpyxl.styles
+    itself -- only ever called after build_field_definition_workbook has
+    already confirmed openpyxl is installed."""
+    from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
+    from openpyxl.utils import get_column_letter
+
+    thin = Side(style="thin")
+    border = Border(top=thin, bottom=thin, left=thin, right=thin)
+    wrap = Alignment(wrap_text=True, vertical="top")
+    row_label_fill = PatternFill("solid", fgColor=_ROW_LABEL_FILL)
+    column_name_fill = PatternFill("solid", fgColor=_COLUMN_NAME_FILL)
+    bold = Font(bold=True)
+
+    last_col = num_fields + 1  # +1 for the row-label column itself
+    for row_idx in range(1, len(FIELD_DEF_ATTRS) + 1):
+        for col_idx in range(1, max(last_col, 1) + 1):
+            cell = ws.cell(row=row_idx, column=col_idx)
+            cell.border = border
+            cell.alignment = wrap
+            if col_idx == 1:
+                cell.font = bold
+                cell.fill = row_label_fill
+            elif row_idx == 1:  # the ColumnName row identifies each field-column
+                cell.font = bold
+                cell.fill = column_name_fill
+
+    ws.column_dimensions["A"].width = 22
+    for col_idx in range(2, last_col + 1):
+        col_letter = get_column_letter(col_idx)
+        # Widest of that field's own values, capped so one long Comments
+        # entry doesn't blow out the whole column -- Excel still wraps text
+        # past this width, it just doesn't try to fit it on one line.
+        widest = max(
+            (len(str(ws.cell(row=r, column=col_idx).value or "")) for r in range(1, len(FIELD_DEF_ATTRS) + 1)),
+            default=12,
+        )
+        ws.column_dimensions[col_letter].width = min(40, max(14, widest + 2))
+
+    ws.freeze_panes = "B2"  # keeps both the attribute-label column and the ColumnName row in view
+
+
+def build_field_definition_workbook(form_templates, selections=None):
     """One sheet per form, transposed (columns=fields, rows=attributes) --
-    matching the reference WFDEmployment/WFDCheckIn Field Definition sheets
-    exactly. Returns an openpyxl Workbook; raises CreateTemplateError if
-    openpyxl isn't installed."""
+    matching the reference WFDEmployment/WFDCheckIn Field Definition sheets'
+    layout AND formatting (pink tab, bold gold row labels, bold blue
+    ColumnName row, grid borders -- see _style_field_definition_sheet).
+    Returns an openpyxl Workbook; raises CreateTemplateError if openpyxl
+    isn't installed.
+
+    selections: same shape and meaning as build_staging_excel_workbook's own
+    -- a list, one entry per form, of row indices into that form's "rows" to
+    include. Both downloads honor the customer's checkbox picks now
+    (Michael's call, 2026-08-12, reversing the earlier "Field Definition
+    always stays complete" decision) -- None includes every row, unfiltered."""
     openpyxl = _load_openpyxl()
     if openpyxl is None:
         raise CreateTemplateError(_openpyxl_unavailable)
+
     wb = openpyxl.Workbook()
     wb.remove(wb.active)
     used_names = set()
-    for form in form_templates:
+    for form_idx, form in enumerate(form_templates):
         sheet_name = _safe_sheet_name(form.get("formDisplayName") or form.get("formName"), used_names)
         ws = wb.create_sheet(sheet_name)
+        ws.sheet_properties.tabColor = _TAB_COLOR_PINK
+        allowed = None
+        if selections is not None and form_idx < len(selections) and selections[form_idx] is not None:
+            allowed = set(selections[form_idx])
+        included_rows = [r for i, r in enumerate(form["rows"]) if allowed is None or i in allowed]
         for row_idx, (label, key) in enumerate(FIELD_DEF_ATTRS, start=1):
             ws.cell(row=row_idx, column=1, value=label)
-            for col_idx, row in enumerate(form["rows"], start=2):
+            for col_idx, row in enumerate(included_rows, start=2):
                 value = row.get(key)
                 ws.cell(row=row_idx, column=col_idx, value=value if value is not None else "")
+        _style_field_definition_sheet(ws, len(included_rows))
     if not wb.sheetnames:
         wb.create_sheet("Sheet1")
     return wb
 
 
-def build_staging_excel_workbook(form_templates):
+def build_staging_excel_workbook(form_templates, selections=None):
     """One sheet per form: a single flat header row of ColumnName values --
     matching every other Staging Excel sheet in this app's convention
     (header-row-only, see file_import.py). Returns an openpyxl Workbook;
-    raises CreateTemplateError if openpyxl isn't installed."""
+    raises CreateTemplateError if openpyxl isn't installed.
+
+    selections: optional list, one entry per form (same order/length as
+    form_templates), each a list of row indices into that form's own
+    "rows" to include -- the customer's checkbox picks from the Field
+    Definition table. Both this and build_field_definition_workbook honor
+    the same selections shape (Michael's call, 2026-08-12). None (or a form
+    with no corresponding entry) includes every row, unfiltered -- the
+    pre-selection behavior, kept as the default for any caller that
+    doesn't know about selections."""
     openpyxl = _load_openpyxl()
     if openpyxl is None:
         raise CreateTemplateError(_openpyxl_unavailable)
     wb = openpyxl.Workbook()
     wb.remove(wb.active)
     used_names = set()
-    for form in form_templates:
+    for form_idx, form in enumerate(form_templates):
         sheet_name = _safe_sheet_name(form.get("formDisplayName") or form.get("formName"), used_names)
         ws = wb.create_sheet(sheet_name)
-        for col_idx, row in enumerate(form["rows"], start=1):
+        allowed = None
+        if selections is not None and form_idx < len(selections) and selections[form_idx] is not None:
+            allowed = set(selections[form_idx])
+        col_idx = 1
+        for row_idx, row in enumerate(form["rows"]):
+            if allowed is not None and row_idx not in allowed:
+                continue
             ws.cell(row=1, column=col_idx, value=row["columnName"])
+            col_idx += 1
     if not wb.sheetnames:
         wb.create_sheet("Sheet1")
     return wb

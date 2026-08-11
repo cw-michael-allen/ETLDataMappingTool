@@ -175,8 +175,21 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .suggestion-card .decode { font-size: 12px; color: var(--cw-teal); margin-bottom: 8px; }
 .suggestion-card .decode-hint { font-size: 12px; color: var(--cw-orange); margin-bottom: 8px; }
 .suggestion-card .actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.override-row { display: none; margin-top: 10px; gap: 8px; }
-.override-row.show { display: flex; }
+/* Native <details> disclosure, same pattern as Create Template's own
+   "Show raw XML structure" -- collapsed by default (browser handles
+   show/hide, no JS toggle needed), sits under the main actions row rather
+   than cluttering it. */
+.override-details { margin-top: 10px; border-top: 1px solid var(--surface-border); padding-top: 8px; }
+.override-details summary { cursor: pointer; font-size: 13px; color: var(--surface-text-muted); }
+.override-details[open] summary { margin-bottom: 8px; }
+/* Explicit rather than relying on the browser's own UA-stylesheet rule for
+   collapsing a closed <details> (details:not([open]) > *:not(summary) {
+   display: none }) -- testing found that rule not reliably hiding content
+   in this app's actual rendering environment, so this hides/shows off the
+   real, standard [open] attribute directly instead of trusting default
+   native behavior neither observed nor guaranteed here. */
+.override-details:not([open]) .override-row { display: none; }
+.override-details[open] .override-row { display: flex; gap: 8px; }
 .value-match-rows { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
 .value-match-row { display: flex; align-items: center; gap: 10px; }
 .value-match-src { font-family: var(--font-heading); font-weight: 600; color: var(--surface-heading); min-width: 160px; }
@@ -308,4 +321,5 @@ footer { text-align: center; font-size: 11px; color: var(--surface-text-muted); 
 .field-def-table th { background: var(--surface-hover-tint); color: var(--surface-heading); }
 .field-def-table td.ft-comments { white-space: pre-line; min-width: 220px; }
 .field-def-table td.empty { text-align: center; color: var(--surface-text-muted); white-space: normal; }
+.field-def-table td.ft-select-cell { text-align: center; width: 1%; }
 .ft-unresolved { color: var(--cw-orange); font-weight: 600; }
