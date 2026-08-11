@@ -279,11 +279,20 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send_json({"error": "No file was attached to the upload."}, 400)
             _filename, raw_bytes = upload
             form_templates = create_template.extract_form_templates(raw_bytes)
+
+            selections = None
+            selections_part = parts.get("selections")
+            if selections_part:
+                try:
+                    selections = json.loads(selections_part[1].decode("utf-8"))
+                except (ValueError, UnicodeDecodeError):
+                    selections = None  # malformed selection payload -- fall back to "include everything"
+
             if kind == "field-definition":
-                wb = create_template.build_field_definition_workbook(form_templates)
+                wb = create_template.build_field_definition_workbook(form_templates, selections)
                 out_name = "Field_Definition.xlsx"
             else:
-                wb = create_template.build_staging_excel_workbook(form_templates)
+                wb = create_template.build_staging_excel_workbook(form_templates, selections)
                 out_name = "Staging_Excel.xlsx"
             buf = io.BytesIO()
             wb.save(buf)
