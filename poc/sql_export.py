@@ -235,7 +235,8 @@ def build_export(
                 if meta.get("required"):
                     notes.append("required")
                 if meta.get("decode"):
-                    notes.append(f"expects: {meta['decode']}")
+                    list_note = f" (List ID: {meta['listId']})" if meta.get("listId") is not None else ""
+                    notes.append(f"expects: {meta['decode']}{list_note}")
                 elif meta.get("type"):
                     notes.append(meta["type"])
                 if notes:
