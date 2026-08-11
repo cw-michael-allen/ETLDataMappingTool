@@ -702,12 +702,16 @@ function parseValueListJs(str) {
   return pairs;
 }
 
-// Mirrors schema_rules.target_value_pairs: decode (CaseWorthy-style
-// code=label) wins if present and parses to anything, else decodeValues
-// (ServTracker-style bare labels, self-paired) -- same fallback order,
-// same reasoning (see that function's own docstring).
+// Mirrors schema_rules.target_value_pairs: decodePairs (CaseWorthy List
+// fields resolved against the ListItem registry -- real structured
+// [code,label] pairs, since some labels contain their own commas and would
+// corrupt decode's comma-split parsing) wins first, then decode
+// (CaseWorthy-style hand-typed "code=label" string), then decodeValues
+// (ServTracker-style bare labels, self-paired) -- same fallback order, same
+// reasoning (see that function's own docstring).
 function targetPairsJs(meta) {
   if (!meta) return [];
+  if (meta.decodePairs && meta.decodePairs.length) return meta.decodePairs;
   if (meta.decode) {
     const pairs = parseDecodeJs(meta.decode);
     if (pairs.length) return pairs;

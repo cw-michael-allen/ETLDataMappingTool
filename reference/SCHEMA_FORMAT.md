@@ -58,9 +58,10 @@ verified by its owner, so changing its contents is their call, not this tool's.
 | Key | Type | Meaning |
 |---|---|---|
 | `note` | string | Free-text guidance surfaced in the UI. |
-| `listId` | int | CaseWorthy list ID. |
+| `listId` | int | CaseWorthy list ID. Resolved automatically against `reference/cw_list_values.json` at load time when a matching entry exists (see `decodePairs` below); a `listId` with no entry in that registry is a real, reported gap -- nothing is guessed. Every decode/format-mismatch message and drafted CASE WHEN sourced from a resolved List field calls out `(List ID: N)` so a data person can cross-reference CaseWorthy's own ListItem table directly. |
 | `decode` | string | Human-readable allowed values. CaseWorthy uses code pairs (`1=Yes, 2=No`); ServTracker uses bare labels (`Yes, No`). |
-| `decodeValues` | string[] | Machine-readable allowed values. **Preferred** — `_decode_mismatch` uses it when present, which is what makes label-style decodes work. |
+| `decodeValues` | string[] | Machine-readable allowed values. Used when present and `decodePairs` isn't, which is what makes label-style decodes work. |
+| `decodePairs` | [code,label][] | **Preferred over `decode`/`decodeValues` when present.** CaseWorthy List fields resolved against the ListItem registry (`reference/cw_list_values.json`, built by `tools/build_cw_list_values.py`) at schema-load time -- see `schema_rules._enrich_list_fields`. Structured pairs rather than a comma-joined string because some real labels contain their own commas (e.g. `"Man (Boy, if child)"`), which would corrupt `decode`'s comma-split parsing. `decode` is still recomputed alongside it as a display-only string. |
 | `lookupTable` | string | Allowed values live in this database table, not the script, so they can't be listed. Type is still `List`. |
 | `unique` | bool | Must be unique across rows. |
 | `sheet` | string | ServTracker: the Excel sheet the customer actually fills in. |
