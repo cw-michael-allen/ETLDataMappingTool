@@ -27,6 +27,54 @@ TARGET_DATABASES = {
 
 DEFAULT_TARGET_DATABASE = "CaseWorthy"
 
+# CaseWorthy-specific: a listId -> {"name", "values":[[code,label],...]}
+# registry built from a direct export of CaseWorthy's ListItem table (see
+# tools/build_cw_list_values.py) -- the actual codes/labels behind a List
+# field's `listId`, which the validation script itself never spells out.
+# ServTracker has no equivalent list system, so this is never consulted for
+# it (see load_schema's target_database gate below).
+LIST_VALUES_PATH = os.path.join(REFERENCE_DIR, "cw_list_values.json")
+_LIST_VALUES_CACHE = None
+
+
+def load_list_values():
+    global _LIST_VALUES_CACHE
+    if _LIST_VALUES_CACHE is None:
+        if os.path.exists(LIST_VALUES_PATH):
+            with open(LIST_VALUES_PATH, encoding="utf-8") as f:
+                _LIST_VALUES_CACHE = json.load(f)
+        else:
+            _LIST_VALUES_CACHE = {}
+    return _LIST_VALUES_CACHE
+
+
+def _enrich_list_fields(schema):
+    """Resolve every List-type row's `listId` against the ListItem registry,
+    overwriting whatever `decode` it already had -- the pre-existing
+    hand-typed decodes on ~39 fields turned out to be illustrative examples,
+    not the full list (two literally ended in "...etc."), so the registry
+    (a real export) wins whenever it has that listId. A row whose listId
+    isn't in the registry (currently just Provider.ProviderTypeCategoryTypeID)
+    is left exactly as it was -- still an honest, reported gap, not guessed at.
+
+    `decodePairs` (a real list of [code, label] pairs) is the new source of
+    truth for machine parsing; `decode` is recomputed alongside it purely as
+    the human-readable display string, since some labels contain commas that
+    would corrupt the old comma-split parser (see SCHEMA_FORMAT.md)."""
+    registry = load_list_values()
+    if not registry:
+        return schema
+    for row in schema:
+        if row.get("type") != "List" or row.get("listId") is None:
+            continue
+        entry = registry.get(str(row["listId"]))
+        if not entry or not entry.get("values"):
+            continue
+        pairs = [(code, label) for code, label in entry["values"]]
+        row["decodePairs"] = pairs
+        row["decode"] = ", ".join(f"{code}={label}" for code, label in pairs)
+    return schema
+
 # Per-target-database presentation and scoping metadata, served to the UI so the
 # frontend stops hardcoding which databases exist and which are usable.
 #
@@ -181,6 +229,8 @@ def load_schema(target_database=DEFAULT_TARGET_DATABASE):
         return []
     with open(path, encoding="utf-8") as f:
         schema = json.load(f)
+    if target_database == "CaseWorthy":
+        schema = _enrich_list_fields(schema)
     _validate_types(target_database, schema)
     return schema
 
@@ -237,9 +287,14 @@ def parse_value_list(values_str):
 
 def target_value_pairs(meta):
     """(code, label) pairs a target field actually accepts, regardless of
-    which of the two decode styles this schema row uses.
+    which of the decode styles this schema row uses.
 
-    CaseWorthy-style: `decode` is a real "code=label" string -- parse it.
+    CaseWorthy List fields resolved against the ListItem registry (see
+    _enrich_list_fields): `decodePairs` is already structured [code, label]
+    pairs -- use it directly, never re-parse `decode`'s comma-joined display
+    string, since some labels contain their own commas.
+    CaseWorthy-style hand-typed: `decode` is a real "code=label" string --
+    parse it.
     ServTracker-style: `decodeValues` is bare labels with no separate code at
     all (the label *is* what gets typed into the sheet) -- so each value
     pairs with itself; there's nothing to translate on the target side.
@@ -247,6 +302,8 @@ def target_value_pairs(meta):
     Shared by transform_draft.py's CASE WHEN drafting and this module's own
     _source_values_mismatch -- one definition of "what does the target
     accept" for both."""
+    if meta.get("decodePairs"):
+        return [(str(code), str(label)) for code, label in meta["decodePairs"]]
     if meta.get("decode"):
         pairs = parse_decode(meta["decode"])
         if pairs:
@@ -254,6 +311,13 @@ def target_value_pairs(meta):
     if meta.get("decodeValues"):
         return [(v, v) for v in meta["decodeValues"]]
     return []
+
+
+def _list_id_suffix(meta):
+    """' (List ID: N)' when a List field's decode came from the ListItem
+    registry -- lets a data person cross-reference the source ListItem table
+    directly instead of just trusting the label text."""
+    return f" (List ID: {meta['listId']})" if meta.get("listId") is not None else ""
 
 
 def _decode_mismatch(meta, desc):
@@ -269,11 +333,17 @@ def _decode_mismatch(meta, desc):
     if meta.get("type") != "List" or not desc:
         return None
 
+    list_suffix = _list_id_suffix(meta)
+    decode_pairs = meta.get("decodePairs")
     values = meta.get("decodeValues")
-    if values:
+    if decode_pairs:
+        codes = {code for code, _ in decode_pairs}
+        labels = {label.lower() for _, label in decode_pairs}
+        shown = (meta.get("decode") or ", ".join(f"{c}={l}" for c, l in decode_pairs)) + list_suffix
+    elif values:
         codes = {v for v in values if v.isdigit()}
         labels = {v.lower() for v in values if not v.isdigit()}
-        shown = meta.get("decode") or ", ".join(values)
+        shown = (meta.get("decode") or ", ".join(values)) + list_suffix
     else:
         if not meta.get("decode"):
             return None
@@ -282,7 +352,7 @@ def _decode_mismatch(meta, desc):
             return None
         codes = {k for k, _ in pairs}
         labels = {v.lower() for _, v in pairs}
-        shown = meta["decode"]
+        shown = meta["decode"] + list_suffix
 
     # Only meaningful when the target actually uses numeric codes. For a
     # label-style list (ServTracker's "Monthly"/"One-Time") a number in the
@@ -334,7 +404,7 @@ def _source_values_mismatch(meta, source_values):
         )
         return (
             f"Your listed source value(s) {', '.join(unmatched)} don't exactly match any of "
-            f"{meta['table']}.{meta['field']}'s allowed values ({target_shown})."
+            f"{meta['table']}.{meta['field']}'s allowed values ({target_shown}){_list_id_suffix(meta)}."
         )
     return None
 
