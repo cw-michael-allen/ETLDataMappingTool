@@ -16,6 +16,7 @@ that's CaseWorthy (fully populated) and ServTracker (listed for the UI, but
 with no schema loaded yet; see schema_rules.py).
 """
 
+import io
 import json
 import os
 import socketserver
@@ -24,9 +25,11 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, parse_qs
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import create_template  # noqa: E402
 import db  # noqa: E402
 import field_matcher  # noqa: E402
 import file_import  # noqa: E402
+import form_xml  # noqa: E402
 import llm_gateway  # noqa: E402
 import schema_rules  # noqa: E402
 import shared_mappings  # noqa: E402
@@ -179,6 +182,14 @@ class Handler(BaseHTTPRequestHandler):
         raw = self.rfile.read(length) if length else b"{}"
         return json.loads(raw or b"{}")
 
+    def _send_xlsx(self, body, filename):
+        self.send_response(200)
+        self.send_header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
     def _handle_import_fields(self):
         # Bulk-import of Step 2 field names from a CSV/xlsx upload -- see
         # file_import.py for the header-row-only parsing and why. Handled
@@ -210,6 +221,77 @@ class Handler(BaseHTTPRequestHandler):
         except file_import.FileImportError as e:
             return self._send_json({"error": str(e)}, 400)
         return self._send_json(result)
+
+    def _handle_create_template_parse_xml(self):
+        # "Create Template". Multipart like _handle_import_fields, reusing
+        # the same parser. Always runs form_xml's generic structural preview
+        # first (works on any XML); separately attempts create_template's
+        # real CaseWorthy-Form-export extraction, which only succeeds when
+        # the upload is actually an <Ecm> export -- its failure isn't fatal
+        # to the request, since the generic preview is still useful on its
+        # own for anything that isn't one.
+        length = int(self.headers.get("Content-Length", 0) or 0)
+        if length > form_xml.MAX_UPLOAD_BYTES:
+            self.close_connection = True
+            limit_mb = form_xml.MAX_UPLOAD_BYTES // (1024 * 1024)
+            return self._send_json(
+                {"error": f"That file is larger than expected for a form definition (limit {limit_mb} MB)."},
+                413,
+            )
+        body = self.rfile.read(length) if length else b""
+        try:
+            parts = file_import.parse_multipart(self.headers.get("Content-Type", ""), body)
+            upload = parts.get("file")
+            if not upload:
+                return self._send_json({"error": "No file was attached to the upload."}, 400)
+            filename, raw_bytes = upload
+            result = form_xml.parse_form_xml(raw_bytes)
+            result["sourceFile"] = filename
+        except file_import.FileImportError as e:
+            return self._send_json({"error": str(e)}, 400)
+        except form_xml.FormXmlError as e:
+            return self._send_json({"error": str(e)}, 400)
+
+        try:
+            result["formTemplates"] = create_template.extract_form_templates(raw_bytes)
+        except create_template.CreateTemplateError as e:
+            result["formTemplatesError"] = str(e)
+        return self._send_json(result)
+
+    def _handle_create_template_download(self, kind):
+        # kind: "field-definition" or "staging-excel". Re-reads and re-parses
+        # the uploaded file rather than trusting a JSON round-trip of
+        # already-parsed rows from the browser -- the file is the one source
+        # of truth, and re-parsing a small XML file again is cheap.
+        length = int(self.headers.get("Content-Length", 0) or 0)
+        if length > form_xml.MAX_UPLOAD_BYTES:
+            self.close_connection = True
+            limit_mb = form_xml.MAX_UPLOAD_BYTES // (1024 * 1024)
+            return self._send_json(
+                {"error": f"That file is larger than expected for a form definition (limit {limit_mb} MB)."},
+                413,
+            )
+        body = self.rfile.read(length) if length else b""
+        try:
+            parts = file_import.parse_multipart(self.headers.get("Content-Type", ""), body)
+            upload = parts.get("file")
+            if not upload:
+                return self._send_json({"error": "No file was attached to the upload."}, 400)
+            _filename, raw_bytes = upload
+            form_templates = create_template.extract_form_templates(raw_bytes)
+            if kind == "field-definition":
+                wb = create_template.build_field_definition_workbook(form_templates)
+                out_name = "Field_Definition.xlsx"
+            else:
+                wb = create_template.build_staging_excel_workbook(form_templates)
+                out_name = "Staging_Excel.xlsx"
+            buf = io.BytesIO()
+            wb.save(buf)
+        except file_import.FileImportError as e:
+            return self._send_json({"error": str(e)}, 400)
+        except (form_xml.FormXmlError, create_template.CreateTemplateError) as e:
+            return self._send_json({"error": str(e)}, 400)
+        return self._send_xlsx(buf.getvalue(), out_name)
 
     def do_GET(self):
         parsed = urlparse(self.path)
@@ -257,6 +339,12 @@ class Handler(BaseHTTPRequestHandler):
 
         if path == "/api/import-fields":
             return self._handle_import_fields()
+        if path == "/api/create-template/parse-xml":
+            return self._handle_create_template_parse_xml()
+        if path == "/api/create-template/download-field-definition":
+            return self._handle_create_template_download("field-definition")
+        if path == "/api/create-template/download-staging-excel":
+            return self._handle_create_template_download("staging-excel")
 
         try:
             payload = self._read_json()

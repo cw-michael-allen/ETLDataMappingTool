@@ -8,6 +8,21 @@ const FALLBACK_DB_META = {
   ServTracker: { label: "ServTracker", logo: "/assets/logos/servtracker.png" },
 };
 
+// "Create Template" is a document generator (upload a CaseWorthy Form XML
+// export, get back the Field Definition + Staging Excel sheets for that
+// custom form) -- deliberately NOT a schema_rules.TARGET_DATABASES entry,
+// since it has no schema to map against and doesn't feed the mapping flow
+// (Michael's call, 2026-08-11: keep it decoupled). It only shares the
+// target-database <select> for discoverability. See form_xml.py for why
+// only a structural XML preview exists so far, not real field extraction.
+const CREATE_TEMPLATE_DB = "__create_template__";
+
+function escapeHtml(str) {
+  return String(str == null ? "" : str).replace(/[&<>"']/g, ch => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  }[ch]));
+}
+
 function dbMeta(name) {
   const fetched = (state.targetDbs || []).find(d => d.name === name);
   return fetched || FALLBACK_DB_META[name] || FALLBACK_DB_META.CaseWorthy;
@@ -88,6 +103,9 @@ let state = {
   suggestions: [],
   schema: null,
   schemaKey: null,
+  // "Create Template" mode's own state -- separate from everything above
+  // since it isn't part of the mapping wizard at all.
+  createTemplate: { parsing: false, error: null, result: null },
 };
 
 async function api(path, opts) {
@@ -106,7 +124,17 @@ const app = document.getElementById("app");
 // (never real client data), not just onboarding copy.
 function renderHeader() {
   const meta = activeDb();
-  const helpBlock = state.step === 1 ? `
+  const isCreateTemplate = state.targetDatabase === CREATE_TEMPLATE_DB;
+  const helpBlock = isCreateTemplate ? `
+    <div class="welcome-panel">
+      <p>Upload a CaseWorthy Form XML export (e.g. a custom Assessment or Entity form like WFDEmployment) to preview its structure before it becomes a Field Definition sheet and a Staging Excel template sheet.</p>
+      <h4>Important Notes</h4>
+      <ul>
+        <li>This only reads form <strong>structure</strong> (field names, types, list IDs) — it never ingests real client data, and a form definition export shouldn't contain any.</li>
+        <li>This preview is the first step of this feature — turning it into the two Excel deliverables still needs to be built.</li>
+      </ul>
+    </div>
+  ` : state.step === 1 ? `
     <div class="welcome-panel">
       <p>Welcome! This tool helps you figure out where your data belongs. As you migrate to ${meta.label}, it maps fields from your old source system to the right destination fields in your new one.</p>
       <h4>How It Works</h4>
@@ -135,8 +163,8 @@ function renderHeader() {
     <div class="header-row">
       <div>
         <img class="brand-logo" src="${meta.logo}" alt="${meta.label}">
-        <div class="eyebrow">${meta.label} • ETL Onboarding</div>
-        <h1>Field Mapping Assistant</h1>
+        <div class="eyebrow">${isCreateTemplate ? "CaseWorthy • Create Template" : `${meta.label} • ETL Onboarding`}</div>
+        <h1>${isCreateTemplate ? "Create Template" : "Field Mapping Assistant"}</h1>
       </div>
     </div>
     ${helpBlock}
@@ -147,11 +175,14 @@ function renderHeader() {
 // step, but small and out of the way at the bottom rather than a prominent
 // box next to the H1. refreshLibStat() targets the same #lib-stat id
 // regardless of where it lives in the markup.
-function renderFooter(extra) {
+function renderFooter(extra, showLibStat = true) {
+  const libStat = showLibStat
+    ? `<div class="lib-stat" id="lib-stat"><span class="num">…</span> <span class="lbl">learned mappings</span></div>`
+    : "";
   return `
     <footer>
       ${extra || "Internal POC · CaseWorthy Technical Consulting"}
-      <div class="lib-stat" id="lib-stat"><span class="num">…</span> <span class="lbl">learned mappings</span></div>
+      ${libStat}
     </footer>`;
 }
 
@@ -260,6 +291,7 @@ function renderModulePicker(meta) {
 
 async function renderStep1() {
   await ensureTargetDbs();
+  if (state.targetDatabase === CREATE_TEMPLATE_DB) return renderCreateTemplateStep();
   const meta = activeDb();
   const unavailable = meta.available === false;
 
@@ -276,7 +308,11 @@ async function renderStep1() {
 
   const dbOptions = (state.targetDbs || [])
     .map(d => `<option value="${d.name}" ${state.targetDatabase === d.name ? "selected" : ""}>${d.label}</option>`)
-    .join("");
+    .join("")
+    // Not one of the schema-backed databases above -- see CREATE_TEMPLATE_DB's
+    // own comment for why this is a separate, decoupled mode rather than a
+    // schema_rules.TARGET_DATABASES entry.
+    + `<option value="${CREATE_TEMPLATE_DB}">+ Create Template (CaseWorthy)</option>`;
 
   const warning = unavailable
     ? `<div class="db-warning">${meta.label}'s schema isn't loaded in this POC yet. Nothing has been guessed at in its place — a schema has to be extracted from its own validation rules first.</div>`
@@ -386,6 +422,187 @@ async function renderStep1() {
     state.sourceSystem = val;
     state.step = 2;
     renderStep2();
+  };
+}
+
+// Recursively renders form_xml.py's bounded tree structure as nested <ul>s.
+// Every piece of text here is uploaded file content, not something this tool
+// authored, so everything goes through escapeHtml -- unlike most of the rest
+// of this file, which renders a consultant's own typed input back to them.
+function renderXmlTreeNode(node) {
+  const attrs = node.attrib
+    ? ` <span class="xml-attrs">${Object.entries(node.attrib).map(([k, v]) => `${escapeHtml(k)}="${escapeHtml(v)}"`).join(" ")}</span>`
+    : "";
+  const text = node.text ? ` <span class="xml-text">"${escapeHtml(node.text)}"</span>` : "";
+  const truncated = node.truncated ? `<div class="xml-truncated">${escapeHtml(node.truncated)}</div>` : "";
+  const children = node.children && node.children.length
+    ? `<ul>${node.children.map(c => `<li>${renderXmlTreeNode(c)}</li>`).join("")}</ul>`
+    : "";
+  return `<span class="xml-tag">&lt;${escapeHtml(node.tag)}&gt;</span>${attrs}${text}${truncated}${children}`;
+}
+
+// One <table> per <Form> found, in the same column order as the reference
+// Field Definition examples (WFDEmployment/WFDCheckIn): ColumnName/TableName/
+// FieldLabel/DataType/FormElementType/Required/ListID/CharacterMaxLength/
+// Comments. See create_template.py's own docstring for what each column is
+// sourced from.
+function renderFormTemplateTable(form) {
+  const rows = form.rows.map(r => `
+    <tr>
+      <td>${escapeHtml(r.columnName)}</td>
+      <td>${escapeHtml(r.tableName)}</td>
+      <td>${escapeHtml(r.fieldLabel)}</td>
+      <td>${r.dataType ? escapeHtml(r.dataType) : `<span class="ft-unresolved">?</span>`}</td>
+      <td>${escapeHtml(r.formElementType)}</td>
+      <td>${escapeHtml(r.required)}</td>
+      <td>${r.listId ? escapeHtml(r.listId) : ""}</td>
+      <td>${r.characterMaxLength != null ? escapeHtml(String(r.characterMaxLength)) : ""}</td>
+      <td class="ft-comments">${r.comments ? escapeHtml(r.comments).replace(/\n/g, "<br>") : ""}</td>
+    </tr>`).join("");
+  const unresolvedNote = form.unresolvedColumns && form.unresolvedColumns.length
+    ? `<div class="import-notice import-error">Data type unresolved for: ${form.unresolvedColumns.map(escapeHtml).join(", ")} — their table isn't described in this export's own &lt;Tables&gt; section (likely a field from an already-existing base table, e.g. a Service or Entity lookup).</div>`
+    : "";
+  return `
+    <div class="field-def-block">
+      <h4>${escapeHtml(form.formDisplayName || form.formName || "Untitled form")}</h4>
+      <div class="field-def-subtitle">${escapeHtml(form.formName || "")} — ${form.rows.length} field(s)</div>
+      ${unresolvedNote}
+      <div class="xml-tree-wrap field-def-table-wrap">
+        <table class="field-def-table">
+          <thead><tr>
+            <th>ColumnName</th><th>TableName</th><th>FieldLabel</th><th>DataType</th>
+            <th>FormElementType</th><th>Required</th><th>ListID</th><th>CharacterMaxLength</th><th>Comments</th>
+          </tr></thead>
+          <tbody>${rows || `<tr><td colspan="9" class="empty">No data fields found on this form.</td></tr>`}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+// Re-sends the already-uploaded file to a binary-response route and saves
+// the result -- POST responses can't be downloaded via a plain <a href>, so
+// this goes through fetch -> blob -> a temporary object URL instead.
+async function downloadCreateTemplateFile(routeSuffix, filename) {
+  const ct = state.createTemplate;
+  if (!ct.file) return;
+  const formData = new FormData();
+  formData.append("file", ct.file);
+  const res = await fetch(`/api/create-template/${routeSuffix}`, { method: "POST", body: formData });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    alert(err.error || "Download failed.");
+    return;
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function renderCreateTemplateStep() {
+  const ct = state.createTemplate;
+
+  const tagCountsHtml = ct.result
+    ? `<div class="xml-tagcounts">Element counts: ${Object.entries(ct.result.tagCounts)
+        .sort((a, b) => b[1] - a[1])
+        .map(([tag, count]) => `${escapeHtml(tag)} (${count})`)
+        .join(", ")}</div>`
+    : "";
+  const rawTreeHtml = ct.result
+    ? `<div class="xml-tree-wrap"><div class="xml-tree">${renderXmlTreeNode(ct.result.tree)}</div></div>`
+    : "";
+  const errorHtml = ct.error ? `<div class="import-notice import-error">${escapeHtml(ct.error)}</div>` : "";
+
+  const templates = ct.result && ct.result.formTemplates;
+  const templatesHtml = templates && templates.length
+    ? templates.map(renderFormTemplateTable).join("") + `
+      <div class="step-nav" style="margin-top:4px;">
+        <button class="secondary" id="ct-download-field-def">Download Field Definition (.xlsx)</button>
+        <button class="secondary" id="ct-download-staging">Download Staging Excel (.xlsx)</button>
+      </div>`
+    : "";
+  const templatesErrorHtml = ct.result && ct.result.formTemplatesError && !templates
+    ? `<div class="import-notice">Couldn't build a Field Definition table from this file: ${escapeHtml(ct.result.formTemplatesError)} Showing the raw structure below instead.</div>`
+    : "";
+  // Once the structured table renders, the raw tree is only useful for
+  // double-checking something the table doesn't explain -- tuck it behind a
+  // disclosure instead of showing both at full length. Without a structured
+  // result (unrecognized export, or a parse error), show the tree by default.
+  const rawTreeBlock = templatesHtml
+    ? `<details class="xml-raw-details"><summary>Show raw XML structure</summary>${tagCountsHtml}${rawTreeHtml}</details>`
+    : `${tagCountsHtml}${rawTreeHtml}`;
+
+  app.innerHTML = `
+    ${renderHeader()}
+    <div class="card">
+      <h3>Upload a Form XML Export</h3>
+      <div class="import-row">
+        <input type="file" id="xml-file" accept=".xml">
+        <button class="secondary" id="xml-parse-btn" disabled>${ct.parsing ? "Parsing…" : "Preview Structure"}</button>
+      </div>
+      <div class="import-hint">Reads the whole file (it's form structure, not client data). A recognized CaseWorthy Form export (&lt;Ecm&gt;...) becomes a Field Definition table below; anything else falls back to a raw structure preview.</div>
+      <div id="xml-status">${errorHtml}</div>
+      ${ct.result ? `
+        <div style="margin-top:14px;">
+          <strong>${escapeHtml(ct.result.sourceFile)}</strong> — ${ct.result.elementCount.toLocaleString()} element(s)
+        </div>
+        ${templatesErrorHtml}
+        ${templatesHtml}
+        ${rawTreeBlock}
+      ` : ""}
+      <div class="step-nav">
+        <button class="secondary" id="ct-back">← Back to Field Mapping</button>
+        <span></span>
+      </div>
+    </div>
+    ${renderFooter("Internal POC · CaseWorthy Technical Consulting", false)}
+  `;
+
+  const fileEl = document.getElementById("xml-file");
+  const parseBtn = document.getElementById("xml-parse-btn");
+  const statusEl = document.getElementById("xml-status");
+  fileEl.onchange = () => { parseBtn.disabled = !fileEl.files.length; };
+  parseBtn.onclick = async () => {
+    const file = fileEl.files[0];
+    if (!file) return;
+    ct.parsing = true;
+    ct.error = null;
+    parseBtn.disabled = true;
+    parseBtn.textContent = "Parsing…";
+    statusEl.innerHTML = "";
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/create-template/parse-xml", { method: "POST", body: formData });
+      const result = await res.json();
+      if (!res.ok || result.error) throw new Error(result.error || "Couldn't parse that file.");
+      ct.result = result;
+      ct.file = file; // kept so the download buttons can resend it without asking the user to re-pick
+    } catch (err) {
+      ct.error = err.message;
+      ct.result = null;
+      ct.file = null;
+    } finally {
+      ct.parsing = false;
+      renderCreateTemplateStep();
+    }
+  };
+  const downloadFieldDefBtn = document.getElementById("ct-download-field-def");
+  if (downloadFieldDefBtn) downloadFieldDefBtn.onclick = () => downloadCreateTemplateFile("download-field-definition", "Field_Definition.xlsx");
+  const downloadStagingBtn = document.getElementById("ct-download-staging");
+  if (downloadStagingBtn) downloadStagingBtn.onclick = () => downloadCreateTemplateFile("download-staging-excel", "Staging_Excel.xlsx");
+  document.getElementById("ct-back").onclick = () => {
+    // The dropdown's onchange already wrote CREATE_TEMPLATE_DB to localStorage
+    // when this mode was selected -- picking a real database here overwrites
+    // that back to something renderStep1's normal (mapping-flow) path handles.
+    state.targetDatabase = "CaseWorthy";
+    localStorage.setItem(TARGET_DB_STORAGE_KEY, state.targetDatabase);
+    renderStep1();
   };
 }
 

@@ -1,0 +1,710 @@
+{
+  "1": {
+    "className": "ESG.WebUI.TextBox",
+    "description": "Text Box"
+  },
+  "10": {
+    "className": "ESG.WebUI.FormulaField",
+    "description": "Formula"
+  },
+  "100": {
+    "className": "ESG.WebUI.AlertTemplateChooser",
+    "description": "Alert Template Chooser"
+  },
+  "101": {
+    "className": "ESG.WebUI.AlertActionTypeChooser",
+    "description": "Alert Action Type Chooser"
+  },
+  "102": {
+    "className": "ESG.WebUI.SpeechRecognizer",
+    "description": "Speech Recognizer"
+  },
+  "103": {
+    "className": "ESG.WebUI.DOBDateChooser",
+    "description": "Date Of Birth Date Chooser"
+  },
+  "104": {
+    "className": "ESG.WebUI.AlertParameterEditor",
+    "description": "Alert Parameter Editor"
+  },
+  "105": {
+    "className": "ESG.WebUI.SQLQueryField",
+    "description": "SQL Query Field"
+  },
+  "106": {
+    "className": "ESG.WebUI.InlineDataGrid",
+    "description": "Inline Data Grid"
+  },
+  "107": {
+    "className": "ESG.WebUI.ChartViewer",
+    "description": "Chart"
+  },
+  "108": {
+    "className": "ESG.WebUI.AutoComplete",
+    "description": "Find As You Type"
+  },
+  "109": {
+    "className": "ESG.WebUI.OutcomesStar",
+    "description": "Outcomes Star"
+  },
+  "11": {
+    "className": "ESG.WebUI.Lookup",
+    "description": "Lookup"
+  },
+  "110": {
+    "className": "ESG.WebUI.MapControlButton",
+    "description": "Map It"
+  },
+  "111": {
+    "className": "ESG.WebUI.ResourceUsagePattern",
+    "description": "Resource Usage Pattern Advanced"
+  },
+  "112": {
+    "className": "ESG.WebUI.Map",
+    "description": "Map"
+  },
+  "113": {
+    "className": "ESG.WebUI.EmailBox",
+    "description": "Email Box"
+  },
+  "114": {
+    "className": "ESG.WebUI.DataShimResourceUsageDefaults",
+    "description": "Data Shim ResourceUsageDefaults"
+  },
+  "115": {
+    "className": "ESG.WebUI.SignatureCaptureNew",
+    "description": "Signature Capture"
+  },
+  "116": {
+    "className": "ESG.WebUI.TemplatePrint",
+    "description": "Template Print"
+  },
+  "117": {
+    "className": "ESG.WebUI.DataShimWorkflowDelegation",
+    "description": "Data Shim Workflow Delegation"
+  },
+  "118": {
+    "className": "ESG.WebUI.MatchClientJobs",
+    "description": "Match Client Jobs"
+  },
+  "119": {
+    "className": "ESG.WebUI.MatchJobClients",
+    "description": "Match Job Clients"
+  },
+  "12": {
+    "className": "ESG.WebUI.SelectButton",
+    "description": "Select Button"
+  },
+  "120": {
+    "className": "ESG.WebUI.ClientNameDataQuality",
+    "description": "Client Name Data Quality"
+  },
+  "121": {
+    "className": "ESG.WebUI.XmlForm",
+    "description": "Xml Form"
+  },
+  "122": {
+    "className": "ESG.WebUI.PDFExportButton",
+    "description": "PDF Export Button"
+  },
+  "123": {
+    "className": "ESG.WebUI.HiddenPhoneTexting",
+    "description": "Hidden Phone Texting"
+  },
+  "124": {
+    "className": "ESG.WebUI.ReportDownload",
+    "description": "Report Download"
+  },
+  "125": {
+    "className": "ESG.WebUI.MultiSelectTree",
+    "description": "Multi-Select Tree"
+  },
+  "126": {
+    "className": "ESG.WebUI.SharedLinkButton",
+    "description": "Shared Link"
+  },
+  "127": {
+    "className": "ESG.WebUI.TimePhaseControl",
+    "description": "Time Phase Control"
+  },
+  "128": {
+    "className": "ESG.WebUI.DebtPayoffCalculator",
+    "description": "Debt Payoff Calculator"
+  },
+  "129": {
+    "className": "ESG.WebUI.AffordabilityAnalyzer",
+    "description": "Affordability Analyzer"
+  },
+  "13": {
+    "className": "ESG.WebUI.SectionBreak",
+    "description": "Section Break"
+  },
+  "130": {
+    "className": "ESG.WebUI.AmortizationScheduler",
+    "description": "Amortization Scheduler"
+  },
+  "131": {
+    "className": "ESG.WebUI.CardScanner",
+    "description": "Card Scanner"
+  },
+  "132": {
+    "className": "ESG.WebUI.IconRuleFormElement",
+    "description": "Icon Rule"
+  },
+  "133": {
+    "className": "ESG.WebUI.LogoElement",
+    "description": "Logo"
+  },
+  "134": {
+    "className": "ESG.WebUI.CredcoIntegration",
+    "description": "Credco Integration"
+  },
+  "135": {
+    "className": "ESG.WebUI.PostKeyword",
+    "description": "Post Keywords"
+  },
+  "136": {
+    "className": "ESG.WebUI.PostService",
+    "description": "Post Service"
+  },
+  "137": {
+    "className": "ESG.WebUI.RefreshCurrentContext",
+    "description": "Refresh Current Context"
+  },
+  "138": {
+    "className": "ESG.WebUI.LocationGeoCode",
+    "description": "Location GeoCode"
+  },
+  "139": {
+    "className": "ESG.WebUI.SortOrder",
+    "description": "Sort Order"
+  },
+  "14": {
+    "className": "ESG.WebUI.PageText",
+    "description": "Page Text"
+  },
+  "140": {
+    "className": "ESG.WebUI.MultiField",
+    "description": "Multi Field"
+  },
+  "141": {
+    "className": "ESG.WebUI.ActivityStatus",
+    "description": "Activity Status"
+  },
+  "142": {
+    "className": "ESG.WebUI.PaymentIntegration",
+    "description": "Payment Integration"
+  },
+  "143": {
+    "className": "ESG.WebUI.MailChimpCampaign",
+    "description": "MailChimp Campaign"
+  },
+  "144": {
+    "className": "ESG.WebUI.FormLookup",
+    "description": "Form Lookup"
+  },
+  "145": {
+    "className": "ESG.WebUI.ImportIntegration",
+    "description": "Import Integration"
+  },
+  "146": {
+    "className": "ESG.WebUI.ClientGender",
+    "description": "Client Gender"
+  },
+  "149": {
+    "className": "ESG.WebUI.ReadWriteOrgGroup",
+    "description": "Read/Write Org Group"
+  },
+  "15": {
+    "className": "ESG.WebUI.RunStoredProcedure",
+    "description": "Run Stored Proc"
+  },
+  "150": {
+    "className": "ESG.WebUI.MultiSelectGenericTable",
+    "description": "Multi-Select (Generic Table)"
+  },
+  "151": {
+    "className": "ESG.WebUI.VoiceToText",
+    "description": "Voice To Text"
+  },
+  "152": {
+    "className": "ESG.WebUI.CCPayment",
+    "description": "Credit Card Payment"
+  },
+  "153": {
+    "className": "ESG.WebUI.ACHPayment",
+    "description": "ACH Payment"
+  },
+  "154": {
+    "className": "ESG.WebUI.EmbeddedReport",
+    "description": "Embeddable Report Viewer"
+  },
+  "155": {
+    "className": "ESG.WebUI.SendEncryptedFax",
+    "description": "Send Encrypted Fax"
+  },
+  "156": {
+    "className": "ESG.WebUI.FaxNumberSearchTextBox",
+    "description": "Fax Number Search TextBox"
+  },
+  "157": {
+    "className": "ESG.WebUI.Attachments",
+    "description": "Attachments"
+  },
+  "158": {
+    "className": "ESG.WebUI.DocumentChooser",
+    "description": "Document Chooser"
+  },
+  "159": {
+    "className": "ESG.WebUI.EnrollmentSubStatus",
+    "description": "Enrollment Sub Status"
+  },
+  "16": {
+    "className": "ESG.WebUI.ReportFolderChooser",
+    "description": "CaseBot Report Folder Chooser"
+  },
+  "160": {
+    "className": "ESG.WebUI.GenericRecurrencePattern",
+    "description": "Generic Recurrence Pattern"
+  },
+  "161": {
+    "className": "ESG.WebUI.DateLock",
+    "description": "Date Lock"
+  },
+  "162": {
+    "className": "ESG.WebUI.UserCategoryAccess",
+    "description": "User Category Access"
+  },
+  "163": {
+    "className": "ESG.WebUI.DatabasePassword",
+    "description": "Database Password"
+  },
+  "17": {
+    "className": "ESG.WebUI.PasswordBox",
+    "description": "Password Box"
+  },
+  "170": {
+    "className": "ESG.WebUI.PasswordReset",
+    "description": "Password Reset"
+  },
+  "171": {
+    "className": "ESG.WebUI.NonAssessmentRuleEditor",
+    "description": "Non Assessment Rule Editor"
+  },
+  "173": {
+    "className": "ESG.WebUI.GoogleAddressAutoComplete",
+    "description": "Google Address Auto Complete"
+  },
+  "174": {
+    "className": "ESG.WebUI.CRMPostData",
+    "description": "CRM Post"
+  },
+  "176": {
+    "className": "ESG.WebUI.GeoTracking",
+    "description": "Geo Tracking"
+  },
+  "177": {
+    "className": "ESG.WebUI.ChecklistPostData",
+    "description": "Checklist Post"
+  },
+  "178": {
+    "className": "ESG.WebUI.ChecklistValidation",
+    "description": "Checklist Validation"
+  },
+  "179": {
+    "className": "ESG.WebUI.CSDParcelLookup",
+    "description": "CSD Parcel Lookup"
+  },
+  "18": {
+    "className": "ESG.WebUI.RaceMultiSelect",
+    "description": "Race Multi-Select"
+  },
+  "182": {
+    "className": "ESG.WebUI.DocuSignSendEnvelope",
+    "description": "DocuSign Send Envelope"
+  },
+  "183": {
+    "className": "ESG.WebUI.Matrix",
+    "description": "Matrix Survey"
+  },
+  "184": {
+    "className": "ESG.WebUI.SectionText",
+    "description": "Section Text"
+  },
+  "185": {
+    "className": "ESG.WebUI.WebServiceDatabind",
+    "description": "Web Service Databind"
+  },
+  "186": {
+    "className": "ESG.WebUI.WebServicePostData",
+    "description": "Web Service Post Data"
+  },
+  "187": {
+    "className": "ESG.WebUI.AutoCompleteTask",
+    "description": "Auto Complete Task"
+  },
+  "188": {
+    "className": "ESG.WebUI.PlannedEncounter",
+    "description": "Planned Encounter"
+  },
+  "189": {
+    "className": "ESG.WebUI.GeoLocation",
+    "description": "Location Capture"
+  },
+  "19": {
+    "className": "ESG.WebUI.MultiSelect",
+    "description": "Multi-Select"
+  },
+  "2": {
+    "className": "ESG.WebUI.LongTextBox",
+    "description": "Large Text Box"
+  },
+  "20": {
+    "className": "ESG.WebUI.OrgGroupMultiSelect",
+    "description": "Org Group Multi-Select"
+  },
+  "21": {
+    "className": "ESG.WebUI.AssessmentChooser",
+    "description": "Assessment Manager"
+  },
+  "22": {
+    "className": "ESG.WebUI.DataQuality",
+    "description": "Data Quality"
+  },
+  "23": {
+    "className": "ESG.WebUI.ResourceUsagePatternBasic",
+    "description": "Resource Usage Pattern"
+  },
+  "24": {
+    "className": "ESG.WebUI.DateRangeChooser",
+    "description": "Date Range"
+  },
+  "25": {
+    "className": "ESG.WebUI.ResourcePatternChooser",
+    "description": "Resource Pattern Chooser"
+  },
+  "26": {
+    "className": "ESG.WebUI.FormulaHidden",
+    "description": "Hidden Formula"
+  },
+  "27": {
+    "className": "ESG.WebUI.ResourcePatternData",
+    "description": "Resource Pattern Data"
+  },
+  "28": {
+    "className": "ESG.WebUI.CopyFromHeader",
+    "description": "Copy value from header"
+  },
+  "29": {
+    "className": "ESG.WebUI.QueryDatabind",
+    "description": "Query Databind"
+  },
+  "3": {
+    "className": "ESG.WebUI.RichTextBox",
+    "description": "Rich Text Box"
+  },
+  "30": {
+    "className": "ESG.WebUI.ResourceSummary",
+    "description": "Resource Summary"
+  },
+  "31": {
+    "className": "ESG.WebUI.AppointmentAttendees",
+    "description": "Appointment Attendees"
+  },
+  "32": {
+    "className": "ESG.WebUI.LongTextBox",
+    "description": "Long Text Box"
+  },
+  "33": {
+    "className": "ESG.WebUI.AssessmentRuleEditor",
+    "description": "Assessment Rule Editor"
+  },
+  "34": {
+    "className": "ESG.WebUI.RichTextEditor",
+    "description": "Rich Text Editor"
+  },
+  "35": {
+    "className": "ESG.WebUI.RichTextEditorFullLine",
+    "description": "Rich Text Editor-Full Line"
+  },
+  "36": {
+    "className": "ESG.WebUI.CaseNotePreview",
+    "description": "Case Note Preview"
+  },
+  "37": {
+    "className": "ESG.WebUI.CaseNotePopup",
+    "description": "Case Note Popup"
+  },
+  "38": {
+    "className": "ESG.WebUI.IssuesData",
+    "description": "Default From Issue"
+  },
+  "39": {
+    "className": "ESG.WebUI.CategoryListDisplay",
+    "description": "Category List Display"
+  },
+  "4": {
+    "className": "ESG.WebUI.DropDownList",
+    "description": "Drop Down List"
+  },
+  "40": {
+    "className": "ESG.WebUI.MathByCategoryTypes",
+    "description": "Math on spreadsheet column"
+  },
+  "41": {
+    "className": "ESG.WebUI.EnrollmentStatus",
+    "description": "Enrollment Status"
+  },
+  "42": {
+    "className": "ESG.WebUI.ButtonIcon",
+    "description": "Icon Button"
+  },
+  "43": {
+    "className": "ESG.WebUI.RadioList",
+    "description": "Radio List"
+  },
+  "44": {
+    "className": "ESG.WebUI.DataShimFamily",
+    "description": "Data Shim Family"
+  },
+  "45": {
+    "className": "ESG.WebUI.EnrollmentVerify",
+    "description": "Enrollment Verify"
+  },
+  "46": {
+    "className": "ESG.WebUI.DataShimEnrollment",
+    "description": "Data Shim Enrollment"
+  },
+  "47": {
+    "className": "ESG.WebUI.DataShimAssessment",
+    "description": "Data Shim Assessment"
+  },
+  "48": {
+    "className": "ESG.WebUI.DuplicateCheck",
+    "description": "Duplicate Check"
+  },
+  "49": {
+    "className": "ESG.WebUI.ResourceSlotAssignment",
+    "description": "Resource Slot Assignment"
+  },
+  "5": {
+    "className": "ESG.WebUI.DropDownTable",
+    "description": "Drop Down Table"
+  },
+  "50": {
+    "className": "ESG.WebUI.FileUpload",
+    "description": "Small File Upload"
+  },
+  "51": {
+    "className": "ESG.WebUI.HiddenPlaceholder",
+    "description": "Hidden Placeholder"
+  },
+  "52": {
+    "className": "ESG.WebUI.AppointmentFollowup",
+    "description": "Follow-up"
+  },
+  "53": {
+    "className": "ESG.WebUI.AfterSaveGoURL",
+    "description": "After save go url"
+  },
+  "54": {
+    "className": "ESG.WebUI.QueryParameterList",
+    "description": "Query Parameter List"
+  },
+  "55": {
+    "className": "ESG.WebUI.DataShimFamilyMember",
+    "description": "Family Member Data Shim"
+  },
+  "56": {
+    "className": "ESG.WebUI.CaseNoteTemplateChooser",
+    "description": "Case note Template Chooser"
+  },
+  "57": {
+    "className": "ESG.WebUI.ValidateFacilityConstraints",
+    "description": "Validate Facility Constraints"
+  },
+  "58": {
+    "className": "ESG.WebUI.TimeEntry",
+    "description": "Time Entry"
+  },
+  "59": {
+    "className": "ESG.WebUI.SignatureCapture",
+    "description": "Signature Capture Old"
+  },
+  "6": {
+    "className": "ESG.WebUI.HiddenField",
+    "description": "Hidden Field"
+  },
+  "60": {
+    "className": "ESG.WebUI.BatchTaskParameters",
+    "description": "Batch Task Parameters"
+  },
+  "61": {
+    "className": "ESG.WebUI.DataShimFinancialAssess",
+    "description": "Data Shim Financial Assessment"
+  },
+  "62": {
+    "className": "ESG.WebUI.ResourceEndReservation",
+    "description": "Resource End Reservation"
+  },
+  "63": {
+    "className": "ESG.WebUI.EnrollmentEntryStatus",
+    "description": "Enrollment Default Entry Status"
+  },
+  "64": {
+    "className": "ESG.WebUI.ServicePost",
+    "description": "Service Post"
+  },
+  "65": {
+    "className": "ESG.WebUI.ValidateServiceConstraints",
+    "description": "Validate Service Constraints"
+  },
+  "66": {
+    "className": "ESG.WebUI.CreateEmailPopup",
+    "description": "Create Email Popup"
+  },
+  "67": {
+    "className": "ESG.WebUI.EnrollmentEligibleRuleEditor",
+    "description": "Enrollment Eligibility Rule Editor"
+  },
+  "68": {
+    "className": "ESG.WebUI.FullLineTextBox",
+    "description": "Full Line Text Box"
+  },
+  "69": {
+    "className": "ESG.WebUI.EmailSearchTextBox",
+    "description": "Email Search Text Box"
+  },
+  "7": {
+    "className": "ESG.WebUI.Button",
+    "description": "Button"
+  },
+  "70": {
+    "className": "ESG.WebUI.MultiSearch",
+    "description": "Multi-Search Box"
+  },
+  "71": {
+    "className": "ESG.WebUI.EnrollmentMemberStatus",
+    "description": "Enrollment Member Status"
+  },
+  "72": {
+    "className": "ESG.WebUI.AccountPost",
+    "description": "Account Transaction"
+  },
+  "73": {
+    "className": "ESG.WebUI.FieldSetGrouping",
+    "description": "Field Set Grouping"
+  },
+  "74": {
+    "className": "ESG.WebUI.ValidateReferralConstraints",
+    "description": "Validate Referral Constraints"
+  },
+  "75": {
+    "className": "ESG.WebUI.AddToSearchParameters",
+    "description": "Add to search parameters"
+  },
+  "76": {
+    "className": "ESG.WebUI.ApprovalHold",
+    "description": "Approval Hold"
+  },
+  "77": {
+    "className": "ESG.WebUI.ReadOnlyForm",
+    "description": "Read Only Form"
+  },
+  "78": {
+    "className": "ESG.WebUI.GeoCoder",
+    "description": "Geo Coder"
+  },
+  "79": {
+    "className": "ESG.WebUI.FormTimer",
+    "description": "Form Timer"
+  },
+  "8": {
+    "className": "ESG.WebUI.Checkbox",
+    "description": "Checkbox"
+  },
+  "80": {
+    "className": "ESG.WebUI.ScanCardMultiPurpose",
+    "description": "ScanCard Viewer"
+  },
+  "81": {
+    "className": "ESG.WebUI.Hyperlink",
+    "description": "Hyperlink"
+  },
+  "82": {
+    "className": "ESG.WebUI.PostData",
+    "description": "Post Data"
+  },
+  "83": {
+    "className": "ESG.WebUI.PostDataHidden",
+    "description": "Post Data Hidden"
+  },
+  "84": {
+    "className": "ESG.WebUI.FileUploadNew",
+    "description": "File Upload New"
+  },
+  "85": {
+    "className": "ESG.WebUI.SilverlightWebCam",
+    "description": "Silverlight WebCam"
+  },
+  "86": {
+    "className": "ESG.WebUI.ClientAccountSummary",
+    "description": "Client Account Summary"
+  },
+  "87": {
+    "className": "ESG.WebUI.StoredProcedureDatabind",
+    "description": "Stored Procedure Databind"
+  },
+  "88": {
+    "className": "ESG.WebUI.CombineFields",
+    "description": "Combine Fields"
+  },
+  "89": {
+    "className": "ESG.WebUI.FormDefaultValueSetPicker",
+    "description": "Default Form Values"
+  },
+  "9": {
+    "className": "ESG.WebUI.DateChooser",
+    "description": "Date Chooser"
+  },
+  "90": {
+    "className": "ESG.WebUI.SSNField",
+    "description": "SSN"
+  },
+  "91": {
+    "className": "ESG.WebUI.NumberRange",
+    "description": "Number Range filter"
+  },
+  "92": {
+    "className": "ESG.WebUI.RefreshClientFamily",
+    "description": "Refresh Client Family"
+  },
+  "93": {
+    "className": "ESG.WebUI.CustomTemplateFieldList",
+    "description": "Custom Template Field List"
+  },
+  "94": {
+    "className": "ESG.WebUI.PhotoViewer",
+    "description": "Photo Viewer"
+  },
+  "95": {
+    "className": "ESG.WebUI.HiddenEmail",
+    "description": "Hidden Email"
+  },
+  "96": {
+    "className": "ESG.WebUI.VideoViewer",
+    "description": "Video Viewer"
+  },
+  "97": {
+    "className": "ESG.WebUI.ProgramEnrollmentEligibility",
+    "description": "Program Enrollment Eligibility"
+  },
+  "98": {
+    "className": "ESG.WebUI.AlertRuleEditor",
+    "description": "Alert Rule Editor"
+  },
+  "99": {
+    "className": "ESG.WebUI.AlertTypeChooser",
+    "description": "Alert Type Chooser"
+  }
+}
