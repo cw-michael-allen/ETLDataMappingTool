@@ -266,3 +266,42 @@ footer { text-align: center; font-size: 11px; color: var(--surface-text-muted); 
 .import-notice { border-radius: 6px; padding: 8px 12px; font-size: 12px; color: var(--cw-black); margin-top: 8px; }
 .import-success { background: #E2F4F1; border: 1px solid var(--cw-green); }
 .import-error { background: #FDEAE3; border: 1px solid var(--cw-orange); }
+
+/* Create Template's XML structure preview (poc/form_xml.py + app.js's
+   renderXmlTreeNode). Monospace, bounded height with its own scrollbar since
+   a real form export can be long -- the page itself must never scroll
+   horizontally per this app's responsive rule. */
+.xml-tagcounts { font-size: 12px; color: var(--surface-text-muted); margin: 10px 0; }
+.xml-tree-wrap {
+  border: 1px solid var(--surface-border); border-radius: 8px;
+  background: var(--surface-page); padding: 12px 14px;
+  max-height: 480px; overflow: auto; margin-top: 8px;
+}
+.xml-tree, .xml-tree ul {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 12px; line-height: 1.7; list-style: none; margin: 0; padding-left: 18px;
+}
+.xml-tree { padding-left: 0; }
+.xml-tag { color: var(--cw-teal); font-weight: 600; }
+.xml-attrs { color: var(--surface-text-muted); }
+.xml-text { color: var(--surface-heading); }
+.xml-truncated { color: var(--cw-orange); font-style: italic; padding-left: 18px; }
+.xml-raw-details { margin-top: 16px; }
+.xml-raw-details summary { cursor: pointer; font-size: 12px; color: var(--surface-text-muted); }
+
+/* Create Template's structured Field Definition table (create_template.py's
+   per-form rows), matching the reference WFDEmployment/WFDCheckIn column
+   layout. Its own horizontally-scrolling wrapper -- this table is wide and
+   the page itself must never scroll sideways. */
+.field-def-block { margin-top: 18px; }
+.field-def-block h4 { margin: 0 0 2px; color: var(--surface-heading); }
+.field-def-subtitle { font-size: 12px; color: var(--surface-text-muted); margin-bottom: 8px; }
+.field-def-table-wrap { overflow-x: auto; max-height: none; }
+.field-def-table { border-collapse: collapse; width: 100%; font-size: 12px; white-space: nowrap; }
+.field-def-table th, .field-def-table td {
+  border: 1px solid var(--surface-border); padding: 6px 10px; text-align: left; vertical-align: top;
+}
+.field-def-table th { background: var(--surface-hover-tint); color: var(--surface-heading); }
+.field-def-table td.ft-comments { white-space: pre-line; min-width: 220px; }
+.field-def-table td.empty { text-align: center; color: var(--surface-text-muted); white-space: normal; }
+.ft-unresolved { color: var(--cw-orange); font-weight: 600; }
