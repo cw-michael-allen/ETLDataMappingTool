@@ -469,77 +469,100 @@ def _style_field_definition_sheet(ws, num_fields):
     ws.freeze_panes = "B2"  # keeps both the attribute-label column and the ColumnName row in view
 
 
-def build_field_definition_workbook(form_templates, selections=None):
-    """One sheet per form, transposed (columns=fields, rows=attributes) --
-    matching the reference WFDEmployment/WFDCheckIn Field Definition sheets'
-    layout AND formatting (pink tab, bold gold row labels, bold blue
-    ColumnName row, grid borders -- see _style_field_definition_sheet).
-    Returns an openpyxl Workbook; raises CreateTemplateError if openpyxl
-    isn't installed.
+def _selected_rows(form_templates, selections):
+    """Flattens every form's rows (respecting selections' per-form row-index
+    filtering, same as before) into one list, dropping which form each row
+    came from -- the workbook builders below regroup by tableName instead,
+    not by form (Michael's call, 2026-08-13: a tab is a table, not a form/
+    module, so a cross-table form's fields belong on separate tabs, and two
+    forms that both touch the same table belong on the same one)."""
+    selected = []
+    for form_idx, form in enumerate(form_templates):
+        allowed = None
+        if selections is not None and form_idx < len(selections) and selections[form_idx] is not None:
+            allowed = set(selections[form_idx])
+        selected.extend(r for i, r in enumerate(form["rows"]) if allowed is None or i in allowed)
+    return selected
 
-    selections: same shape and meaning as build_staging_excel_workbook's own
-    -- a list, one entry per form, of row indices into that form's "rows" to
-    include. Both downloads honor the customer's checkbox picks now
-    (Michael's call, 2026-08-12, reversing the earlier "Field Definition
-    always stays complete" decision) -- None includes every row, unfiltered."""
+
+def _group_by_table(rows):
+    """tableName -> [rows], in first-seen order (of both tables and rows
+    within a table) -- not alphabetical, so a table's columns stay in the
+    order they appeared on the form(s) they came from.
+
+    Deduplicates on (tableName, columnName): the same physical column can be
+    surfaced on more than one form (e.g. two different forms both showing
+    Client.Gender) -- it's one column, so it belongs on that table's tab
+    once, not once per form that happened to display it. First occurrence
+    wins if the two forms ever disagree about its metadata."""
+    grouped = {}
+    seen = set()
+    for row in rows:
+        key = (row["tableName"], row["columnName"])
+        if key in seen:
+            continue
+        seen.add(key)
+        grouped.setdefault(row["tableName"], []).append(row)
+    return grouped
+
+
+def build_field_definition_workbook(form_templates, selections=None):
+    """One sheet per TARGET TABLE (not per form -- see _group_by_table),
+    transposed (columns=fields, rows=attributes) -- matching the reference
+    WFDEmployment/WFDCheckIn Field Definition sheets' layout AND formatting
+    (pink tab, bold gold row labels, bold blue ColumnName row, grid borders
+    -- see _style_field_definition_sheet). Returns an openpyxl Workbook;
+    raises CreateTemplateError if openpyxl isn't installed.
+
+    selections: a list, one entry per form (same order as form_templates),
+    of row indices into that form's own "rows" to include. Both this and
+    build_staging_excel_workbook honor the same selections shape (Michael's
+    call, 2026-08-12) -- None includes every row, unfiltered."""
     openpyxl = _load_openpyxl()
     if openpyxl is None:
         raise CreateTemplateError(_openpyxl_unavailable)
 
+    grouped = _group_by_table(_selected_rows(form_templates, selections))
     wb = openpyxl.Workbook()
     wb.remove(wb.active)
     used_names = set()
-    for form_idx, form in enumerate(form_templates):
-        sheet_name = _safe_sheet_name(form.get("formDisplayName") or form.get("formName"), used_names)
+    for table_name, table_rows in grouped.items():
+        sheet_name = _safe_sheet_name(table_name or "Unknown", used_names)
         ws = wb.create_sheet(sheet_name)
         ws.sheet_properties.tabColor = _TAB_COLOR_PINK
-        allowed = None
-        if selections is not None and form_idx < len(selections) and selections[form_idx] is not None:
-            allowed = set(selections[form_idx])
-        included_rows = [r for i, r in enumerate(form["rows"]) if allowed is None or i in allowed]
         for row_idx, (label, key) in enumerate(FIELD_DEF_ATTRS, start=1):
             ws.cell(row=row_idx, column=1, value=label)
-            for col_idx, row in enumerate(included_rows, start=2):
+            for col_idx, row in enumerate(table_rows, start=2):
                 value = row.get(key)
                 ws.cell(row=row_idx, column=col_idx, value=value if value is not None else "")
-        _style_field_definition_sheet(ws, len(included_rows))
+        _style_field_definition_sheet(ws, len(table_rows))
     if not wb.sheetnames:
         wb.create_sheet("Sheet1")
     return wb
 
 
 def build_staging_excel_workbook(form_templates, selections=None):
-    """One sheet per form: a single flat header row of ColumnName values --
-    matching every other Staging Excel sheet in this app's convention
-    (header-row-only, see file_import.py). Returns an openpyxl Workbook;
-    raises CreateTemplateError if openpyxl isn't installed.
+    """One sheet per TARGET TABLE (not per form -- see _group_by_table): a
+    single flat header row of ColumnName values, matching every other
+    Staging Excel sheet in this app's convention (header-row-only, see
+    file_import.py). Returns an openpyxl Workbook; raises
+    CreateTemplateError if openpyxl isn't installed.
 
-    selections: optional list, one entry per form (same order/length as
-    form_templates), each a list of row indices into that form's own
-    "rows" to include -- the customer's checkbox picks from the Field
-    Definition table. Both this and build_field_definition_workbook honor
-    the same selections shape (Michael's call, 2026-08-12). None (or a form
-    with no corresponding entry) includes every row, unfiltered -- the
-    pre-selection behavior, kept as the default for any caller that
-    doesn't know about selections."""
+    selections: same shape as build_field_definition_workbook's own -- None
+    (or a form with no corresponding entry) includes every row, unfiltered."""
     openpyxl = _load_openpyxl()
     if openpyxl is None:
         raise CreateTemplateError(_openpyxl_unavailable)
+
+    grouped = _group_by_table(_selected_rows(form_templates, selections))
     wb = openpyxl.Workbook()
     wb.remove(wb.active)
     used_names = set()
-    for form_idx, form in enumerate(form_templates):
-        sheet_name = _safe_sheet_name(form.get("formDisplayName") or form.get("formName"), used_names)
+    for table_name, table_rows in grouped.items():
+        sheet_name = _safe_sheet_name(table_name or "Unknown", used_names)
         ws = wb.create_sheet(sheet_name)
-        allowed = None
-        if selections is not None and form_idx < len(selections) and selections[form_idx] is not None:
-            allowed = set(selections[form_idx])
-        col_idx = 1
-        for row_idx, row in enumerate(form["rows"]):
-            if allowed is not None and row_idx not in allowed:
-                continue
+        for col_idx, row in enumerate(table_rows, start=1):
             ws.cell(row=1, column=col_idx, value=row["columnName"])
-            col_idx += 1
     if not wb.sheetnames:
         wb.create_sheet("Sheet1")
     return wb
