@@ -259,6 +259,10 @@ class Handler(BaseHTTPRequestHandler):
             # key isn't optional the way a data field is, so this reflects
             # what download time will do no matter what gets checked/unchecked.
             result["linkAdditions"] = create_template.compute_link_additions(form_templates)
+            # Per-form breakdown of the same additions, so the preview (which
+            # stays organized by form) can splice each one into the right
+            # form-block(s) as a literal row instead of only a summary banner.
+            result["linkAdditionsByForm"] = create_template.compute_link_additions_by_form(form_templates)
         except create_template.CreateTemplateError as e:
             result["formTemplatesError"] = str(e)
         return self._send_json(result)

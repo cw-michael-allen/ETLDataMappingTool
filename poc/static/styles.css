@@ -325,6 +325,14 @@ footer { text-align: center; font-size: 11px; color: var(--surface-text-muted); 
 .ft-unresolved { color: var(--cw-orange); font-weight: 600; }
 .ft-linked { color: var(--cw-teal); font-weight: 600; }
 
+/* Synthetic join columns (renderSyntheticRow) -- grayed out and italic so
+   they read as "added automatically," never mistaken for a real field the
+   form itself asked for. No background-color transition here, matching this
+   file's existing rule against transitioning theme-swapped properties. */
+.ft-synthetic-row { background: var(--surface-hover-tint); font-style: italic; color: var(--surface-text-muted); }
+.ft-synthetic-row td { color: var(--surface-text-muted); }
+.ft-synthetic-row .ft-linked, .ft-synthetic-row .ft-unresolved { color: inherit; font-weight: 600; }
+
 /* A long decode list (renderCommentsCell) collapsed in place within its own
    Comments cell -- explicit [open]-scoped visibility, not the browser's own
    native <details> collapse, same reasoning as .override-details above. */

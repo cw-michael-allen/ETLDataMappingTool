@@ -71,6 +71,19 @@ Review", Delaware People in Need) rather than guessed at:
   tools/build_cw_foreign_keys.py. A field with no matching entry has no
   known link, reported as such, never guessed at from column naming alone
   (an "*ID"-named column is not, by itself, evidence of anything).
+- Synthesized join columns (both downloads, plus the browser preview since
+  2026-08-12) come in two kinds, because joining two sheets needs a real
+  column on BOTH sides: a child table's own FK column (_needed_link_columns,
+  the original 2026-08-13 behavior) AND the parent/referenced table's own
+  primary key column(s) (_needed_pk_columns, added 2026-08-12 after Michael
+  pointed out a child's synthesized FK column is useless if the parent sheet
+  never surfaces the column it's actually pointing at -- e.g. Client's own
+  EntityID not being a field on any uploaded form). Sourced from
+  reference/cw_primary_keys.json, the primary-key half of the same real
+  database-wide key export build_cw_foreign_keys.py produces alongside the
+  FK registry -- same trust rule as LinkedTo, never guessed from a column
+  being named "*ID". Composite primary keys synthesize every missing
+  column, not just one; a join can't work on half a key.
 """
 
 import json
@@ -84,9 +97,11 @@ import schema_rules
 REFERENCE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "reference")
 ELEMENT_TYPES_PATH = os.path.join(REFERENCE_DIR, "cw_element_types.json")
 FOREIGN_KEYS_PATH = os.path.join(REFERENCE_DIR, "cw_foreign_keys.json")
+PRIMARY_KEYS_PATH = os.path.join(REFERENCE_DIR, "cw_primary_keys.json")
 _ELEMENT_TYPES_CACHE = None
 _BASE_SCHEMA_COLUMNS_CACHE = None
 _FOREIGN_KEYS_CACHE = None
+_PRIMARY_KEYS_CACHE = None
 
 _TEXT_MAX_RE = re.compile(r"Text \(max (\d+)\)")
 
@@ -111,6 +126,17 @@ def load_foreign_keys():
         else:
             _FOREIGN_KEYS_CACHE = {}
     return _FOREIGN_KEYS_CACHE
+
+
+def load_primary_keys():
+    global _PRIMARY_KEYS_CACHE
+    if _PRIMARY_KEYS_CACHE is None:
+        if os.path.exists(PRIMARY_KEYS_PATH):
+            with open(PRIMARY_KEYS_PATH, encoding="utf-8") as f:
+                _PRIMARY_KEYS_CACHE = json.load(f)
+        else:
+            _PRIMARY_KEYS_CACHE = {}
+    return _PRIMARY_KEYS_CACHE
 
 
 def _linked_to(table_name, column_name):
@@ -547,6 +573,7 @@ def _group_by_table(rows):
 
 
 _FOREIGN_KEYS_BY_TABLE_CACHE = None
+_PRIMARY_KEYS_BY_TABLE_CACHE = None
 
 
 def _foreign_keys_by_table():
@@ -561,6 +588,19 @@ def _foreign_keys_by_table():
             by_table.setdefault(entry["table"].lower(), []).append(entry)
         _FOREIGN_KEYS_BY_TABLE_CACHE = by_table
     return _FOREIGN_KEYS_BY_TABLE_CACHE
+
+
+def _primary_keys_by_table():
+    """table_lower -> [pk column names], from reference/cw_primary_keys.json
+    -- a table with a composite primary key yields more than one column
+    here, since a join can't work on only half a composite key."""
+    global _PRIMARY_KEYS_BY_TABLE_CACHE
+    if _PRIMARY_KEYS_BY_TABLE_CACHE is None:
+        by_table = {}
+        for entry in load_primary_keys().values():
+            by_table.setdefault(entry["table"].lower(), []).append(entry["column"])
+        _PRIMARY_KEYS_BY_TABLE_CACHE = by_table
+    return _PRIMARY_KEYS_BY_TABLE_CACHE
 
 
 def _link_addition_row(table_name, fk_entry):
@@ -588,6 +628,35 @@ def _link_addition_row(table_name, fk_entry):
             f"Added automatically -- needed to join {table_name} rows back to "
             f"{fk_entry['referencedTable']}, but wasn't a field on the original form."
         ),
+        "kind": "foreign-key",
+    }
+
+
+def _pk_addition_row(table_name, pk_column):
+    """A synthetic row for a table's own primary-key column that's real
+    (sourced from reference/cw_primary_keys.json) but was never a
+    FormElement on the export's own form(s) -- needed because a *child*
+    table's synthesized FK column (_link_addition_row) is useless unless the
+    *parent* table it points at actually surfaces the column being pointed
+    to. Same shape as _link_addition_row's rows so it flows through the same
+    rendering/workbook code unchanged; linkedTo is left empty since this
+    column doesn't point anywhere itself -- it's the anchor other tables'
+    FKs join back to."""
+    return {
+        "columnName": pk_column,
+        "tableName": table_name,
+        "fieldLabel": pk_column,
+        "dataType": None,
+        "formElementType": "Primary Key (not on the original form)",
+        "required": "Required",
+        "listId": None,
+        "characterMaxLength": None,
+        "linkedTo": None,
+        "comments": (
+            f"Added automatically -- {table_name}'s own primary key, needed so other "
+            f"sheets' linking columns can actually join back to a real row here."
+        ),
+        "kind": "primary-key",
     }
 
 
@@ -617,29 +686,108 @@ def _needed_link_columns(grouped):
     return additions
 
 
+def _needed_pk_columns(grouped):
+    """tableName -> [synthetic PK rows] for every present table that's the
+    REFERENCED side of some other present table's real foreign key (self-
+    references excluded, same rule as _needed_link_columns) and whose own
+    primary-key column(s) aren't already present among that table's own
+    rows -- see module docstring: a child's synthesized FK column is dead
+    weight if the parent sheet never surfaces the column it's pointing at.
+    Missing composite-key columns are all added, not just one."""
+    lower_to_actual = {t.lower(): t for t in grouped}
+    referenced_lower = set()
+    for table_name in grouped:
+        for fk in _foreign_keys_by_table().get(table_name.lower(), []):
+            ref_lower = fk["referencedTable"].lower()
+            if ref_lower != table_name.lower() and ref_lower in lower_to_actual:
+                referenced_lower.add(ref_lower)
+
+    additions = {}
+    for ref_lower in referenced_lower:
+        actual_table = lower_to_actual[ref_lower]
+        existing_cols = {r["columnName"].lower() for r in grouped[actual_table]}
+        missing = [pk for pk in _primary_keys_by_table().get(ref_lower, []) if pk.lower() not in existing_cols]
+        if missing:
+            additions[actual_table] = [_pk_addition_row(actual_table, pk) for pk in missing]
+    return additions
+
+
+def _needed_join_columns(grouped):
+    """tableName -> [synthetic rows] combining both halves of what a real
+    join needs: the child table's own FK column (_needed_link_columns) and
+    the parent table's own primary key column(s) (_needed_pk_columns) --
+    a join can't work with only one side of it present. Primary-key rows
+    are listed first (the table's own identity), then FK rows, matching
+    every reference example's convention of ID/link columns reading first;
+    deduplicated by column name in the rare case a table needs the same
+    column name from both halves."""
+    fk_additions = _needed_link_columns(grouped)
+    pk_additions = _needed_pk_columns(grouped)
+    combined = {}
+    for table_name in set(fk_additions) | set(pk_additions):
+        rows, seen = [], set()
+        for row in pk_additions.get(table_name, []) + fk_additions.get(table_name, []):
+            key = row["columnName"].lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            rows.append(row)
+        combined[table_name] = rows
+    return combined
+
+
 def _group_by_table_with_links(rows):
-    """_group_by_table, plus synthetic linking columns (see
-    _needed_link_columns) prepended to each affected table -- ID/link
+    """_group_by_table, plus synthetic join columns (see
+    _needed_join_columns) prepended to each affected table -- ID/link
     columns read first in every reference example seen, so a synthesized
     one is placed the same way."""
     grouped = _group_by_table(rows)
-    for table_name, additions in _needed_link_columns(grouped).items():
+    for table_name, additions in _needed_join_columns(grouped).items():
         grouped[table_name] = additions + grouped[table_name]
     return grouped
 
 
 def compute_link_additions(form_templates):
-    """Public wrapper for the browser preview: every synthetic linking
-    column that will be added at download time, regardless of checkbox
-    selections (see _needed_link_columns), as a flat list of
-    {"table", "column", "linkedTo"} -- so a customer sees this before they
-    download, not after."""
+    """Public wrapper for the browser preview: every synthetic join column
+    that will be added at download time, regardless of checkbox selections
+    (see _needed_join_columns), as a flat list of
+    {"table", "column", "linkedTo", "kind"} -- kind is "foreign-key"
+    (linkedTo set) or "primary-key" (linkedTo is None -- nothing to link to,
+    it IS the anchor) -- so a customer sees this before they download, not
+    after."""
     grouped = _group_by_table(_selected_rows(form_templates, None))
     return [
-        {"table": table_name, "column": row["columnName"], "linkedTo": row["linkedTo"]}
-        for table_name, rows in _needed_link_columns(grouped).items()
+        {"table": table_name, "column": row["columnName"], "linkedTo": row["linkedTo"], "kind": row["kind"]}
+        for table_name, rows in _needed_join_columns(grouped).items()
         for row in rows
     ]
+
+
+def compute_link_additions_by_form(form_templates):
+    """Same computation as compute_link_additions, re-attributed per form so
+    the browser preview -- which stays organized by FORM rather than by
+    table (Michael's call, 2026-08-12: keep the existing per-form checkbox
+    UI, don't restructure the preview to match the downloads' per-table
+    grouping) -- can splice each table's synthetic rows into every
+    form-block that touches that table. Two forms touching the same table
+    both see that table's additions; not deduplicated across forms, since
+    each form renders its own independent preview table. Ignores
+    selections, same as compute_link_additions -- a join key isn't
+    optional. Returns a list aligned 1:1 with form_templates."""
+    grouped = _group_by_table(_selected_rows(form_templates, None))
+    additions_by_table = _needed_join_columns(grouped)
+    result = []
+    for form in form_templates:
+        tables_touched, seen_tables = [], set()
+        for row in form["rows"]:
+            if row["tableName"] not in seen_tables:
+                seen_tables.add(row["tableName"])
+                tables_touched.append(row["tableName"])
+        form_additions = []
+        for table_name in tables_touched:
+            form_additions.extend(additions_by_table.get(table_name, []))
+        result.append(form_additions)
+    return result
 
 
 def build_field_definition_workbook(form_templates, selections=None):

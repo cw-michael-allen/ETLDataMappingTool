@@ -489,7 +489,32 @@ function renderCommentsCell(comments) {
 // The leading checkbox column is this table's own -- it controls which
 // fields make it into the Field Definition and Staging Excel downloads
 // (see state.createTemplate.selections).
-function renderFormTemplateTable(form, formIndex, selected) {
+// Synthetic join columns (primary-key anchors and foreign-key links this
+// table needs but that were never a FormElement on the original form -- see
+// create_template.py's compute_link_additions_by_form) render as real rows
+// in-line with the form's own fields, not just a summary banner (Michael's
+// call, 2026-08-12) -- no checkbox (a join key isn't optional the way a data
+// field is) and a distinct "synthetic" tint so it's never mistaken for
+// something the form actually asked for.
+function renderSyntheticRow(r) {
+  return `
+    <tr class="ft-synthetic-row" title="Added automatically -- not a field on the original form">
+      <td class="ft-select-cell">—</td>
+      <td>${escapeHtml(r.columnName)}</td>
+      <td>${escapeHtml(r.tableName)}</td>
+      <td>${escapeHtml(r.fieldLabel)}</td>
+      <td>${r.dataType ? escapeHtml(r.dataType) : `<span class="ft-unresolved">?</span>`}</td>
+      <td>${escapeHtml(r.formElementType)}</td>
+      <td>${escapeHtml(r.required)}</td>
+      <td>${r.listId ? escapeHtml(r.listId) : ""}</td>
+      <td>${r.characterMaxLength != null ? escapeHtml(String(r.characterMaxLength)) : ""}</td>
+      <td>${r.linkedTo ? `<span class="ft-linked">${escapeHtml(r.linkedTo)}</span>` : ""}</td>
+      <td class="ft-comments">${renderCommentsCell(r.comments)}</td>
+    </tr>`;
+}
+
+function renderFormTemplateTable(form, formIndex, selected, linkAdditions) {
+  const syntheticRows = (linkAdditions || []).map(renderSyntheticRow).join("");
   const rows = form.rows.map((r, i) => `
     <tr>
       <td class="ft-select-cell"><input type="checkbox" class="ct-field-cb" data-form-index="${formIndex}" data-row-index="${i}" ${selected.has(i) ? "checked" : ""}></td>
@@ -512,7 +537,7 @@ function renderFormTemplateTable(form, formIndex, selected) {
   return `
     <div class="field-def-block">
       <h4>${escapeHtml(form.formDisplayName || form.formName || "Untitled form")}</h4>
-      <div class="field-def-subtitle">${escapeHtml(form.formName || "")} — ${form.rows.length} field(s), ${selected.size} selected for download</div>
+      <div class="field-def-subtitle">${escapeHtml(form.formName || "")} — ${form.rows.length} field(s), ${selected.size} selected for download${(linkAdditions || []).length ? `, ${linkAdditions.length} linking column${linkAdditions.length === 1 ? "" : "s"} added automatically` : ""}</div>
       <div class="module-actions">
         <button type="button" class="ghost ct-select-all" data-form-index="${formIndex}">Select all</button>
         <button type="button" class="ghost ct-select-none" data-form-index="${formIndex}">Deselect all</button>
@@ -525,7 +550,7 @@ function renderFormTemplateTable(form, formIndex, selected) {
             <th></th><th>ColumnName</th><th>TableName</th><th>FieldLabel</th><th>DataType</th>
             <th>FormElementType</th><th>Required</th><th>ListID</th><th>CharacterMaxLength</th><th>LinkedTo</th><th>Comments</th>
           </tr></thead>
-          <tbody>${rows || `<tr><td colspan="11" class="empty">No data fields found on this form.</td></tr>`}</tbody>
+          <tbody>${syntheticRows}${rows || (syntheticRows ? "" : `<tr><td colspan="11" class="empty">No data fields found on this form.</td></tr>`)}</tbody>
         </table>
       </div>
     </div>`;
@@ -576,8 +601,9 @@ async function renderCreateTemplateStep() {
   const errorHtml = ct.error ? `<div class="import-notice import-error">${escapeHtml(ct.error)}</div>` : "";
 
   const templates = ct.result && ct.result.formTemplates;
+  const linkAdditionsByForm = (ct.result && ct.result.linkAdditionsByForm) || [];
   const templatesHtml = templates && templates.length
-    ? templates.map((form, i) => renderFormTemplateTable(form, i, ct.selections[i])).join("") + `
+    ? templates.map((form, i) => renderFormTemplateTable(form, i, ct.selections[i], linkAdditionsByForm[i])).join("") + `
       <div class="step-nav" style="margin-top:4px;">
         <button class="secondary" id="ct-download-field-def">Download Field Definition (.xlsx)</button>
         <button class="secondary" id="ct-download-staging">Download Staging Excel (.xlsx)</button>
@@ -588,10 +614,16 @@ async function renderCreateTemplateStep() {
     : "";
   // Always reflects what download time will do, regardless of the current
   // checkbox selections -- a join key isn't optional the way a data field
-  // is (see create_template.py's compute_link_additions).
+  // is (see create_template.py's compute_link_additions). The rows
+  // themselves are now also spliced directly into each form's table above
+  // (renderFormTemplateTable's syntheticRows) -- this banner stays as a
+  // one-line total so a customer doesn't have to count grayed-out rows
+  // across every form block to know how many there are.
   const linkAdditions = ct.result && ct.result.linkAdditions;
   const linkAdditionsHtml = linkAdditions && linkAdditions.length
-    ? `<div class="import-notice import-info">Both downloads will automatically add ${linkAdditions.length} linking column${linkAdditions.length === 1 ? "" : "s"} not present on the original form, needed to join a sheet's rows back to another: ${linkAdditions.map(a => `${escapeHtml(a.table)}.${escapeHtml(a.column)} → ${escapeHtml(a.linkedTo)}`).join(", ")}.</div>`
+    ? `<div class="import-notice import-info">Both downloads (and the tables below) automatically add ${linkAdditions.length} join column${linkAdditions.length === 1 ? "" : "s"} not present on the original form(s), needed to link sheets together: ${linkAdditions.map(a => a.kind === "primary-key"
+        ? `${escapeHtml(a.table)}.${escapeHtml(a.column)} (its own primary key)`
+        : `${escapeHtml(a.table)}.${escapeHtml(a.column)} → ${escapeHtml(a.linkedTo)}`).join(", ")}.</div>`
     : "";
   // Once the structured table renders, the raw tree is only useful for
   // double-checking something the table doesn't explain -- tuck it behind a
