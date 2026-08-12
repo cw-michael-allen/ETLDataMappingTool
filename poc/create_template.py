@@ -546,6 +546,102 @@ def _group_by_table(rows):
     return grouped
 
 
+_FOREIGN_KEYS_BY_TABLE_CACHE = None
+
+
+def _foreign_keys_by_table():
+    """table_lower -> [fk entries whose OWN column lives on that table] --
+    an index over load_foreign_keys() for the "which of this table's columns
+    are foreign keys" direction, as opposed to _linked_to's "is this exact
+    (table, column) a foreign key" direction."""
+    global _FOREIGN_KEYS_BY_TABLE_CACHE
+    if _FOREIGN_KEYS_BY_TABLE_CACHE is None:
+        by_table = {}
+        for entry in load_foreign_keys().values():
+            by_table.setdefault(entry["table"].lower(), []).append(entry)
+        _FOREIGN_KEYS_BY_TABLE_CACHE = by_table
+    return _FOREIGN_KEYS_BY_TABLE_CACHE
+
+
+def _link_addition_row(table_name, fk_entry):
+    """A synthetic row for a foreign-key column that's real (sourced from
+    reference/cw_foreign_keys.json) but was never a FormElement on the
+    export's own form(s) -- see module docstring's LinkedTo section for why
+    this exists: CaseWorthy's live form auto-populates these from session
+    context (the current client/entity), so a human never had to place them
+    as a field, but a downloaded multi-sheet template still needs them to
+    join a child table's rows back to its parent. Shaped exactly like a real
+    row so it flows through the same rendering/workbook code unchanged;
+    Comments and FormElementType make its synthetic origin unmistakable
+    rather than passing it off as something a form actually asked for."""
+    return {
+        "columnName": fk_entry["column"],
+        "tableName": table_name,
+        "fieldLabel": fk_entry["column"],
+        "dataType": None,
+        "formElementType": "Linking Key (not on the original form)",
+        "required": "Required",
+        "listId": None,
+        "characterMaxLength": None,
+        "linkedTo": f"{fk_entry['referencedTable']}.{fk_entry['referencedColumn']}",
+        "comments": (
+            f"Added automatically -- needed to join {table_name} rows back to "
+            f"{fk_entry['referencedTable']}, but wasn't a field on the original form."
+        ),
+    }
+
+
+def _needed_link_columns(grouped):
+    """tableName -> [synthetic rows] for every foreign key that's real
+    (sourced), whose target table is also present among `grouped`'s own
+    tables, and that isn't already covered by one of that table's own rows.
+    Self-references (a table linking to itself, e.g. a HoH pointer within
+    Client) are skipped -- not a cross-*sheet* concern, which is what this
+    exists for. Always computed the same way regardless of the customer's
+    checkbox selections -- a join key isn't optional the way a data field
+    is (Michael's call, 2026-08-13)."""
+    present_tables = {t.lower() for t in grouped}
+    additions = {}
+    for table_name, rows in grouped.items():
+        existing_cols = {r["columnName"].lower() for r in rows}
+        for fk in _foreign_keys_by_table().get(table_name.lower(), []):
+            ref_lower = fk["referencedTable"].lower()
+            if ref_lower == table_name.lower() or ref_lower not in present_tables:
+                continue
+            if fk["column"].lower() in existing_cols:
+                continue
+            additions.setdefault(table_name, [])
+            if any(a["columnName"].lower() == fk["column"].lower() for a in additions[table_name]):
+                continue  # a second FK constraint on the same column -- one synthetic row is enough
+            additions[table_name].append(_link_addition_row(table_name, fk))
+    return additions
+
+
+def _group_by_table_with_links(rows):
+    """_group_by_table, plus synthetic linking columns (see
+    _needed_link_columns) prepended to each affected table -- ID/link
+    columns read first in every reference example seen, so a synthesized
+    one is placed the same way."""
+    grouped = _group_by_table(rows)
+    for table_name, additions in _needed_link_columns(grouped).items():
+        grouped[table_name] = additions + grouped[table_name]
+    return grouped
+
+
+def compute_link_additions(form_templates):
+    """Public wrapper for the browser preview: every synthetic linking
+    column that will be added at download time, regardless of checkbox
+    selections (see _needed_link_columns), as a flat list of
+    {"table", "column", "linkedTo"} -- so a customer sees this before they
+    download, not after."""
+    grouped = _group_by_table(_selected_rows(form_templates, None))
+    return [
+        {"table": table_name, "column": row["columnName"], "linkedTo": row["linkedTo"]}
+        for table_name, rows in _needed_link_columns(grouped).items()
+        for row in rows
+    ]
+
+
 def build_field_definition_workbook(form_templates, selections=None):
     """One sheet per TARGET TABLE (not per form -- see _group_by_table),
     transposed (columns=fields, rows=attributes) -- matching the reference
@@ -562,7 +658,7 @@ def build_field_definition_workbook(form_templates, selections=None):
     if openpyxl is None:
         raise CreateTemplateError(_openpyxl_unavailable)
 
-    grouped = _group_by_table(_selected_rows(form_templates, selections))
+    grouped = _group_by_table_with_links(_selected_rows(form_templates, selections))
     wb = openpyxl.Workbook()
     wb.remove(wb.active)
     used_names = set()
@@ -594,7 +690,7 @@ def build_staging_excel_workbook(form_templates, selections=None):
     if openpyxl is None:
         raise CreateTemplateError(_openpyxl_unavailable)
 
-    grouped = _group_by_table(_selected_rows(form_templates, selections))
+    grouped = _group_by_table_with_links(_selected_rows(form_templates, selections))
     wb = openpyxl.Workbook()
     wb.remove(wb.active)
     used_names = set()

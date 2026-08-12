@@ -586,6 +586,13 @@ async function renderCreateTemplateStep() {
   const templatesErrorHtml = ct.result && ct.result.formTemplatesError && !templates
     ? `<div class="import-notice">Couldn't build a Field Definition table from this file: ${escapeHtml(ct.result.formTemplatesError)} Showing the raw structure below instead.</div>`
     : "";
+  // Always reflects what download time will do, regardless of the current
+  // checkbox selections -- a join key isn't optional the way a data field
+  // is (see create_template.py's compute_link_additions).
+  const linkAdditions = ct.result && ct.result.linkAdditions;
+  const linkAdditionsHtml = linkAdditions && linkAdditions.length
+    ? `<div class="import-notice import-info">Both downloads will automatically add ${linkAdditions.length} linking column${linkAdditions.length === 1 ? "" : "s"} not present on the original form, needed to join a sheet's rows back to another: ${linkAdditions.map(a => `${escapeHtml(a.table)}.${escapeHtml(a.column)} → ${escapeHtml(a.linkedTo)}`).join(", ")}.</div>`
+    : "";
   // Once the structured table renders, the raw tree is only useful for
   // double-checking something the table doesn't explain -- tuck it behind a
   // disclosure instead of showing both at full length. Without a structured
@@ -609,6 +616,7 @@ async function renderCreateTemplateStep() {
           <strong>${escapeHtml(ct.result.sourceFile)}</strong> — ${ct.result.elementCount.toLocaleString()} element(s)
         </div>
         ${templatesErrorHtml}
+        ${linkAdditionsHtml}
         ${templatesHtml}
         ${rawTreeBlock}
       ` : ""}
