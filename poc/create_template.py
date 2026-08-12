@@ -84,6 +84,22 @@ Review", Delaware People in Need) rather than guessed at:
   FK registry -- same trust rule as LinkedTo, never guessed from a column
   being named "*ID". Composite primary keys synthesize every missing
   column, not just one; a join can't work on half a key.
+- Third DataType fallback tier (added 2026-08-14): reference/cw_physical_columns.json,
+  a full CaseWorthy database column export (every schema, table, and column
+  -- see tools/build_cw_physical_columns.py) consulted only when neither an
+  export's own <Tables> section nor the curated 28-table base CaseWorthy
+  schema resolves a field. This is what closes the "table-alias gap" flagged
+  after the base-schema fallback shipped: a Form export's FormElement
+  DataInput references CaseWorthy's live *physical* table names (Entity,
+  EntityContactPreference, ClientAddress, Family, FamilyMember, ...), which
+  don't match the curated schema's own names (Client, AddressHistory) for
+  the same conceptual data -- so a field on one of those physical tables
+  stayed unresolved even with the base-schema fallback in place. This tier
+  only ever supplies raw SQL type/length, never required/decode/ListID
+  richness (the physical export has none of that -- it's a column dump, not
+  an ETL-authored rule set), and only ever looks at the dbo schema, since a
+  Form export's own physical table names are always dbo's even though the
+  registry itself keeps every schema in the source export.
 """
 
 import json
@@ -98,10 +114,12 @@ REFERENCE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "
 ELEMENT_TYPES_PATH = os.path.join(REFERENCE_DIR, "cw_element_types.json")
 FOREIGN_KEYS_PATH = os.path.join(REFERENCE_DIR, "cw_foreign_keys.json")
 PRIMARY_KEYS_PATH = os.path.join(REFERENCE_DIR, "cw_primary_keys.json")
+PHYSICAL_COLUMNS_PATH = os.path.join(REFERENCE_DIR, "cw_physical_columns.json")
 _ELEMENT_TYPES_CACHE = None
 _BASE_SCHEMA_COLUMNS_CACHE = None
 _FOREIGN_KEYS_CACHE = None
 _PRIMARY_KEYS_CACHE = None
+_PHYSICAL_COLUMNS_CACHE = None
 
 _TEXT_MAX_RE = re.compile(r"Text \(max (\d+)\)")
 
@@ -137,6 +155,17 @@ def load_primary_keys():
         else:
             _PRIMARY_KEYS_CACHE = {}
     return _PRIMARY_KEYS_CACHE
+
+
+def load_physical_columns():
+    global _PHYSICAL_COLUMNS_CACHE
+    if _PHYSICAL_COLUMNS_CACHE is None:
+        if os.path.exists(PHYSICAL_COLUMNS_PATH):
+            with open(PHYSICAL_COLUMNS_PATH, encoding="utf-8") as f:
+                _PHYSICAL_COLUMNS_CACHE = json.load(f)
+        else:
+            _PHYSICAL_COLUMNS_CACHE = {}
+    return _PHYSICAL_COLUMNS_CACHE
 
 
 def _linked_to(table_name, column_name):
@@ -305,6 +334,27 @@ def _base_schema_lookup(table_name, column_name):
     }
 
 
+def _physical_schema_lookup(table_name, column_name, schema="dbo"):
+    """Third and last DataType fallback -- see this module's own docstring
+    for why this exists (closing the table-alias gap the base-schema
+    fallback above couldn't). Only raw SQL type/length, shaped just enough
+    like table_columns' own entries for the caller to use interchangeably;
+    no required/decode/ListID richness, since reference/cw_physical_columns.json
+    is a plain column export, not an ETL-authored rule set. Scoped to dbo by
+    default -- a Form export's own physical table names are always dbo's,
+    even though the registry itself keeps every schema from the source
+    export (Michael's call, 2026-08-12: don't pre-filter the registry, scope
+    at lookup time instead, same reasoning as build_cw_physical_columns.py's
+    own docstring)."""
+    row = load_physical_columns().get(f"{table_name.lower()}.{column_name.lower()}")
+    if not row or row["schema"].lower() != schema.lower():
+        return None
+    return {
+        "dataType": row["dataType"],
+        "characterMaxLength": _character_max_length(row["dataType"], row["characterMaxLength"]),
+    }
+
+
 def extract_form_templates(raw_bytes):
     """raw_bytes -> list of {"formName", "formDisplayName", "rows": [...],
     "unresolvedColumns": [...]}, one entry per <Form> found.
@@ -315,9 +365,11 @@ def extract_form_templates(raw_bytes):
     export. linkedTo is a "Table.Column" string when this field is a real
     foreign key (reference/cw_foreign_keys.json), else None.
 
-    unresolvedColumns: "Table.Column" strings for fields whose table isn't
-    described in this export's own <Tables> section -- included so the field
-    still shows up (a real field on the form) but with an honest gap on
+    unresolvedColumns: "Table.Column" strings for fields whose (table, column)
+    isn't described in this export's own <Tables> section, the curated base
+    CaseWorthy schema, or the dbo physical-column export (see
+    _physical_schema_lookup) -- included so the field still shows up (a real
+    field on the form) but with an honest gap on
     DataType rather than a guess.
 
     Raises CreateTemplateError if the file isn't a recognizable CaseWorthy
@@ -379,9 +431,14 @@ def extract_form_templates(raw_bytes):
                     if not list_id and fallback["listId"] is not None:
                         list_id = str(fallback["listId"])
                 else:
-                    data_type = None
-                    char_max = None
-                    unresolved.append(f"{table_name}.{column_name}")
+                    physical = _physical_schema_lookup(table_name, column_name)
+                    if physical is not None:
+                        data_type = physical["dataType"]
+                        char_max = physical["characterMaxLength"]
+                    else:
+                        data_type = None
+                        char_max = None
+                        unresolved.append(f"{table_name}.{column_name}")
 
             rows.append({
                 "columnName": column_name,
