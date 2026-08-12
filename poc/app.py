@@ -253,7 +253,12 @@ class Handler(BaseHTTPRequestHandler):
             return self._send_json({"error": str(e)}, 400)
 
         try:
-            result["formTemplates"] = create_template.extract_form_templates(raw_bytes)
+            form_templates = create_template.extract_form_templates(raw_bytes)
+            result["formTemplates"] = form_templates
+            # Always computed regardless of checkbox selections -- a join
+            # key isn't optional the way a data field is, so this reflects
+            # what download time will do no matter what gets checked/unchecked.
+            result["linkAdditions"] = create_template.compute_link_additions(form_templates)
         except create_template.CreateTemplateError as e:
             result["formTemplatesError"] = str(e)
         return self._send_json(result)
