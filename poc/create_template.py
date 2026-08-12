@@ -59,6 +59,18 @@ Review", Delaware People in Need) rather than guessed at:
   reference/cw_list_values.json registry -- an export's <Lists> section is
   self-contained and covers org-specific custom lists (the 1,000,000+ range)
   the baseline registry can't resolve at all.
+- LinkedTo (added 2026-08-13, a new attribute row/column): whether a field's
+  own (table, column) is a real foreign key elsewhere, e.g.
+  ClientAddress.ClientID -> Client.EntityID -- this is what tells a
+  consultant an ID in one sheet is the same thing as an ID in another,
+  without which two sheets full of numbers can look unrelated even when
+  they're not. Sourced from reference/cw_foreign_keys.json, a real
+  database-wide FK export Michael provided directly (2026-08-13) after an
+  earlier attempt to *infer* this from a Form export's own Query Rule
+  operand codes was deliberately not built without that confirmation -- see
+  tools/build_cw_foreign_keys.py. A field with no matching entry has no
+  known link, reported as such, never guessed at from column naming alone
+  (an "*ID"-named column is not, by itself, evidence of anything).
 """
 
 import json
@@ -71,8 +83,10 @@ import schema_rules
 
 REFERENCE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "reference")
 ELEMENT_TYPES_PATH = os.path.join(REFERENCE_DIR, "cw_element_types.json")
+FOREIGN_KEYS_PATH = os.path.join(REFERENCE_DIR, "cw_foreign_keys.json")
 _ELEMENT_TYPES_CACHE = None
 _BASE_SCHEMA_COLUMNS_CACHE = None
+_FOREIGN_KEYS_CACHE = None
 
 _TEXT_MAX_RE = re.compile(r"Text \(max (\d+)\)")
 
@@ -86,6 +100,28 @@ def load_element_types():
         else:
             _ELEMENT_TYPES_CACHE = {}
     return _ELEMENT_TYPES_CACHE
+
+
+def load_foreign_keys():
+    global _FOREIGN_KEYS_CACHE
+    if _FOREIGN_KEYS_CACHE is None:
+        if os.path.exists(FOREIGN_KEYS_PATH):
+            with open(FOREIGN_KEYS_PATH, encoding="utf-8") as f:
+                _FOREIGN_KEYS_CACHE = json.load(f)
+        else:
+            _FOREIGN_KEYS_CACHE = {}
+    return _FOREIGN_KEYS_CACHE
+
+
+def _linked_to(table_name, column_name):
+    """'Client.EntityID'-style string when (table_name, column_name) is a
+    real foreign key (reference/cw_foreign_keys.json), else None -- see this
+    module's own docstring for why this is never guessed from column
+    naming."""
+    entry = load_foreign_keys().get(f"{table_name.lower()}.{column_name.lower()}")
+    if not entry:
+        return None
+    return f"{entry['referencedTable']}.{entry['referencedColumn']}"
 
 
 def _base_schema_columns():
@@ -249,7 +285,9 @@ def extract_form_templates(raw_bytes):
 
     rows: [{"columnName", "tableName", "fieldLabel", "dataType",
             "formElementType", "required", "listId", "characterMaxLength",
-            "comments"}], in the same order fields appear in the export.
+            "linkedTo", "comments"}], in the same order fields appear in the
+    export. linkedTo is a "Table.Column" string when this field is a real
+    foreign key (reference/cw_foreign_keys.json), else None.
 
     unresolvedColumns: "Table.Column" strings for fields whose table isn't
     described in this export's own <Tables> section -- included so the field
@@ -328,6 +366,7 @@ def extract_form_templates(raw_bytes):
                 "required": "Required" if fe.get("Required") == "1" else "Optional",
                 "listId": list_id,
                 "characterMaxLength": char_max,
+                "linkedTo": _linked_to(table_name, column_name),
                 "comments": _comments_for_list(list_id, lists, base_row),
             })
 
@@ -366,6 +405,7 @@ FIELD_DEF_ATTRS = [
     ("Required", "required"),
     ("ListID", "listId"),
     ("CharacterMaxLength", "characterMaxLength"),
+    ("LinkedTo", "linkedTo"),
     ("Comments", "comments"),
 ]
 

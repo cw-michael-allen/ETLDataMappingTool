@@ -501,6 +501,7 @@ function renderFormTemplateTable(form, formIndex, selected) {
       <td>${escapeHtml(r.required)}</td>
       <td>${r.listId ? escapeHtml(r.listId) : ""}</td>
       <td>${r.characterMaxLength != null ? escapeHtml(String(r.characterMaxLength)) : ""}</td>
+      <td>${r.linkedTo ? `<span class="ft-linked">${escapeHtml(r.linkedTo)}</span>` : ""}</td>
       <td class="ft-comments">${renderCommentsCell(r.comments)}</td>
     </tr>`).join("");
   // A plain informational tint, not import-error's red/orange -- this is an
@@ -522,9 +523,9 @@ function renderFormTemplateTable(form, formIndex, selected) {
         <table class="field-def-table">
           <thead><tr>
             <th></th><th>ColumnName</th><th>TableName</th><th>FieldLabel</th><th>DataType</th>
-            <th>FormElementType</th><th>Required</th><th>ListID</th><th>CharacterMaxLength</th><th>Comments</th>
+            <th>FormElementType</th><th>Required</th><th>ListID</th><th>CharacterMaxLength</th><th>LinkedTo</th><th>Comments</th>
           </tr></thead>
-          <tbody>${rows || `<tr><td colspan="10" class="empty">No data fields found on this form.</td></tr>`}</tbody>
+          <tbody>${rows || `<tr><td colspan="11" class="empty">No data fields found on this form.</td></tr>`}</tbody>
         </table>
       </div>
     </div>`;
