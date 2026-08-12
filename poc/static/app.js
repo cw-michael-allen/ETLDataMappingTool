@@ -353,7 +353,7 @@ async function renderStep1() {
       </div>
       ${moduleBlock}
       <label for="src-sys">Source system name</label>
-      <input type="text" id="src-sys" placeholder="e.g. Bonterra Case Manager, Apricot, a homegrown Access database" value="${state.sourceSystem}">
+      <input type="text" id="src-sys" placeholder="e.g. Bonterra Case Manager, Apricot, a homegrown Access database" value="${escapeHtml(state.sourceSystem)}">
       <div class="target-db-row" style="margin-top:14px;">
         <label style="display:flex;align-items:center;gap:8px;font-weight:600;">
           <input type="checkbox" id="advanced-toggle" ${state.advancedMode ? "checked" : ""} style="width:auto;">
@@ -784,10 +784,10 @@ function mergeImportedFields(imported) {
 function renderStep2() {
   const rows = state.fields.map((f, i) => `
     <div class="field-row" data-idx="${i}">
-      ${state.advancedMode ? `<input type="text" class="fsrctable" placeholder="Source table name (e.g. dbo.ClientExport)" value="${f.sourceTable || ""}">` : ""}
-      <input type="text" class="fname" placeholder="Source field name (e.g. Client_DOB)" value="${f.name}">
-      <input type="text" class="fdesc" placeholder="Optional: short description or format (e.g. MM/DD/YYYY, 1=Yes/2=No)" value="${f.desc}">
-      ${state.advancedMode ? `<input type="text" class="fsrcvalues" placeholder="Optional: this field's known source values (e.g. M, F, U or 1=Yes, 2=No)" value="${f.sourceValues || ""}">` : ""}
+      ${state.advancedMode ? `<input type="text" class="fsrctable" placeholder="Source table name (e.g. dbo.ClientExport)" value="${escapeHtml(f.sourceTable || "")}">` : ""}
+      <input type="text" class="fname" placeholder="Source field name (e.g. Client_DOB)" value="${escapeHtml(f.name)}">
+      <input type="text" class="fdesc" placeholder="Optional: short description or format (e.g. MM/DD/YYYY, 1=Yes/2=No)" value="${escapeHtml(f.desc)}">
+      ${state.advancedMode ? `<input type="text" class="fsrcvalues" placeholder="Optional: this field's known source values (e.g. M, F, U or 1=Yes, 2=No)" value="${escapeHtml(f.sourceValues || "")}">` : ""}
       <button class="ghost remove-field">Remove</button>
     </div>
   `).join("");
@@ -798,6 +798,10 @@ function renderStep2() {
   const importFormatHint = state.advancedMode
     ? `Header cells should use that same "Table.Column" form (e.g. Client.ClientID) so we can split out the table name.`
     : `Header cells should just be the column name (e.g. ClientID).`;
+  // lastImportNotice.text is pre-escaped where it's built (the import-btn
+  // handler below) -- the one piece of it that's ever attacker-controllable
+  // (the uploaded file's own name) goes through escapeHtml there before
+  // this string is assembled, so it's safe to render as-is here.
   const notice = lastImportNotice
     ? `<div class="import-notice import-${lastImportNotice.kind}">${lastImportNotice.text}</div>`
     : "";
@@ -806,7 +810,7 @@ function renderStep2() {
   app.innerHTML = `
     ${renderHeader()}
     <div class="card">
-      <h3>List the Fields From ${state.sourceSystem}</h3>
+      <h3>List the Fields From ${escapeHtml(state.sourceSystem)}</h3>
       <div style="color:var(--surface-text-muted);font-size:13px;margin-bottom:14px;">Add each field name from your export. A short description helps but isn't required.${state.advancedMode ? ` Advanced mode is on — also enter each field's source table name so a SQL export can be generated later. ${advancedInstructions} If a field has a known, limited set of values (e.g. a code or category), list them in "known source values" so they can be matched against the target's allowed values and considered for value-mapping in the SQL export.` : ""}</div>
       <div class="import-panel">
         <div class="import-row">
@@ -890,13 +894,18 @@ function renderStep2() {
 
       syncFieldsFromDOM();
       const { added, skipped } = mergeImportedFields(result.fields);
-      const parts = [`Imported ${added} field${added === 1 ? "" : "s"} from ${result.sourceFile}.`];
+      // result.sourceFile is the uploaded file's own name -- attacker-controllable
+      // (nothing stops a crafted request from naming it anything), so it's
+      // escaped here before landing in lastImportNotice.text, which renderStep2
+      // trusts and renders as raw HTML. result.warnings is server-generated,
+      // count-only text (see file_import.py's build_fields) -- safe as-is.
+      const parts = [`Imported ${added} field${added === 1 ? "" : "s"} from ${escapeHtml(result.sourceFile)}.`];
       if (skipped) parts.push(`${skipped} duplicate${skipped === 1 ? "" : "s"} skipped.`);
       parts.push(...(result.warnings || []));
       lastImportNotice = { kind: "success", text: parts.join(" ") };
       renderStep2();
     } catch (err) {
-      importStatusEl.innerHTML = `<div class="import-notice import-error">${err.message}</div>`;
+      importStatusEl.innerHTML = `<div class="import-notice import-error">${escapeHtml(err.message)}</div>`;
       importBtn.disabled = false;
       importBtn.textContent = "Import fields";
     }
@@ -949,11 +958,11 @@ function renderStep3Results() {
     const options = state.schema.map(t => `<option value="${t.table}::${t.field}" ${s.confirmedTable===t.table && s.confirmedField===t.field ? "selected" : ""}>${targetName(t)} → ${t.field}${t.required ? " (required)" : ""}</option>`).join("");
     return `
       <div class="suggestion-card" data-idx="${i}">
-        <div class="src">${s.source}${s.desc ? ` <span style="font-weight:400;color:var(--surface-text-muted);">— ${s.desc}</span>` : ""}</div>
-        ${s.sourceValues ? `<div class="decode">Known source values: ${s.sourceValues}</div>` : ""}
-        ${hasMatch ? `<div class="target">${shownTarget} → ${s.confirmedField}</div>` : `<div class="target" style="color:var(--cw-orange);">No confident match</div>`}
+        <div class="src">${escapeHtml(s.source)}${s.desc ? ` <span style="font-weight:400;color:var(--surface-text-muted);">— ${escapeHtml(s.desc)}</span>` : ""}</div>
+        ${s.sourceValues ? `<div class="decode">Known source values: ${escapeHtml(s.sourceValues)}</div>` : ""}
+        ${hasMatch ? `<div class="target">${escapeHtml(shownTarget)} → ${escapeHtml(s.confirmedField)}</div>` : `<div class="target" style="color:var(--cw-orange);">No confident match</div>`}
         <span class="pill ${pillClass}">${pillLabel}</span>
-        <div class="reason" style="margin-top:6px;">${s.suggestion.reasoning || ""}</div>
+        <div class="reason" style="margin-top:6px;">${escapeHtml(s.suggestion.reasoning || "")}</div>
         ${decode}${note}${requiredNote}${linkNote}${mergeNote}
         <div class="actions">
           <button class="secondary confirm-btn">${s.confirmed ? "Confirmed ✓" : "Confirm this mapping"}</button>
@@ -973,8 +982,8 @@ function renderStep3Results() {
   app.innerHTML = `
     ${renderHeader()}
     <div class="card">
-      <h3>Mapping Suggestions for ${state.sourceSystem}</h3>
-      <div style="color:var(--surface-text-muted);font-size:13px;margin-bottom:14px;">Confirm each mapping, pick a different target field, or flag anything ambiguous for manual review. Confirmed mappings are saved so the next customer on ${state.sourceSystem} sees them instantly.</div>
+      <h3>Mapping Suggestions for ${escapeHtml(state.sourceSystem)}</h3>
+      <div style="color:var(--surface-text-muted);font-size:13px;margin-bottom:14px;">Confirm each mapping, pick a different target field, or flag anything ambiguous for manual review. Confirmed mappings are saved so the next customer on ${escapeHtml(state.sourceSystem)} sees them instantly.</div>
       ${cards || '<div class="empty">No fields to show.</div>'}
       <div class="step-nav">
         <button class="secondary" id="back-3">← Back</button>
@@ -1118,7 +1127,7 @@ function renderValueMatchStep() {
     const targetPairs = targetPairsJs(s.targetMeta);
     const targetIsSelfPaired = targetPairs.every(([c, l]) => c === l);
     const targetOptionsHtml = (preselect) => targetPairs.map(([code, label]) =>
-      `<option value="${code}" ${preselect === code ? "selected" : ""}>${targetIsSelfPaired ? label : `${code} = ${label}`}</option>`
+      `<option value="${escapeHtml(code)}" ${preselect === code ? "selected" : ""}>${targetIsSelfPaired ? escapeHtml(label) : `${escapeHtml(code)} = ${escapeHtml(label)}`}</option>`
     ).join("");
 
     // Priority for the pre-filled selection: this render pass's own edits >
@@ -1138,8 +1147,8 @@ function renderValueMatchStep() {
     }).map(([code, label]) => {
       const preselect = draft[code] !== undefined ? draft[code] : (targetByLabel[label.trim().toLowerCase()] || "");
       return `
-        <div class="value-match-row" data-code="${code}">
-          <span class="value-match-src">${label !== code ? `${code} (${label})` : code}</span>
+        <div class="value-match-row" data-code="${escapeHtml(code)}">
+          <span class="value-match-src">${label !== code ? `${escapeHtml(code)} (${escapeHtml(label)})` : escapeHtml(code)}</span>
           <span class="value-match-arrow">→</span>
           <select class="value-match-select">
             <option value="" disabled ${preselect === "" ? "selected" : ""}>Choose a match…</option>
@@ -1152,8 +1161,8 @@ function renderValueMatchStep() {
     const targetName = s.targetMeta.sheet || s.targetMeta.table;
     return `
       <div class="suggestion-card value-match-card" data-idx="${i}">
-        <div class="src">${s.source} <span style="font-weight:400;color:var(--surface-text-muted);">→ ${targetName} → ${s.confirmedField}</span></div>
-        <div class="decode">Approved values: ${targetIsSelfPaired ? targetPairs.map(p => p[1]).join(", ") : targetPairs.map(([c, l]) => `${c}=${l}`).join(", ")}</div>
+        <div class="src">${escapeHtml(s.source)} <span style="font-weight:400;color:var(--surface-text-muted);">→ ${escapeHtml(targetName)} → ${escapeHtml(s.confirmedField)}</span></div>
+        <div class="decode">Approved values: ${targetIsSelfPaired ? targetPairs.map(p => escapeHtml(p[1])).join(", ") : targetPairs.map(([c, l]) => `${escapeHtml(c)}=${escapeHtml(l)}`).join(", ")}</div>
         <div class="value-match-rows">${rows}</div>
       </div>`;
   }).join("");
@@ -1225,28 +1234,28 @@ function renderReadinessPanel(check) {
     groups.push(`
       <div class="readiness-group">
         <h4>Required target fields with no mapping yet</h4>
-        <ul>${check.requiredMissing.map(r => `<li>${tableDisplayName(r.table)} → ${r.field}</li>`).join("")}</ul>
+        <ul>${check.requiredMissing.map(r => `<li>${tableDisplayName(r.table)} → ${escapeHtml(r.field)}</li>`).join("")}</ul>
       </div>`);
   }
   if (check.fkWarnings.length) {
     groups.push(`
       <div class="readiness-group">
         <h4>Missing dependent tables</h4>
-        <ul>${check.fkWarnings.map(w => `<li>${tableDisplayName(w.table)}.${w.field} references <strong>${tableDisplayName(w.dependsOn)}</strong>, but you haven't mapped any ${tableDisplayName(w.dependsOn)} fields yet.</li>`).join("")}</ul>
+        <ul>${check.fkWarnings.map(w => `<li>${tableDisplayName(w.table)}.${escapeHtml(w.field)} references <strong>${tableDisplayName(w.dependsOn)}</strong>, but you haven't mapped any ${tableDisplayName(w.dependsOn)} fields yet.</li>`).join("")}</ul>
       </div>`);
   }
   if (check.duplicates.length) {
     groups.push(`
       <div class="readiness-group">
         <h4>Two source fields mapped to the same target</h4>
-        <ul>${check.duplicates.map(d => `<li>${tableDisplayName(d.table)} → ${d.field} claimed by: ${d.sourceFields.join(", ")}</li>`).join("")}</ul>
+        <ul>${check.duplicates.map(d => `<li>${tableDisplayName(d.table)} → ${escapeHtml(d.field)} claimed by: ${d.sourceFields.map(escapeHtml).join(", ")}</li>`).join("")}</ul>
       </div>`);
   }
   if (check.formatHints.length) {
     groups.push(`
       <div class="readiness-group">
         <h4>Possible value/format mismatches</h4>
-        <ul>${check.formatHints.map(h => `<li>${h.sourceField}: ${h.hint}</li>`).join("")}</ul>
+        <ul>${check.formatHints.map(h => `<li>${escapeHtml(h.sourceField)}: ${escapeHtml(h.hint)}</li>`).join("")}</ul>
       </div>`);
   }
   if (!groups.length) {
@@ -1258,17 +1267,17 @@ function renderReadinessPanel(check) {
 function renderSqlExportSection(exportResult) {
   if (!exportResult) return "";
   const headerBlock = exportResult.header ? `
-    <pre style="background:var(--surface-page);border:1px solid var(--surface-border);color:var(--surface-text);border-radius:6px;padding:12px;font-size:12px;overflow-x:auto;white-space:pre-wrap;margin-bottom:14px;">${exportResult.header.replace(/</g, "&lt;")}</pre>` : "";
+    <pre style="background:var(--surface-page);border:1px solid var(--surface-border);color:var(--surface-text);border-radius:6px;padding:12px;font-size:12px;overflow-x:auto;white-space:pre-wrap;margin-bottom:14px;">${escapeHtml(exportResult.header)}</pre>` : "";
   const blocks = exportResult.statements.map(s => `
     <div style="margin-bottom:14px;">
-      <div style="font-family:var(--font-heading);font-weight:600;color:var(--surface-heading);margin-bottom:4px;">${s.targetTable} <span style="color:var(--surface-text-muted);font-weight:400;">(source: ${s.sourceTable})</span></div>
-      <pre style="background:var(--surface-page);border:1px solid var(--surface-border);color:var(--surface-text);border-radius:6px;padding:12px;font-size:12px;overflow-x:auto;white-space:pre-wrap;">${s.sql.replace(/</g, "&lt;")}</pre>
+      <div style="font-family:var(--font-heading);font-weight:600;color:var(--surface-heading);margin-bottom:4px;">${escapeHtml(s.targetTable)} <span style="color:var(--surface-text-muted);font-weight:400;">(source: ${escapeHtml(s.sourceTable)})</span></div>
+      <pre style="background:var(--surface-page);border:1px solid var(--surface-border);color:var(--surface-text);border-radius:6px;padding:12px;font-size:12px;overflow-x:auto;white-space:pre-wrap;">${escapeHtml(s.sql)}</pre>
     </div>`).join("");
 
   const multiSource = exportResult.multiSourceTables.length ? `
     <div class="db-warning">
       <strong>These target tables are split across more than one source table</strong> — no JOIN is generated, so you'll get one SELECT per source table below and need to merge the results yourself:
-      <ul style="margin:6px 0 0 0;">${exportResult.multiSourceTables.map(m => `<li>${m.targetTable}: ${m.sourceTables.join(", ")}</li>`).join("")}</ul>
+      <ul style="margin:6px 0 0 0;">${exportResult.multiSourceTables.map(m => `<li>${escapeHtml(m.targetTable)}: ${m.sourceTables.map(escapeHtml).join(", ")}</li>`).join("")}</ul>
     </div>` : "";
 
   return `
@@ -1289,7 +1298,7 @@ async function renderStep4() {
   app.innerHTML = `
     ${renderHeader()}
     <div class="card">
-      <h3>Summary — ${state.sourceSystem}</h3>
+      <h3>Summary — ${escapeHtml(state.sourceSystem)}</h3>
       <div class="loading">Checking mappings against ${dbLabel()}'s import rules…</div>
     </div>
   `;
@@ -1318,7 +1327,7 @@ async function renderStep4() {
     const status = s.flagged ? "Flagged for review" : (s.confirmed ? "Confirmed" : (s.confirmedTable ? "Suggested (not confirmed)" : "Unmapped"));
     const target = s.confirmedTable ? `${tableDisplayName(s.confirmedTable)} → ${s.confirmedField}` : "—";
     const rowClass = s.flagged || (!s.confirmedTable && !s.flagged) ? "flagged-row" : "";
-    return `<tr class="${rowClass}"><td>${s.source}</td><td>${target}</td><td>${status}</td></tr>`;
+    return `<tr class="${rowClass}"><td>${escapeHtml(s.source)}</td><td>${target}</td><td>${status}</td></tr>`;
   }).join("");
 
   const mods = effectiveModules();
@@ -1339,7 +1348,7 @@ async function renderStep4() {
   app.innerHTML = `
     ${renderHeader()}
     <div class="card">
-      <h3>Summary — ${state.sourceSystem}</h3>
+      <h3>Summary — ${escapeHtml(state.sourceSystem)}</h3>
       ${renderReadinessPanel(check)}
       <table class="summary">
         <thead><tr><th>Your field</th><th>${dbLabel()} target</th><th>Status</th></tr></thead>

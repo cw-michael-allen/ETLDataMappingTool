@@ -6,4 +6,4 @@
 # Everything else in this repo is pure standard library by design; this is
 # the one deliberate exception, because a hand-rolled writer risks
 # corrupting a file other people also open directly in Excel.
-openpyxl
+openpyxl>=3.1.5

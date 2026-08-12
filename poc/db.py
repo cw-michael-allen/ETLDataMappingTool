@@ -19,7 +19,18 @@ def normalize(s):
     return re.sub(r"[^a-z0-9]", "", (s or "").strip().lower())
 
 
+# PRAGMA/DDL statements can't take a placeholder for a table name (SQLite,
+# like every SQL engine, only parameterizes values, not identifiers), so
+# these two spots build the statement with an f-string. table is never
+# user input -- always one of these two literals -- but this allowlist
+# makes that a checked fact instead of an assumption a static scanner (or a
+# future edit) has to take on faith.
+_KNOWN_TABLES = frozenset({"mappings", "field_index"})
+
+
 def _has_column(conn, table, column):
+    if table not in _KNOWN_TABLES:
+        raise ValueError(f"not a known table: {table!r}")
     cols = [row["name"] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()]
     return column in cols
 
@@ -33,12 +44,12 @@ def get_conn():
     # ...) so the same source-system field name can map differently for
     # each. Older local databases predate this column — recreate rather than
     # migrate, since this is disposable local demo data (see poc/README.md).
-    for table in ("mappings", "field_index"):
+    for table in _KNOWN_TABLES:
         exists = conn.execute(
             "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,)
         ).fetchone()
         if exists and not _has_column(conn, table, "target_db"):
-            conn.execute(f"DROP TABLE {table}")
+            conn.execute(f"DROP TABLE {table}")  # table is one of _KNOWN_TABLES, see above
 
     conn.execute(
         """CREATE TABLE IF NOT EXISTS mappings (

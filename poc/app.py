@@ -183,6 +183,13 @@ class Handler(BaseHTTPRequestHandler):
         return json.loads(raw or b"{}")
 
     def _send_xlsx(self, body, filename):
+        # filename is always one of this file's own hardcoded output names
+        # (never derived from an upload's name or other request data) --
+        # asserted here so that stays a checked fact, not an assumption a
+        # future caller (or a static scanner looking at this header write)
+        # has to take on faith.
+        if "\r" in filename or "\n" in filename or '"' in filename:
+            raise ValueError(f"unsafe filename for a response header: {filename!r}")
         self.send_response(200)
         self.send_header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
@@ -336,7 +343,13 @@ class Handler(BaseHTTPRequestHandler):
     def _serve_static(self, path):
         rel = path.lstrip("/") or "index.html"
         file_path = os.path.normpath(os.path.join(STATIC_DIR, rel))
-        if not file_path.startswith(os.path.normpath(STATIC_DIR)):
+        static_root = os.path.normpath(STATIC_DIR)
+        # A bare startswith(static_root) would also accept a sibling
+        # directory that merely shares static_root as a string prefix (e.g.
+        # a "static_backup" next to "static") -- the trailing separator
+        # forces this to actually be static_root itself or a real path
+        # underneath it.
+        if file_path != static_root and not file_path.startswith(static_root + os.sep):
             return self._send_json({"error": "forbidden"}, 403)
         if os.path.isdir(file_path):
             file_path = os.path.join(file_path, "index.html")
