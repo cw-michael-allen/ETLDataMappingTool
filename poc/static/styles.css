@@ -323,3 +323,10 @@ footer { text-align: center; font-size: 11px; color: var(--surface-text-muted); 
 .field-def-table td.empty { text-align: center; color: var(--surface-text-muted); white-space: normal; }
 .field-def-table td.ft-select-cell { text-align: center; width: 1%; }
 .ft-unresolved { color: var(--cw-orange); font-weight: 600; }
+
+/* A long decode list (renderCommentsCell) collapsed in place within its own
+   Comments cell -- explicit [open]-scoped visibility, not the browser's own
+   native <details> collapse, same reasoning as .override-details above. */
+.comment-details summary { cursor: pointer; color: var(--cw-teal); font-weight: 600; }
+.comment-details:not([open]) .comment-full { display: none; }
+.comment-details[open] .comment-full { display: block; margin-top: 4px; }

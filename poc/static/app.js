@@ -456,6 +456,30 @@ function renderXmlTreeNode(node) {
   return `<span class="xml-tag">&lt;${escapeHtml(node.tag)}&gt;</span>${attrs}${text}${truncated}${children}`;
 }
 
+// Comments is always a decode list (create_template.py only ever populates
+// it from a ListID's values, one "code - label" per line) -- a short list
+// (Yes/No, etc.) is fine shown in full, but a long one (Gender, Race: 15-30
+// lines) stretched the whole Comments row for every field in the table.
+// Collapsed in place per-cell (Michael's call, 2026-08-13: keep the
+// transposed layout matching the reference spreadsheet, don't restructure
+// the preview into one row per field) rather than always-expanded.
+const COMMENTS_COLLAPSE_THRESHOLD = 3; // lines; short lists just show in full, nothing to gain by collapsing
+
+function renderCommentsCell(comments) {
+  if (!comments) return "";
+  const lines = comments.split("\n");
+  const full = escapeHtml(comments).replace(/\n/g, "<br>");
+  if (lines.length <= COMMENTS_COLLAPSE_THRESHOLD) return full;
+  // Explicit [open]-scoped visibility, not the browser's own native <details>
+  // collapse -- see the Step 3 override-details CSS comment for why that
+  // wasn't reliably hiding content in this app's rendering environment.
+  return `
+    <details class="comment-details">
+      <summary>${lines.length} values</summary>
+      <div class="comment-full">${full}</div>
+    </details>`;
+}
+
 // One <table> per <Form> found, in the same column order as the reference
 // Field Definition examples (WFDEmployment/WFDCheckIn): ColumnName/TableName/
 // FieldLabel/DataType/FormElementType/Required/ListID/CharacterMaxLength/
@@ -463,11 +487,8 @@ function renderXmlTreeNode(node) {
 // sourced from.
 //
 // The leading checkbox column is this table's own -- it controls which
-// fields make it into the Staging Excel download (fieldsNeedingValueMatch-
-// style selection, see state.createTemplate.selections). Field Definition
-// stays a complete record of everything discovered regardless of what's
-// checked (Michael's call, 2026-08-12) -- only Staging Excel, the actual
-// customer-facing template, should reflect a trimmed-down selection.
+// fields make it into the Field Definition and Staging Excel downloads
+// (see state.createTemplate.selections).
 function renderFormTemplateTable(form, formIndex, selected) {
   const rows = form.rows.map((r, i) => `
     <tr>
@@ -480,7 +501,7 @@ function renderFormTemplateTable(form, formIndex, selected) {
       <td>${escapeHtml(r.required)}</td>
       <td>${r.listId ? escapeHtml(r.listId) : ""}</td>
       <td>${r.characterMaxLength != null ? escapeHtml(String(r.characterMaxLength)) : ""}</td>
-      <td class="ft-comments">${r.comments ? escapeHtml(r.comments).replace(/\n/g, "<br>") : ""}</td>
+      <td class="ft-comments">${renderCommentsCell(r.comments)}</td>
     </tr>`).join("");
   // A plain informational tint, not import-error's red/orange -- this is an
   // honest "we don't have this fact yet" gap, not the tool malfunctioning.
