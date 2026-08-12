@@ -253,7 +253,16 @@ class Handler(BaseHTTPRequestHandler):
             return self._send_json({"error": str(e)}, 400)
 
         try:
-            result["formTemplates"] = create_template.extract_form_templates(raw_bytes)
+            form_templates = create_template.extract_form_templates(raw_bytes)
+            result["formTemplates"] = form_templates
+            # Always computed regardless of checkbox selections -- a join
+            # key isn't optional the way a data field is, so this reflects
+            # what download time will do no matter what gets checked/unchecked.
+            result["linkAdditions"] = create_template.compute_link_additions(form_templates)
+            # Per-form breakdown of the same additions, so the preview (which
+            # stays organized by form) can splice each one into the right
+            # form-block(s) as a literal row instead of only a summary banner.
+            result["linkAdditionsByForm"] = create_template.compute_link_additions_by_form(form_templates)
         except create_template.CreateTemplateError as e:
             result["formTemplatesError"] = str(e)
         return self._send_json(result)
@@ -279,11 +288,20 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send_json({"error": "No file was attached to the upload."}, 400)
             _filename, raw_bytes = upload
             form_templates = create_template.extract_form_templates(raw_bytes)
+
+            selections = None
+            selections_part = parts.get("selections")
+            if selections_part:
+                try:
+                    selections = json.loads(selections_part[1].decode("utf-8"))
+                except (ValueError, UnicodeDecodeError):
+                    selections = None  # malformed selection payload -- fall back to "include everything"
+
             if kind == "field-definition":
-                wb = create_template.build_field_definition_workbook(form_templates)
+                wb = create_template.build_field_definition_workbook(form_templates, selections)
                 out_name = "Field_Definition.xlsx"
             else:
-                wb = create_template.build_staging_excel_workbook(form_templates)
+                wb = create_template.build_staging_excel_workbook(form_templates, selections)
                 out_name = "Staging_Excel.xlsx"
             buf = io.BytesIO()
             wb.save(buf)

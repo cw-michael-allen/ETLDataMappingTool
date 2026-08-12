@@ -89,9 +89,17 @@ initTheme();
 // clear itself the next time renderStep2 runs, not persist across steps.
 let lastImportNotice = null;
 
+// CREATE_TEMPLATE_DB is a transient mode, never a "last used database" worth
+// reopening into -- unlike CaseWorthy/ServTracker, landing back on the
+// upload screen on every fresh page load isn't what "remember my last
+// database" was meant to do. Guards against both never persisting it going
+// forward (see the target-db onchange handler below) and any stale value a
+// browser already has stored from before this fix existed.
+const _storedTargetDb = localStorage.getItem(TARGET_DB_STORAGE_KEY);
+
 let state = {
   step: 1,
-  targetDatabase: localStorage.getItem(TARGET_DB_STORAGE_KEY) || "CaseWorthy",
+  targetDatabase: (_storedTargetDb && _storedTargetDb !== CREATE_TEMPLATE_DB) ? _storedTargetDb : "CaseWorthy",
   targetDbs: null,
   modules: [],
   modulesInitializedFor: null,
@@ -104,8 +112,10 @@ let state = {
   schema: null,
   schemaKey: null,
   // "Create Template" mode's own state -- separate from everything above
-  // since it isn't part of the mapping wizard at all.
-  createTemplate: { parsing: false, error: null, result: null },
+  // since it isn't part of the mapping wizard at all. selections mirrors
+  // result.formTemplates 1:1 (array of Set<row index>, one per form) once a
+  // parse succeeds -- see renderCreateTemplateStep's parse handler.
+  createTemplate: { parsing: false, error: null, result: null, file: null, selections: null },
 };
 
 async function api(path, opts) {
@@ -373,7 +383,12 @@ async function renderStep1() {
   document.getElementById("target-db").onchange = (e) => {
     syncSourceSystem();
     state.targetDatabase = e.target.value;
-    localStorage.setItem(TARGET_DB_STORAGE_KEY, state.targetDatabase);
+    // Create Template is a transient mode, not a "last used database" worth
+    // reopening into on the next visit -- see the top-of-file comment by
+    // _storedTargetDb for why this is never written to storage.
+    if (state.targetDatabase !== CREATE_TEMPLATE_DB) {
+      localStorage.setItem(TARGET_DB_STORAGE_KEY, state.targetDatabase);
+    }
     // Module selections belong to a database; carrying them across would scope
     // the new one by names it doesn't have. Clearing modulesInitializedFor
     // lets the newly-selected database's own default (all-selected or
@@ -441,14 +456,50 @@ function renderXmlTreeNode(node) {
   return `<span class="xml-tag">&lt;${escapeHtml(node.tag)}&gt;</span>${attrs}${text}${truncated}${children}`;
 }
 
+// Comments is always a decode list (create_template.py only ever populates
+// it from a ListID's values, one "code - label" per line) -- a short list
+// (Yes/No, etc.) is fine shown in full, but a long one (Gender, Race: 15-30
+// lines) stretched the whole Comments row for every field in the table.
+// Collapsed in place per-cell (Michael's call, 2026-08-13: keep the
+// transposed layout matching the reference spreadsheet, don't restructure
+// the preview into one row per field) rather than always-expanded.
+const COMMENTS_COLLAPSE_THRESHOLD = 3; // lines; short lists just show in full, nothing to gain by collapsing
+
+function renderCommentsCell(comments) {
+  if (!comments) return "";
+  const lines = comments.split("\n");
+  const full = escapeHtml(comments).replace(/\n/g, "<br>");
+  if (lines.length <= COMMENTS_COLLAPSE_THRESHOLD) return full;
+  // Explicit [open]-scoped visibility, not the browser's own native <details>
+  // collapse -- see the Step 3 override-details CSS comment for why that
+  // wasn't reliably hiding content in this app's rendering environment.
+  return `
+    <details class="comment-details">
+      <summary>${lines.length} values</summary>
+      <div class="comment-full">${full}</div>
+    </details>`;
+}
+
 // One <table> per <Form> found, in the same column order as the reference
 // Field Definition examples (WFDEmployment/WFDCheckIn): ColumnName/TableName/
 // FieldLabel/DataType/FormElementType/Required/ListID/CharacterMaxLength/
 // Comments. See create_template.py's own docstring for what each column is
 // sourced from.
-function renderFormTemplateTable(form) {
-  const rows = form.rows.map(r => `
-    <tr>
+//
+// The leading checkbox column is this table's own -- it controls which
+// fields make it into the Field Definition and Staging Excel downloads
+// (see state.createTemplate.selections).
+// Synthetic join columns (primary-key anchors and foreign-key links this
+// table needs but that were never a FormElement on the original form -- see
+// create_template.py's compute_link_additions_by_form) render as real rows
+// in-line with the form's own fields, not just a summary banner (Michael's
+// call, 2026-08-12) -- no checkbox (a join key isn't optional the way a data
+// field is) and a distinct "synthetic" tint so it's never mistaken for
+// something the form actually asked for.
+function renderSyntheticRow(r) {
+  return `
+    <tr class="ft-synthetic-row" title="Added automatically -- not a field on the original form">
+      <td class="ft-select-cell">—</td>
       <td>${escapeHtml(r.columnName)}</td>
       <td>${escapeHtml(r.tableName)}</td>
       <td>${escapeHtml(r.fieldLabel)}</td>
@@ -457,7 +508,26 @@ function renderFormTemplateTable(form) {
       <td>${escapeHtml(r.required)}</td>
       <td>${r.listId ? escapeHtml(r.listId) : ""}</td>
       <td>${r.characterMaxLength != null ? escapeHtml(String(r.characterMaxLength)) : ""}</td>
-      <td class="ft-comments">${r.comments ? escapeHtml(r.comments).replace(/\n/g, "<br>") : ""}</td>
+      <td>${r.linkedTo ? `<span class="ft-linked">${escapeHtml(r.linkedTo)}</span>` : ""}</td>
+      <td class="ft-comments">${renderCommentsCell(r.comments)}</td>
+    </tr>`;
+}
+
+function renderFormTemplateTable(form, formIndex, selected, linkAdditions) {
+  const syntheticRows = (linkAdditions || []).map(renderSyntheticRow).join("");
+  const rows = form.rows.map((r, i) => `
+    <tr>
+      <td class="ft-select-cell"><input type="checkbox" class="ct-field-cb" data-form-index="${formIndex}" data-row-index="${i}" ${selected.has(i) ? "checked" : ""}></td>
+      <td>${escapeHtml(r.columnName)}</td>
+      <td>${escapeHtml(r.tableName)}</td>
+      <td>${escapeHtml(r.fieldLabel)}</td>
+      <td>${r.dataType ? escapeHtml(r.dataType) : `<span class="ft-unresolved">?</span>`}</td>
+      <td>${escapeHtml(r.formElementType)}</td>
+      <td>${escapeHtml(r.required)}</td>
+      <td>${r.listId ? escapeHtml(r.listId) : ""}</td>
+      <td>${r.characterMaxLength != null ? escapeHtml(String(r.characterMaxLength)) : ""}</td>
+      <td>${r.linkedTo ? `<span class="ft-linked">${escapeHtml(r.linkedTo)}</span>` : ""}</td>
+      <td class="ft-comments">${renderCommentsCell(r.comments)}</td>
     </tr>`).join("");
   // A plain informational tint, not import-error's red/orange -- this is an
   // honest "we don't have this fact yet" gap, not the tool malfunctioning.
@@ -467,15 +537,20 @@ function renderFormTemplateTable(form) {
   return `
     <div class="field-def-block">
       <h4>${escapeHtml(form.formDisplayName || form.formName || "Untitled form")}</h4>
-      <div class="field-def-subtitle">${escapeHtml(form.formName || "")} — ${form.rows.length} field(s)</div>
+      <div class="field-def-subtitle">${escapeHtml(form.formName || "")} — ${form.rows.length} field(s), ${selected.size} selected for download${(linkAdditions || []).length ? `, ${linkAdditions.length} linking column${linkAdditions.length === 1 ? "" : "s"} added automatically` : ""}</div>
+      <div class="module-actions">
+        <button type="button" class="ghost ct-select-all" data-form-index="${formIndex}">Select all</button>
+        <button type="button" class="ghost ct-select-none" data-form-index="${formIndex}">Deselect all</button>
+        <button type="button" class="ghost ct-select-required" data-form-index="${formIndex}">Select required only</button>
+      </div>
       ${unresolvedNote}
       <div class="xml-tree-wrap field-def-table-wrap">
         <table class="field-def-table">
           <thead><tr>
-            <th>ColumnName</th><th>TableName</th><th>FieldLabel</th><th>DataType</th>
-            <th>FormElementType</th><th>Required</th><th>ListID</th><th>CharacterMaxLength</th><th>Comments</th>
+            <th></th><th>ColumnName</th><th>TableName</th><th>FieldLabel</th><th>DataType</th>
+            <th>FormElementType</th><th>Required</th><th>ListID</th><th>CharacterMaxLength</th><th>LinkedTo</th><th>Comments</th>
           </tr></thead>
-          <tbody>${rows || `<tr><td colspan="9" class="empty">No data fields found on this form.</td></tr>`}</tbody>
+          <tbody>${syntheticRows}${rows || (syntheticRows ? "" : `<tr><td colspan="11" class="empty">No data fields found on this form.</td></tr>`)}</tbody>
         </table>
       </div>
     </div>`;
@@ -484,11 +559,16 @@ function renderFormTemplateTable(form) {
 // Re-sends the already-uploaded file to a binary-response route and saves
 // the result -- POST responses can't be downloaded via a plain <a href>, so
 // this goes through fetch -> blob -> a temporary object URL instead.
-async function downloadCreateTemplateFile(routeSuffix, filename) {
+// extraFields: plain object of additional form-data fields (e.g. the
+// Staging Excel download's field selections).
+async function downloadCreateTemplateFile(routeSuffix, filename, extraFields) {
   const ct = state.createTemplate;
   if (!ct.file) return;
   const formData = new FormData();
   formData.append("file", ct.file);
+  if (extraFields) {
+    Object.entries(extraFields).forEach(([key, value]) => formData.append(key, value));
+  }
   const res = await fetch(`/api/create-template/${routeSuffix}`, { method: "POST", body: formData });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -521,8 +601,9 @@ async function renderCreateTemplateStep() {
   const errorHtml = ct.error ? `<div class="import-notice import-error">${escapeHtml(ct.error)}</div>` : "";
 
   const templates = ct.result && ct.result.formTemplates;
+  const linkAdditionsByForm = (ct.result && ct.result.linkAdditionsByForm) || [];
   const templatesHtml = templates && templates.length
-    ? templates.map(renderFormTemplateTable).join("") + `
+    ? templates.map((form, i) => renderFormTemplateTable(form, i, ct.selections[i], linkAdditionsByForm[i])).join("") + `
       <div class="step-nav" style="margin-top:4px;">
         <button class="secondary" id="ct-download-field-def">Download Field Definition (.xlsx)</button>
         <button class="secondary" id="ct-download-staging">Download Staging Excel (.xlsx)</button>
@@ -530,6 +611,19 @@ async function renderCreateTemplateStep() {
     : "";
   const templatesErrorHtml = ct.result && ct.result.formTemplatesError && !templates
     ? `<div class="import-notice">Couldn't build a Field Definition table from this file: ${escapeHtml(ct.result.formTemplatesError)} Showing the raw structure below instead.</div>`
+    : "";
+  // Always reflects what download time will do, regardless of the current
+  // checkbox selections -- a join key isn't optional the way a data field
+  // is (see create_template.py's compute_link_additions). The rows
+  // themselves are now also spliced directly into each form's table above
+  // (renderFormTemplateTable's syntheticRows) -- this banner stays as a
+  // one-line total so a customer doesn't have to count grayed-out rows
+  // across every form block to know how many there are.
+  const linkAdditions = ct.result && ct.result.linkAdditions;
+  const linkAdditionsHtml = linkAdditions && linkAdditions.length
+    ? `<div class="import-notice import-info">Both downloads (and the tables below) automatically add ${linkAdditions.length} join column${linkAdditions.length === 1 ? "" : "s"} not present on the original form(s), needed to link sheets together: ${linkAdditions.map(a => a.kind === "primary-key"
+        ? `${escapeHtml(a.table)}.${escapeHtml(a.column)} (its own primary key)`
+        : `${escapeHtml(a.table)}.${escapeHtml(a.column)} → ${escapeHtml(a.linkedTo)}`).join(", ")}.</div>`
     : "";
   // Once the structured table renders, the raw tree is only useful for
   // double-checking something the table doesn't explain -- tuck it behind a
@@ -554,6 +648,7 @@ async function renderCreateTemplateStep() {
           <strong>${escapeHtml(ct.result.sourceFile)}</strong> — ${ct.result.elementCount.toLocaleString()} element(s)
         </div>
         ${templatesErrorHtml}
+        ${linkAdditionsHtml}
         ${templatesHtml}
         ${rawTreeBlock}
       ` : ""}
@@ -585,23 +680,79 @@ async function renderCreateTemplateStep() {
       if (!res.ok || result.error) throw new Error(result.error || "Couldn't parse that file.");
       ct.result = result;
       ct.file = file; // kept so the download buttons can resend it without asking the user to re-pick
+      // Default selection: Required fields start checked, Optional fields
+      // start unchecked -- "pick and choose what you want in the staging
+      // file," starting from the fields the target actually requires.
+      ct.selections = (result.formTemplates || []).map(form =>
+        new Set(form.rows.map((r, i) => i).filter(i => form.rows[i].required === "Required"))
+      );
     } catch (err) {
       ct.error = err.message;
       ct.result = null;
       ct.file = null;
+      ct.selections = null;
     } finally {
       ct.parsing = false;
       renderCreateTemplateStep();
     }
   };
+  // Field-select checkboxes/buttons only exist once a structured result has
+  // rendered -- updated in place (not a full re-render) so ticking one box
+  // doesn't reset scroll position or repaint the whole (potentially large)
+  // table.
+  function updateSelectedCount(formIndex) {
+    const block = document.querySelectorAll(".field-def-block")[formIndex];
+    const subtitle = block && block.querySelector(".field-def-subtitle");
+    if (!subtitle) return;
+    const form = templates[formIndex];
+    subtitle.textContent = `${form.formName || ""} — ${form.rows.length} field(s), ${ct.selections[formIndex].size} selected for download`;
+  }
+  document.querySelectorAll(".ct-field-cb").forEach(cb => {
+    cb.onchange = () => {
+      const fi = Number(cb.dataset.formIndex), ri = Number(cb.dataset.rowIndex);
+      if (cb.checked) ct.selections[fi].add(ri); else ct.selections[fi].delete(ri);
+      updateSelectedCount(fi);
+    };
+  });
+  document.querySelectorAll(".ct-select-all").forEach(btn => {
+    btn.onclick = () => {
+      const fi = Number(btn.dataset.formIndex);
+      ct.selections[fi] = new Set(templates[fi].rows.map((_, i) => i));
+      document.querySelectorAll(`.ct-field-cb[data-form-index="${fi}"]`).forEach(cb => { cb.checked = true; });
+      updateSelectedCount(fi);
+    };
+  });
+  document.querySelectorAll(".ct-select-none").forEach(btn => {
+    btn.onclick = () => {
+      const fi = Number(btn.dataset.formIndex);
+      ct.selections[fi] = new Set();
+      document.querySelectorAll(`.ct-field-cb[data-form-index="${fi}"]`).forEach(cb => { cb.checked = false; });
+      updateSelectedCount(fi);
+    };
+  });
+  document.querySelectorAll(".ct-select-required").forEach(btn => {
+    btn.onclick = () => {
+      const fi = Number(btn.dataset.formIndex);
+      const form = templates[fi];
+      ct.selections[fi] = new Set(form.rows.map((r, i) => i).filter(i => form.rows[i].required === "Required"));
+      document.querySelectorAll(`.ct-field-cb[data-form-index="${fi}"]`).forEach(cb => {
+        cb.checked = ct.selections[fi].has(Number(cb.dataset.rowIndex));
+      });
+      updateSelectedCount(fi);
+    };
+  });
+  // Both downloads honor the same checkbox selections now (Michael's call,
+  // 2026-08-12) -- one shared payload sent to each.
+  const selectionsPayload = () => ({ selections: JSON.stringify(ct.selections.map(set => Array.from(set))) });
   const downloadFieldDefBtn = document.getElementById("ct-download-field-def");
-  if (downloadFieldDefBtn) downloadFieldDefBtn.onclick = () => downloadCreateTemplateFile("download-field-definition", "Field_Definition.xlsx");
+  if (downloadFieldDefBtn) downloadFieldDefBtn.onclick = () => downloadCreateTemplateFile(
+    "download-field-definition", "Field_Definition.xlsx", selectionsPayload(),
+  );
   const downloadStagingBtn = document.getElementById("ct-download-staging");
-  if (downloadStagingBtn) downloadStagingBtn.onclick = () => downloadCreateTemplateFile("download-staging-excel", "Staging_Excel.xlsx");
+  if (downloadStagingBtn) downloadStagingBtn.onclick = () => downloadCreateTemplateFile(
+    "download-staging-excel", "Staging_Excel.xlsx", selectionsPayload(),
+  );
   document.getElementById("ct-back").onclick = () => {
-    // The dropdown's onchange already wrote CREATE_TEMPLATE_DB to localStorage
-    // when this mode was selected -- picking a real database here overwrites
-    // that back to something renderStep1's normal (mapping-flow) path handles.
     state.targetDatabase = "CaseWorthy";
     localStorage.setItem(TARGET_DB_STORAGE_KEY, state.targetDatabase);
     renderStep1();
@@ -806,13 +957,15 @@ function renderStep3Results() {
         ${decode}${note}${requiredNote}${linkNote}${mergeNote}
         <div class="actions">
           <button class="secondary confirm-btn">${s.confirmed ? "Confirmed ✓" : "Confirm this mapping"}</button>
-          <button class="ghost override-btn">Choose different field</button>
           <button class="ghost flag-btn" style="border-color:var(--surface-text-muted);color:var(--surface-text-muted);">Flag for consultant review</button>
         </div>
-        <div class="override-row">
-          <select class="override-select">${options}</select>
-          <button class="primary override-save">Use this</button>
-        </div>
+        <details class="override-details">
+          <summary>Choose a different target field</summary>
+          <div class="override-row">
+            <select class="override-select">${options}</select>
+            <button class="primary override-save">Use this</button>
+          </div>
+        </details>
       </div>
     `;
   }).join("");
@@ -845,9 +998,6 @@ function renderStep3Results() {
       s.confirmed = true;
       s.flagged = false;
       renderStep3Results();
-    };
-    card.querySelector(".override-btn").onclick = () => {
-      card.querySelector(".override-row").classList.toggle("show");
     };
     card.querySelector(".override-save").onclick = () => {
       const val = card.querySelector(".override-select").value;

@@ -59,6 +59,31 @@ Review", Delaware People in Need) rather than guessed at:
   reference/cw_list_values.json registry -- an export's <Lists> section is
   self-contained and covers org-specific custom lists (the 1,000,000+ range)
   the baseline registry can't resolve at all.
+- LinkedTo (added 2026-08-13, a new attribute row/column): whether a field's
+  own (table, column) is a real foreign key elsewhere, e.g.
+  ClientAddress.ClientID -> Client.EntityID -- this is what tells a
+  consultant an ID in one sheet is the same thing as an ID in another,
+  without which two sheets full of numbers can look unrelated even when
+  they're not. Sourced from reference/cw_foreign_keys.json, a real
+  database-wide FK export Michael provided directly (2026-08-13) after an
+  earlier attempt to *infer* this from a Form export's own Query Rule
+  operand codes was deliberately not built without that confirmation -- see
+  tools/build_cw_foreign_keys.py. A field with no matching entry has no
+  known link, reported as such, never guessed at from column naming alone
+  (an "*ID"-named column is not, by itself, evidence of anything).
+- Synthesized join columns (both downloads, plus the browser preview since
+  2026-08-12) come in two kinds, because joining two sheets needs a real
+  column on BOTH sides: a child table's own FK column (_needed_link_columns,
+  the original 2026-08-13 behavior) AND the parent/referenced table's own
+  primary key column(s) (_needed_pk_columns, added 2026-08-12 after Michael
+  pointed out a child's synthesized FK column is useless if the parent sheet
+  never surfaces the column it's actually pointing at -- e.g. Client's own
+  EntityID not being a field on any uploaded form). Sourced from
+  reference/cw_primary_keys.json, the primary-key half of the same real
+  database-wide key export build_cw_foreign_keys.py produces alongside the
+  FK registry -- same trust rule as LinkedTo, never guessed from a column
+  being named "*ID". Composite primary keys synthesize every missing
+  column, not just one; a join can't work on half a key.
 """
 
 import json
@@ -71,8 +96,12 @@ import schema_rules
 
 REFERENCE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "reference")
 ELEMENT_TYPES_PATH = os.path.join(REFERENCE_DIR, "cw_element_types.json")
+FOREIGN_KEYS_PATH = os.path.join(REFERENCE_DIR, "cw_foreign_keys.json")
+PRIMARY_KEYS_PATH = os.path.join(REFERENCE_DIR, "cw_primary_keys.json")
 _ELEMENT_TYPES_CACHE = None
 _BASE_SCHEMA_COLUMNS_CACHE = None
+_FOREIGN_KEYS_CACHE = None
+_PRIMARY_KEYS_CACHE = None
 
 _TEXT_MAX_RE = re.compile(r"Text \(max (\d+)\)")
 
@@ -86,6 +115,39 @@ def load_element_types():
         else:
             _ELEMENT_TYPES_CACHE = {}
     return _ELEMENT_TYPES_CACHE
+
+
+def load_foreign_keys():
+    global _FOREIGN_KEYS_CACHE
+    if _FOREIGN_KEYS_CACHE is None:
+        if os.path.exists(FOREIGN_KEYS_PATH):
+            with open(FOREIGN_KEYS_PATH, encoding="utf-8") as f:
+                _FOREIGN_KEYS_CACHE = json.load(f)
+        else:
+            _FOREIGN_KEYS_CACHE = {}
+    return _FOREIGN_KEYS_CACHE
+
+
+def load_primary_keys():
+    global _PRIMARY_KEYS_CACHE
+    if _PRIMARY_KEYS_CACHE is None:
+        if os.path.exists(PRIMARY_KEYS_PATH):
+            with open(PRIMARY_KEYS_PATH, encoding="utf-8") as f:
+                _PRIMARY_KEYS_CACHE = json.load(f)
+        else:
+            _PRIMARY_KEYS_CACHE = {}
+    return _PRIMARY_KEYS_CACHE
+
+
+def _linked_to(table_name, column_name):
+    """'Client.EntityID'-style string when (table_name, column_name) is a
+    real foreign key (reference/cw_foreign_keys.json), else None -- see this
+    module's own docstring for why this is never guessed from column
+    naming."""
+    entry = load_foreign_keys().get(f"{table_name.lower()}.{column_name.lower()}")
+    if not entry:
+        return None
+    return f"{entry['referencedTable']}.{entry['referencedColumn']}"
 
 
 def _base_schema_columns():
@@ -249,7 +311,9 @@ def extract_form_templates(raw_bytes):
 
     rows: [{"columnName", "tableName", "fieldLabel", "dataType",
             "formElementType", "required", "listId", "characterMaxLength",
-            "comments"}], in the same order fields appear in the export.
+            "linkedTo", "comments"}], in the same order fields appear in the
+    export. linkedTo is a "Table.Column" string when this field is a real
+    foreign key (reference/cw_foreign_keys.json), else None.
 
     unresolvedColumns: "Table.Column" strings for fields whose table isn't
     described in this export's own <Tables> section -- included so the field
@@ -328,6 +392,7 @@ def extract_form_templates(raw_bytes):
                 "required": "Required" if fe.get("Required") == "1" else "Optional",
                 "listId": list_id,
                 "characterMaxLength": char_max,
+                "linkedTo": _linked_to(table_name, column_name),
                 "comments": _comments_for_list(list_id, lists, base_row),
             })
 
@@ -366,6 +431,7 @@ FIELD_DEF_ATTRS = [
     ("Required", "required"),
     ("ListID", "listId"),
     ("CharacterMaxLength", "characterMaxLength"),
+    ("LinkedTo", "linkedTo"),
     ("Comments", "comments"),
 ]
 
@@ -399,45 +465,387 @@ def _safe_sheet_name(name, used):
     return cleaned
 
 
-def build_field_definition_workbook(form_templates):
-    """One sheet per form, transposed (columns=fields, rows=attributes) --
-    matching the reference WFDEmployment/WFDCheckIn Field Definition sheets
-    exactly. Returns an openpyxl Workbook; raises CreateTemplateError if
-    openpyxl isn't installed."""
+# Colors below are literal sRGB hex, not theme+tint references, so the
+# generated file looks the same regardless of what theme it opens under --
+# extracted by resolving the ICS reference workbook's own theme+tint values
+# (Michael's "3. Staging Database Field Definition - ICS v8.xlsx", 2026-08-12)
+# against its actual theme1.xml color scheme:
+#   tab color:        theme 5 (accent2)  @ tint 0.7999816888943144 -> FBE5D6
+#                      (Excel's built-in "Orange, Accent 2, Lighter 80%")
+#   row-label fill:    theme 7 (accent4) @ tint 0.7999816888943144 -> FFF2CC
+#                      (used consistently for the attribute-label column
+#                      across every pink-tab sheet checked: WFDEmployment,
+#                      WFDCheckIn)
+#   ColumnName fill:   a pastel blue highlighting the row that identifies
+#                      each field-column -- the reference varies which exact
+#                      accent it starts from per sheet (WFDEmployment:
+#                      theme 8/accent5 @ 0.5999938962981048 -> B4C7E7;
+#                      WFDCheckIn: theme 4/accent1 @ same tint -> B7D6F2),
+#                      so rather than copy that inconsistency this always
+#                      uses B4C7E7 for a uniform look across every
+#                      generated sheet.
+_TAB_COLOR_PINK = "FBE5D6"
+_ROW_LABEL_FILL = "FFF2CC"
+_COLUMN_NAME_FILL = "B4C7E7"
+
+
+def _style_field_definition_sheet(ws, num_fields):
+    """Applies the ICS reference's formatting: bold gold row-label column,
+    bold blue ColumnName header row, thin grid borders, wrapped text, frozen
+    panes so both the attribute labels and the field-identifying row stay
+    visible while scrolling a wide sheet. See build_field_definition_workbook
+    for where the actual color values came from. Imports openpyxl.styles
+    itself -- only ever called after build_field_definition_workbook has
+    already confirmed openpyxl is installed."""
+    from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
+    from openpyxl.utils import get_column_letter
+
+    thin = Side(style="thin")
+    border = Border(top=thin, bottom=thin, left=thin, right=thin)
+    wrap = Alignment(wrap_text=True, vertical="top")
+    row_label_fill = PatternFill("solid", fgColor=_ROW_LABEL_FILL)
+    column_name_fill = PatternFill("solid", fgColor=_COLUMN_NAME_FILL)
+    bold = Font(bold=True)
+
+    last_col = num_fields + 1  # +1 for the row-label column itself
+    for row_idx in range(1, len(FIELD_DEF_ATTRS) + 1):
+        for col_idx in range(1, max(last_col, 1) + 1):
+            cell = ws.cell(row=row_idx, column=col_idx)
+            cell.border = border
+            cell.alignment = wrap
+            if col_idx == 1:
+                cell.font = bold
+                cell.fill = row_label_fill
+            elif row_idx == 1:  # the ColumnName row identifies each field-column
+                cell.font = bold
+                cell.fill = column_name_fill
+
+    ws.column_dimensions["A"].width = 22
+    for col_idx in range(2, last_col + 1):
+        col_letter = get_column_letter(col_idx)
+        # Widest of that field's own values, capped so one long Comments
+        # entry doesn't blow out the whole column -- Excel still wraps text
+        # past this width, it just doesn't try to fit it on one line.
+        widest = max(
+            (len(str(ws.cell(row=r, column=col_idx).value or "")) for r in range(1, len(FIELD_DEF_ATTRS) + 1)),
+            default=12,
+        )
+        ws.column_dimensions[col_letter].width = min(40, max(14, widest + 2))
+
+    ws.freeze_panes = "B2"  # keeps both the attribute-label column and the ColumnName row in view
+
+
+def _selected_rows(form_templates, selections):
+    """Flattens every form's rows (respecting selections' per-form row-index
+    filtering, same as before) into one list, dropping which form each row
+    came from -- the workbook builders below regroup by tableName instead,
+    not by form (Michael's call, 2026-08-13: a tab is a table, not a form/
+    module, so a cross-table form's fields belong on separate tabs, and two
+    forms that both touch the same table belong on the same one)."""
+    selected = []
+    for form_idx, form in enumerate(form_templates):
+        allowed = None
+        if selections is not None and form_idx < len(selections) and selections[form_idx] is not None:
+            allowed = set(selections[form_idx])
+        selected.extend(r for i, r in enumerate(form["rows"]) if allowed is None or i in allowed)
+    return selected
+
+
+def _group_by_table(rows):
+    """tableName -> [rows], in first-seen order (of both tables and rows
+    within a table) -- not alphabetical, so a table's columns stay in the
+    order they appeared on the form(s) they came from.
+
+    Deduplicates on (tableName, columnName): the same physical column can be
+    surfaced on more than one form (e.g. two different forms both showing
+    Client.Gender) -- it's one column, so it belongs on that table's tab
+    once, not once per form that happened to display it. First occurrence
+    wins if the two forms ever disagree about its metadata."""
+    grouped = {}
+    seen = set()
+    for row in rows:
+        key = (row["tableName"], row["columnName"])
+        if key in seen:
+            continue
+        seen.add(key)
+        grouped.setdefault(row["tableName"], []).append(row)
+    return grouped
+
+
+_FOREIGN_KEYS_BY_TABLE_CACHE = None
+_PRIMARY_KEYS_BY_TABLE_CACHE = None
+
+
+def _foreign_keys_by_table():
+    """table_lower -> [fk entries whose OWN column lives on that table] --
+    an index over load_foreign_keys() for the "which of this table's columns
+    are foreign keys" direction, as opposed to _linked_to's "is this exact
+    (table, column) a foreign key" direction."""
+    global _FOREIGN_KEYS_BY_TABLE_CACHE
+    if _FOREIGN_KEYS_BY_TABLE_CACHE is None:
+        by_table = {}
+        for entry in load_foreign_keys().values():
+            by_table.setdefault(entry["table"].lower(), []).append(entry)
+        _FOREIGN_KEYS_BY_TABLE_CACHE = by_table
+    return _FOREIGN_KEYS_BY_TABLE_CACHE
+
+
+def _primary_keys_by_table():
+    """table_lower -> [pk column names], from reference/cw_primary_keys.json
+    -- a table with a composite primary key yields more than one column
+    here, since a join can't work on only half a composite key."""
+    global _PRIMARY_KEYS_BY_TABLE_CACHE
+    if _PRIMARY_KEYS_BY_TABLE_CACHE is None:
+        by_table = {}
+        for entry in load_primary_keys().values():
+            by_table.setdefault(entry["table"].lower(), []).append(entry["column"])
+        _PRIMARY_KEYS_BY_TABLE_CACHE = by_table
+    return _PRIMARY_KEYS_BY_TABLE_CACHE
+
+
+def _link_addition_row(table_name, fk_entry):
+    """A synthetic row for a foreign-key column that's real (sourced from
+    reference/cw_foreign_keys.json) but was never a FormElement on the
+    export's own form(s) -- see module docstring's LinkedTo section for why
+    this exists: CaseWorthy's live form auto-populates these from session
+    context (the current client/entity), so a human never had to place them
+    as a field, but a downloaded multi-sheet template still needs them to
+    join a child table's rows back to its parent. Shaped exactly like a real
+    row so it flows through the same rendering/workbook code unchanged;
+    Comments and FormElementType make its synthetic origin unmistakable
+    rather than passing it off as something a form actually asked for."""
+    return {
+        "columnName": fk_entry["column"],
+        "tableName": table_name,
+        "fieldLabel": fk_entry["column"],
+        "dataType": None,
+        "formElementType": "Linking Key (not on the original form)",
+        "required": "Required",
+        "listId": None,
+        "characterMaxLength": None,
+        "linkedTo": f"{fk_entry['referencedTable']}.{fk_entry['referencedColumn']}",
+        "comments": (
+            f"Added automatically -- needed to join {table_name} rows back to "
+            f"{fk_entry['referencedTable']}, but wasn't a field on the original form."
+        ),
+        "kind": "foreign-key",
+    }
+
+
+def _pk_addition_row(table_name, pk_column):
+    """A synthetic row for a table's own primary-key column that's real
+    (sourced from reference/cw_primary_keys.json) but was never a
+    FormElement on the export's own form(s) -- needed because a *child*
+    table's synthesized FK column (_link_addition_row) is useless unless the
+    *parent* table it points at actually surfaces the column being pointed
+    to. Same shape as _link_addition_row's rows so it flows through the same
+    rendering/workbook code unchanged; linkedTo is left empty since this
+    column doesn't point anywhere itself -- it's the anchor other tables'
+    FKs join back to."""
+    return {
+        "columnName": pk_column,
+        "tableName": table_name,
+        "fieldLabel": pk_column,
+        "dataType": None,
+        "formElementType": "Primary Key (not on the original form)",
+        "required": "Required",
+        "listId": None,
+        "characterMaxLength": None,
+        "linkedTo": None,
+        "comments": (
+            f"Added automatically -- {table_name}'s own primary key, needed so other "
+            f"sheets' linking columns can actually join back to a real row here."
+        ),
+        "kind": "primary-key",
+    }
+
+
+def _needed_link_columns(grouped):
+    """tableName -> [synthetic rows] for every foreign key that's real
+    (sourced), whose target table is also present among `grouped`'s own
+    tables, and that isn't already covered by one of that table's own rows.
+    Self-references (a table linking to itself, e.g. a HoH pointer within
+    Client) are skipped -- not a cross-*sheet* concern, which is what this
+    exists for. Always computed the same way regardless of the customer's
+    checkbox selections -- a join key isn't optional the way a data field
+    is (Michael's call, 2026-08-13)."""
+    present_tables = {t.lower() for t in grouped}
+    additions = {}
+    for table_name, rows in grouped.items():
+        existing_cols = {r["columnName"].lower() for r in rows}
+        for fk in _foreign_keys_by_table().get(table_name.lower(), []):
+            ref_lower = fk["referencedTable"].lower()
+            if ref_lower == table_name.lower() or ref_lower not in present_tables:
+                continue
+            if fk["column"].lower() in existing_cols:
+                continue
+            additions.setdefault(table_name, [])
+            if any(a["columnName"].lower() == fk["column"].lower() for a in additions[table_name]):
+                continue  # a second FK constraint on the same column -- one synthetic row is enough
+            additions[table_name].append(_link_addition_row(table_name, fk))
+    return additions
+
+
+def _needed_pk_columns(grouped):
+    """tableName -> [synthetic PK rows] for every present table that's the
+    REFERENCED side of some other present table's real foreign key (self-
+    references excluded, same rule as _needed_link_columns) and whose own
+    primary-key column(s) aren't already present among that table's own
+    rows -- see module docstring: a child's synthesized FK column is dead
+    weight if the parent sheet never surfaces the column it's pointing at.
+    Missing composite-key columns are all added, not just one."""
+    lower_to_actual = {t.lower(): t for t in grouped}
+    referenced_lower = set()
+    for table_name in grouped:
+        for fk in _foreign_keys_by_table().get(table_name.lower(), []):
+            ref_lower = fk["referencedTable"].lower()
+            if ref_lower != table_name.lower() and ref_lower in lower_to_actual:
+                referenced_lower.add(ref_lower)
+
+    additions = {}
+    for ref_lower in referenced_lower:
+        actual_table = lower_to_actual[ref_lower]
+        existing_cols = {r["columnName"].lower() for r in grouped[actual_table]}
+        missing = [pk for pk in _primary_keys_by_table().get(ref_lower, []) if pk.lower() not in existing_cols]
+        if missing:
+            additions[actual_table] = [_pk_addition_row(actual_table, pk) for pk in missing]
+    return additions
+
+
+def _needed_join_columns(grouped):
+    """tableName -> [synthetic rows] combining both halves of what a real
+    join needs: the child table's own FK column (_needed_link_columns) and
+    the parent table's own primary key column(s) (_needed_pk_columns) --
+    a join can't work with only one side of it present. Primary-key rows
+    are listed first (the table's own identity), then FK rows, matching
+    every reference example's convention of ID/link columns reading first;
+    deduplicated by column name in the rare case a table needs the same
+    column name from both halves."""
+    fk_additions = _needed_link_columns(grouped)
+    pk_additions = _needed_pk_columns(grouped)
+    combined = {}
+    for table_name in set(fk_additions) | set(pk_additions):
+        rows, seen = [], set()
+        for row in pk_additions.get(table_name, []) + fk_additions.get(table_name, []):
+            key = row["columnName"].lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            rows.append(row)
+        combined[table_name] = rows
+    return combined
+
+
+def _group_by_table_with_links(rows):
+    """_group_by_table, plus synthetic join columns (see
+    _needed_join_columns) prepended to each affected table -- ID/link
+    columns read first in every reference example seen, so a synthesized
+    one is placed the same way."""
+    grouped = _group_by_table(rows)
+    for table_name, additions in _needed_join_columns(grouped).items():
+        grouped[table_name] = additions + grouped[table_name]
+    return grouped
+
+
+def compute_link_additions(form_templates):
+    """Public wrapper for the browser preview: every synthetic join column
+    that will be added at download time, regardless of checkbox selections
+    (see _needed_join_columns), as a flat list of
+    {"table", "column", "linkedTo", "kind"} -- kind is "foreign-key"
+    (linkedTo set) or "primary-key" (linkedTo is None -- nothing to link to,
+    it IS the anchor) -- so a customer sees this before they download, not
+    after."""
+    grouped = _group_by_table(_selected_rows(form_templates, None))
+    return [
+        {"table": table_name, "column": row["columnName"], "linkedTo": row["linkedTo"], "kind": row["kind"]}
+        for table_name, rows in _needed_join_columns(grouped).items()
+        for row in rows
+    ]
+
+
+def compute_link_additions_by_form(form_templates):
+    """Same computation as compute_link_additions, re-attributed per form so
+    the browser preview -- which stays organized by FORM rather than by
+    table (Michael's call, 2026-08-12: keep the existing per-form checkbox
+    UI, don't restructure the preview to match the downloads' per-table
+    grouping) -- can splice each table's synthetic rows into every
+    form-block that touches that table. Two forms touching the same table
+    both see that table's additions; not deduplicated across forms, since
+    each form renders its own independent preview table. Ignores
+    selections, same as compute_link_additions -- a join key isn't
+    optional. Returns a list aligned 1:1 with form_templates."""
+    grouped = _group_by_table(_selected_rows(form_templates, None))
+    additions_by_table = _needed_join_columns(grouped)
+    result = []
+    for form in form_templates:
+        tables_touched, seen_tables = [], set()
+        for row in form["rows"]:
+            if row["tableName"] not in seen_tables:
+                seen_tables.add(row["tableName"])
+                tables_touched.append(row["tableName"])
+        form_additions = []
+        for table_name in tables_touched:
+            form_additions.extend(additions_by_table.get(table_name, []))
+        result.append(form_additions)
+    return result
+
+
+def build_field_definition_workbook(form_templates, selections=None):
+    """One sheet per TARGET TABLE (not per form -- see _group_by_table),
+    transposed (columns=fields, rows=attributes) -- matching the reference
+    WFDEmployment/WFDCheckIn Field Definition sheets' layout AND formatting
+    (pink tab, bold gold row labels, bold blue ColumnName row, grid borders
+    -- see _style_field_definition_sheet). Returns an openpyxl Workbook;
+    raises CreateTemplateError if openpyxl isn't installed.
+
+    selections: a list, one entry per form (same order as form_templates),
+    of row indices into that form's own "rows" to include. Both this and
+    build_staging_excel_workbook honor the same selections shape (Michael's
+    call, 2026-08-12) -- None includes every row, unfiltered."""
     openpyxl = _load_openpyxl()
     if openpyxl is None:
         raise CreateTemplateError(_openpyxl_unavailable)
+
+    grouped = _group_by_table_with_links(_selected_rows(form_templates, selections))
     wb = openpyxl.Workbook()
     wb.remove(wb.active)
     used_names = set()
-    for form in form_templates:
-        sheet_name = _safe_sheet_name(form.get("formDisplayName") or form.get("formName"), used_names)
+    for table_name, table_rows in grouped.items():
+        sheet_name = _safe_sheet_name(table_name or "Unknown", used_names)
         ws = wb.create_sheet(sheet_name)
+        ws.sheet_properties.tabColor = _TAB_COLOR_PINK
         for row_idx, (label, key) in enumerate(FIELD_DEF_ATTRS, start=1):
             ws.cell(row=row_idx, column=1, value=label)
-            for col_idx, row in enumerate(form["rows"], start=2):
+            for col_idx, row in enumerate(table_rows, start=2):
                 value = row.get(key)
                 ws.cell(row=row_idx, column=col_idx, value=value if value is not None else "")
+        _style_field_definition_sheet(ws, len(table_rows))
     if not wb.sheetnames:
         wb.create_sheet("Sheet1")
     return wb
 
 
-def build_staging_excel_workbook(form_templates):
-    """One sheet per form: a single flat header row of ColumnName values --
-    matching every other Staging Excel sheet in this app's convention
-    (header-row-only, see file_import.py). Returns an openpyxl Workbook;
-    raises CreateTemplateError if openpyxl isn't installed."""
+def build_staging_excel_workbook(form_templates, selections=None):
+    """One sheet per TARGET TABLE (not per form -- see _group_by_table): a
+    single flat header row of ColumnName values, matching every other
+    Staging Excel sheet in this app's convention (header-row-only, see
+    file_import.py). Returns an openpyxl Workbook; raises
+    CreateTemplateError if openpyxl isn't installed.
+
+    selections: same shape as build_field_definition_workbook's own -- None
+    (or a form with no corresponding entry) includes every row, unfiltered."""
     openpyxl = _load_openpyxl()
     if openpyxl is None:
         raise CreateTemplateError(_openpyxl_unavailable)
+
+    grouped = _group_by_table_with_links(_selected_rows(form_templates, selections))
     wb = openpyxl.Workbook()
     wb.remove(wb.active)
     used_names = set()
-    for form in form_templates:
-        sheet_name = _safe_sheet_name(form.get("formDisplayName") or form.get("formName"), used_names)
+    for table_name, table_rows in grouped.items():
+        sheet_name = _safe_sheet_name(table_name or "Unknown", used_names)
         ws = wb.create_sheet(sheet_name)
-        for col_idx, row in enumerate(form["rows"], start=1):
+        for col_idx, row in enumerate(table_rows, start=1):
             ws.cell(row=1, column=col_idx, value=row["columnName"])
     if not wb.sheetnames:
         wb.create_sheet("Sheet1")
