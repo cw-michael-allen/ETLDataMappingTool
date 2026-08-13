@@ -342,14 +342,21 @@ class Handler(BaseHTTPRequestHandler):
 
     def _serve_static(self, path):
         rel = path.lstrip("/") or "index.html"
-        file_path = os.path.normpath(os.path.join(STATIC_DIR, rel))
-        static_root = os.path.normpath(STATIC_DIR)
-        # A bare startswith(static_root) would also accept a sibling
-        # directory that merely shares static_root as a string prefix (e.g.
-        # a "static_backup" next to "static") -- the trailing separator
-        # forces this to actually be static_root itself or a real path
-        # underneath it.
-        if file_path != static_root and not file_path.startswith(static_root + os.sep):
+        # realpath (not just normpath) resolves symlinks too, and
+        # commonpath is the canonical "is this actually contained in that
+        # directory" check -- stricter than the previous startswith()-based
+        # guard, which a static scanner's taint tracker didn't recognize as
+        # a real sanitizer even though it was already correct. Different
+        # drives on Windows raise ValueError from commonpath, which is
+        # exactly the "not contained" case -- caught and treated the same
+        # as any other escape attempt.
+        static_root = os.path.realpath(STATIC_DIR)
+        file_path = os.path.realpath(os.path.join(static_root, rel))
+        try:
+            contained = os.path.commonpath([static_root, file_path]) == static_root
+        except ValueError:
+            contained = False
+        if not contained:
             return self._send_json({"error": "forbidden"}, 403)
         if os.path.isdir(file_path):
             file_path = os.path.join(file_path, "index.html")

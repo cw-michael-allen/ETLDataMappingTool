@@ -30,6 +30,10 @@ fabricate a target rule we haven't sourced.
 
 Pure standard library, including the .xlsx reader -- consistent with the POC's
 no-pip-install constraint, so this stays runnable as a maintenance task.
+
+Every XML part read out of a template .xlsx goes through _read_zip_xml,
+which rejects a DOCTYPE outright before any parsing happens (same mitigation
+poc/create_template.py and poc/file_import.py use, for the same reason).
 """
 
 import argparse
@@ -123,6 +127,21 @@ NON_VALUE_WORDS = {
 # .xlsx reading (stdlib: an xlsx is a zip of XML)
 # --------------------------------------------------------------------------
 
+def _read_zip_xml(z, name):
+    """Reads one XML part out of an .xlsx zip, raising if it declares a
+    DOCTYPE -- same mitigation poc/create_template.py and poc/file_import.py
+    use for the same reason (stdlib ElementTree's entity-expansion
+    protections against XXE/"billion laughs" aren't guaranteed across Python
+    versions, and no real .xlsx part has a legitimate reason to declare one).
+    These template workbooks are Michael's own trusted OneDrive files, not
+    arbitrary uploads -- this is defense-in-depth, not a response to an
+    actual untrusted-input path."""
+    data = z.read(name)
+    if b"<!DOCTYPE" in data[:1024].lstrip().upper():
+        sys.exit(f"{name} in {z.filename} declares a DOCTYPE, which isn't accepted here.")
+    return data
+
+
 def _col_index(ref):
     m = re.match(r"([A-Z]+)", ref or "")
     if not m:
@@ -140,13 +159,13 @@ def read_sheet_headers(path):
 
     shared = []
     if "xl/sharedStrings.xml" in names:
-        for si in ET.fromstring(z.read("xl/sharedStrings.xml")).findall(NS + "si"):
+        for si in ET.fromstring(_read_zip_xml(z, "xl/sharedStrings.xml")).findall(NS + "si"):
             shared.append("".join(t.text or "" for t in si.iter(NS + "t")))
 
-    wb = ET.fromstring(z.read("xl/workbook.xml"))
+    wb = ET.fromstring(_read_zip_xml(z, "xl/workbook.xml"))
     rel_map = {
         r.get("Id"): r.get("Target")
-        for r in ET.fromstring(z.read("xl/_rels/workbook.xml.rels"))
+        for r in ET.fromstring(_read_zip_xml(z, "xl/_rels/workbook.xml.rels"))
     }
 
     out = collections.OrderedDict()
@@ -155,7 +174,7 @@ def read_sheet_headers(path):
         target = target if target.startswith("xl/") else "xl/" + target.lstrip("/")
         if target not in names:
             continue
-        data = ET.fromstring(z.read(target)).find(NS + "sheetData")
+        data = ET.fromstring(_read_zip_xml(z, target)).find(NS + "sheetData")
         if data is None or len(data) == 0:
             out[sh.get("name")] = []
             continue
@@ -231,11 +250,11 @@ def read_dictionary(path):
     names = z.namelist()
     shared = []
     if "xl/sharedStrings.xml" in names:
-        for si in ET.fromstring(z.read("xl/sharedStrings.xml")).findall(NS + "si"):
+        for si in ET.fromstring(_read_zip_xml(z, "xl/sharedStrings.xml")).findall(NS + "si"):
             shared.append("".join(t.text or "" for t in si.iter(NS + "t")))
-    wb = ET.fromstring(z.read("xl/workbook.xml"))
+    wb = ET.fromstring(_read_zip_xml(z, "xl/workbook.xml"))
     rel_map = {r.get("Id"): r.get("Target")
-               for r in ET.fromstring(z.read("xl/_rels/workbook.xml.rels"))}
+               for r in ET.fromstring(_read_zip_xml(z, "xl/_rels/workbook.xml.rels"))}
 
     def cell_text(c):
         v = c.find(NS + "v")
@@ -253,7 +272,7 @@ def read_dictionary(path):
         target = target if target.startswith("xl/") else "xl/" + target.lstrip("/")
         if target not in names:
             continue
-        data = ET.fromstring(z.read(target)).find(NS + "sheetData")
+        data = ET.fromstring(_read_zip_xml(z, target)).find(NS + "sheetData")
         grid = []
         for r in list(data or [])[:14]:
             cells = {}

@@ -14,6 +14,14 @@ first `<row>` closes, before the parser ever reads row 2 off disk.
 Pure standard library, matching app.py's "no pip install needed to run the
 app" rule. .xlsx support is hand-rolled against the OOXML zip/XML format
 (zipfile + xml.etree.ElementTree) rather than depending on openpyxl.
+
+Every XML part read out of an uploaded .xlsx (workbook.xml, its rels,
+sharedStrings.xml, the first worksheet) goes through _read_zip_xml, which
+rejects a DOCTYPE outright before any parsing happens -- same mitigation
+create_template.py/form_xml.py use for the same reason: stdlib ElementTree's
+entity-expansion protections against XXE/"billion laughs" aren't guaranteed
+across Python versions, and none of these parts has a legitimate reason to
+declare one.
 """
 
 import csv
@@ -96,6 +104,64 @@ def _col_index(cell_ref):
     return idx
 
 
+def _read_zip_xml(zf, name):
+    """Reads one XML part out of an .xlsx zip whole, raising FileImportError
+    if it declares a DOCTYPE -- see this module's own docstring. Only used
+    for parts this module already reads via ET.parse/fromstring (workbook.xml,
+    its .rels), which consume the whole part into a tree regardless -- no
+    streaming guarantee to preserve there. NOT used for sharedStrings.xml or
+    a worksheet, where reading the whole part upfront would defeat the whole
+    reason those two use iterparse in the first place (see _open_checked_xml
+    below)."""
+    data = zf.read(name)
+    if b"<!DOCTYPE" in data[:1024].lstrip().upper():
+        raise FileImportError("That workbook has a part that declares a DOCTYPE, which isn't accepted here.")
+    return data
+
+
+class _PrefixedStream:
+    """A read()-only file-like wrapping `stream`, having already consumed
+    `prefix` bytes from it -- replays `prefix` first, then falls through to
+    `stream`. Lets _open_checked_xml peek at a stream's start (to reject a
+    DOCTYPE) without losing true incremental reading for anything past the
+    peek -- unlike reading the whole part into memory upfront would."""
+
+    def __init__(self, prefix, stream):
+        self._prefix = prefix
+        self._stream = stream
+
+    def read(self, size=-1):
+        if not self._prefix:
+            return self._stream.read(size)
+        if size is None or size < 0:
+            chunk, self._prefix = self._prefix, b""
+            return chunk + self._stream.read()
+        if size <= len(self._prefix):
+            chunk, self._prefix = self._prefix[:size], self._prefix[size:]
+            return chunk
+        chunk, self._prefix = self._prefix, b""
+        return chunk + self._stream.read(size - len(chunk))
+
+    def close(self):
+        self._stream.close()
+
+
+def _open_checked_xml(zf, name, peek_size=2048):
+    """Opens one XML part from an .xlsx zip as a stream for ET.iterparse,
+    having already peeked at (and rejected a DOCTYPE in) its first bytes --
+    true incremental reading is preserved for everything past the peek. Used
+    for sharedStrings.xml and a worksheet, where read_xlsx_header's whole
+    point is to never read row 2 off disk once it has row 1 (see this
+    module's own docstring) -- reading the whole part upfront (_read_zip_xml
+    above) would defeat that."""
+    stream = zf.open(name)
+    head = stream.read(peek_size)
+    if b"<!DOCTYPE" in head.lstrip().upper():
+        stream.close()
+        raise FileImportError("That workbook has a part that declares a DOCTYPE, which isn't accepted here.")
+    return _PrefixedStream(head, stream)
+
+
 def _cell_value(c_elem, shared_strings):
     cell_type = c_elem.get("t")
     if cell_type == "inlineStr":
@@ -116,26 +182,30 @@ def _read_shared_strings(zf):
     if "xl/sharedStrings.xml" not in zf.namelist():
         return []
     strings = []
-    with zf.open("xl/sharedStrings.xml") as f:
-        for _event, elem in ET.iterparse(f, events=("end",)):
+    # ET.iterparse only auto-closes a source it opened itself (from a path
+    # string) -- since _open_checked_xml hands it an already-open stream,
+    # closing it is on us.
+    stream = _open_checked_xml(zf, "xl/sharedStrings.xml")
+    try:
+        for _event, elem in ET.iterparse(stream, events=("end",)):
             if _local(elem.tag) == "si":
                 strings.append("".join(t.text or "" for t in elem.iter() if _local(t.tag) == "t"))
                 elem.clear()
+    finally:
+        stream.close()
     return strings
 
 
 def _first_sheet_path(zf):
     """Resolve the workbook's first (leftmost-tab) sheet to its worksheet XML path."""
-    with zf.open("xl/workbook.xml") as f:
-        wb_root = ET.parse(f).getroot()
+    wb_root = ET.fromstring(_read_zip_xml(zf, "xl/workbook.xml"))
     sheets = [el for el in wb_root.iter() if _local(el.tag) == "sheet"]
     if not sheets:
         raise FileImportError("That workbook has no sheets.")
     rid = sheets[0].get(_OOXML_REL_NS)
     rels_path = "xl/_rels/workbook.xml.rels"
     if rid and rels_path in zf.namelist():
-        with zf.open(rels_path) as f:
-            rels_root = ET.parse(f).getroot()
+        rels_root = ET.fromstring(_read_zip_xml(zf, rels_path))
         for rel in rels_root:
             if rel.get("Id") == rid:
                 target = (rel.get("Target") or "").lstrip("/")
@@ -157,8 +227,9 @@ def read_xlsx_header(raw_bytes):
     try:
         sheet_path = _first_sheet_path(zf)
         shared_strings = _read_shared_strings(zf)
-        with zf.open(sheet_path) as f:
-            for _event, elem in ET.iterparse(f, events=("end",)):
+        sheet_stream = _open_checked_xml(zf, sheet_path)
+        try:
+            for _event, elem in ET.iterparse(sheet_stream, events=("end",)):
                 # "end" events fire bottom-up: a row's <c>/<v> children fire
                 # before the <row> itself, so clearing non-row elements here
                 # would wipe each cell's value before we ever read it. Just
@@ -175,6 +246,8 @@ def read_xlsx_header(raw_bytes):
                     max_idx = max(max_idx, idx)
                 elem.clear()
                 return [values.get(i, "") for i in range(1, max_idx + 1)]
+        finally:
+            sheet_stream.close()
     finally:
         zf.close()
     return []

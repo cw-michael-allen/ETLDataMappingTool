@@ -12,8 +12,19 @@ import json
 import os
 import urllib.error
 import urllib.request
+from urllib.parse import urlparse
 
+# ANTHROPIC_API_URL is an operator/deployment-time setting (see this file's
+# own docstring: Phase 2 repoints it at CaseWorthy's internal API gateway),
+# never something an HTTP client of this server can influence -- nothing in
+# suggest_mapping's own request-body-derived arguments (source_system,
+# field_name, desc, candidates, target_label) ever becomes part of the URL
+# below, only of the request body/JSON payload. Scheme-validated anyway,
+# cheaply, so a misconfigured env var can't point this at something like
+# file:// or an internal-only address.
 API_URL = os.environ.get("ANTHROPIC_API_URL", "https://api.anthropic.com/v1/messages")
+if urlparse(API_URL).scheme != "https":
+    raise ValueError(f"ANTHROPIC_API_URL must be an https:// URL, got: {API_URL!r}")
 MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5")
 ANTHROPIC_VERSION = "2023-06-01"
 
