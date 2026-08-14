@@ -23,11 +23,11 @@ Optional env vars:
 Only needed if you want the LLM fallback active — everything else in this app runs with zero setup. Without it, `llm_gateway.py` degrades gracefully to "no confident match" for whatever the rule-based matcher can't resolve, same as before this was wired up.
 
 1. Install [Claude Code](https://nodejs.org) (needs Node 18+): `npm install -g @anthropic-ai/claude-code`, then run `claude` once and log in with your work Claude account — this draws from the org's Claude Team/Enterprise subscription usage, not a separate API key or charge.
-2. Install `cw_services_toolkit`, which lives alongside this project in the same repo:
+2. Install `cw_services_toolkit`, which lives alongside this project in the same repo. From this `poc/` directory:
    ```
    pip install -e "..\..\..\..\ServicesSharedUtilities\cw_services_toolkit"
    ```
-   (adjust the relative path to wherever your checkout actually puts `Teams/TeamExpressWay/CW-ETL-FieldMap/` relative to `ServicesSharedUtilities/cw_services_toolkit/`).
+   (that's `poc/` → `CW-ETL-FieldMap/` → `TeamExpressWay/` → `Teams/` → repo root → `ServicesSharedUtilities/cw_services_toolkit/` — four levels up, then down. Running from a different directory needs a different relative path, or use the toolkit's absolute path instead.)
 3. **Check your Python version first**: the toolkit's own `pyproject.toml` requires **3.13.14+, excluding 3.14.0–3.14.5** (the fix for CVE-2026-7210, a hash-flooding weakness in `xml.parsers.expat`/`ElementTree`). `pip install` refuses outright on an excluded version — run `python --version` before assuming step 2 will work. This is stricter than this app's own "any Python 3.x anyone would realistically still have installed" floor (see below) — the LLM fallback is genuinely optional specifically so this narrower requirement doesn't become everyone's problem.
 
 Nothing above touches Windows Credential Manager or any credential-storage step — `anthropic_ai` authenticates entirely through Claude Code's own login, so there's no secret for this app (or `system_utility`) to hold.
