@@ -8,8 +8,10 @@ and a small JSON API backed by a local SQLite datastore. Run with:
 
 Then open http://127.0.0.1:8000 . Mapping suggestions come first from a
 rule-based matcher grounded in the extracted validation-script schema
-(field_matcher.py) and only fall back to the Anthropic API (if
-ANTHROPIC_API_KEY is set) for names the rules can't confidently resolve.
+(field_matcher.py) and only fall back to Claude (via
+cw_services_toolkit.anthropic_ai, if it's installed and Claude Code is
+logged in -- see poc/README.md) for names the rules can't confidently
+resolve.
 
 Supports multiple target databases (schema_rules.TARGET_DATABASES) — today
 that's CaseWorthy (fully populated) and ServTracker (listed for the UI, but
@@ -572,8 +574,10 @@ def main():
         print(f"Learned-mapping library: SHARED at {db.DB_PATH}")
     else:
         print(f"Learned-mapping library: local only at {db.DB_PATH} (set CW_ETL_DB_PATH to share it across machines — see poc/README.md, 'Shared learned-mappings library')")
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        print("WARNING: ANTHROPIC_API_KEY not set — suggestions will come back as 'no confident match'.")
+    if not llm_gateway.is_available():
+        print("WARNING: cw_services_toolkit isn't installed — suggestions will come back as 'no confident "
+              "match' until it is (this doesn't confirm Claude Code itself is installed/logged in, only that "
+              "the toolkit is reachable — see poc/README.md, 'Mapping suggestions (LLM fallback)').")
 
     shared_mappings.init()
     shared = shared_mappings.SHARED

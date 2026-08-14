@@ -24,8 +24,10 @@ cd poc
 python app.py                 # pure stdlib, no pip install needed to run the app itself
 ```
 Then open `http://127.0.0.1:8000`, or double-click `poc/start.bat` (also opens a Chrome app
-window for demos). `ANTHROPIC_API_KEY` is optional — the rule-based matcher resolves most common
-field names without it. No test suite, linter, or build step exists in this repo.
+window for demos). The LLM fallback (`cw_services_toolkit.anthropic_ai`, see
+`poc/README.md`'s "Mapping suggestions (LLM fallback)") is optional and lazily imported — the
+rule-based matcher resolves most common field names without it. No test suite, linter, or build
+step exists in this repo.
 
 Regenerating a target schema (don't hand-edit the generated JSON):
 ```
@@ -90,7 +92,10 @@ code path; don't special-case one database in the frontend when a `TARGET_DB_MET
    `high`-confidence rule match short-circuits the LLM entirely.
 4. `llm_gateway.suggest_mapping` — only reached when the rule matcher isn't confident. Takes the
    target application's label as a parameter (never hardcode which application it's mapping to
-   in the prompt — that was a real bug, fixed, see git history).
+   in the prompt — that was a real bug, fixed, see git history). Calls Claude via
+   `cw_services_toolkit.anthropic_ai` (lazily imported, degrades to a "no confident match"
+   response if the toolkit isn't installed — see git history for the direct-Anthropic-API
+   implementation this replaced), never a raw API call of its own.
 5. `app.combined_field_index` — cross-source-system boosting ("also mapped this way N times"),
    summing `db.get_field_index` (local) and `shared_mappings.SHARED.get_field_index` (shared) —
    two independent evidence pools, added together rather than one overriding the other.

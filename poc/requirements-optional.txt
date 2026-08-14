@@ -7,3 +7,15 @@
 # the one deliberate exception, because a hand-rolled writer risks
 # corrupting a file other people also open directly in Excel.
 openpyxl>=3.1.5
+
+# openpyxl defaults to stdlib xml.etree.ElementTree for its own internal
+# XML handling unless lxml is importable, in which case it uses lxml.etree
+# instead (verified directly: openpyxl.LXML is False without this, True
+# with it installed). Declared explicitly here rather than left to chance,
+# same reasoning cw_services_toolkit's excel_io uses for the same class of
+# risk (CVE-2026-7210, an insufficient-entropy hash-flooding weakness in
+# xml.parsers.expat/ElementTree) -- both of this repo's openpyxl call sites
+# (create_template.py's Field Definition/Staging Excel writer,
+# shared_mappings.py's shared-log reader/writer) get the safer parser this
+# way without any code change of their own.
+lxml

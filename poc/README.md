@@ -1,24 +1,36 @@
 # CW-ETL-FIELDMAP — Phase 0 local POC
 
-Local web app version of the Field Mapping Assistant, per `docs/PHASE_PLAN.md`. Pure Python standard library — no `pip install` required — plus a local SQLite datastore. No authentication (by design, see phase plan). LLM calls go straight to Anthropic for now, isolated behind `llm_gateway.py` so swapping in CaseWorthy's internal gateway later is a one-file change.
+Local web app version of the Field Mapping Assistant, per `docs/PHASE_PLAN.md`. Pure Python standard library — no `pip install` required to run the app itself — plus a local SQLite datastore. No authentication (by design, see phase plan). LLM calls go through `cw_services_toolkit.anthropic_ai` (see "Mapping suggestions (LLM fallback)" below), isolated behind `llm_gateway.py` so a future org-level change to how Claude gets called is a one-file change here.
 
 ## Run it
 
 ```
-set ANTHROPIC_API_KEY=sk-ant-...   (PowerShell: $env:ANTHROPIC_API_KEY="sk-ant-...")
 python app.py
 ```
 
-Then open http://127.0.0.1:8000 in a browser, or double-click `start.bat` (see below). An API key is optional now — most common field names resolve to a real confidence match from the rule-based matcher without one; the LLM is only a fallback for names the rules can't confidently resolve.
+Then open http://127.0.0.1:8000 in a browser, or double-click `start.bat` (see below). No setup is required to start the app — most common field names resolve to a real confidence match from the rule-based matcher on their own; the LLM fallback (see below) is optional and only ever consulted for names the rules can't confidently resolve.
 
 Optional env vars:
 - `PORT` — defaults to 8000.
-- `ANTHROPIC_MODEL` — defaults to `claude-sonnet-5`.
 - `CW_ETL_DB_PATH` — points the learned-mappings SQLite file at a shared location instead of the
   local `data/` folder; see "Shared learned-mappings library" below.
 - `CW_ETL_SHARED_XLSX` — path to a shared Excel append-log that the matching logic also reads
   from and writes to; see "Shared mapping log (Excel)" below. Independent of `CW_ETL_DB_PATH` —
   either, both, or neither can be set.
+
+## Mapping suggestions (LLM fallback)
+
+Only needed if you want the LLM fallback active — everything else in this app runs with zero setup. Without it, `llm_gateway.py` degrades gracefully to "no confident match" for whatever the rule-based matcher can't resolve, same as before this was wired up.
+
+1. Install [Claude Code](https://nodejs.org) (needs Node 18+): `npm install -g @anthropic-ai/claude-code`, then run `claude` once and log in with your work Claude account — this draws from the org's Claude Team/Enterprise subscription usage, not a separate API key or charge.
+2. Install `cw_services_toolkit`, which lives alongside this project in the same repo:
+   ```
+   pip install -e "..\..\..\..\ServicesSharedUtilities\cw_services_toolkit"
+   ```
+   (adjust the relative path to wherever your checkout actually puts `Teams/TeamExpressWay/CW-ETL-FieldMap/` relative to `ServicesSharedUtilities/cw_services_toolkit/`).
+3. **Check your Python version first**: the toolkit's own `pyproject.toml` requires **3.13.14+, excluding 3.14.0–3.14.5** (the fix for CVE-2026-7210, a hash-flooding weakness in `xml.parsers.expat`/`ElementTree`). `pip install` refuses outright on an excluded version — run `python --version` before assuming step 2 will work. This is stricter than this app's own "any Python 3.x anyone would realistically still have installed" floor (see below) — the LLM fallback is genuinely optional specifically so this narrower requirement doesn't become everyone's problem.
+
+Nothing above touches Windows Credential Manager or any credential-storage step — `anthropic_ai` authenticates entirely through Claude Code's own login, so there's no secret for this app (or `system_utility`) to hold.
 
 ## Python version compatibility
 
@@ -34,8 +46,8 @@ Practical floor: any Python 3.x anyone would realistically still have installed 
 
 - `app.py` — HTTP server (stdlib `http.server`), serves the static frontend and the JSON API. Every endpoint is scoped by `targetDatabase` (see below).
 - `db.py` — SQLite-backed mapping library: per-source-system confirmed mappings (including the field's typed description, used by `transform_draft.py`'s historical-pattern lookups), plus a cross-system field index used to boost suggestion confidence. Scoped per target database, so CaseWorthy and ServTracker mappings never collide.
-- `field_matcher.py` — rule-based confidence matcher, grounded entirely in the target database's extracted schema. Scores a source field name against every candidate field via exact match, a curated table of common ETL abbreviations (DOB, SSN, FName, ZipCode, ...), and exact-substring/token matches (e.g. `Enrollment_Begin_Date` → `Enrollment.BeginDate`), before falling back to generic name-similarity. This is what produces a real "high/medium/low" confidence match with no API key and no network call — the LLM (`llm_gateway.py`) is only consulted when this can't confidently resolve a name.
-- `llm_gateway.py` — the one place that calls an LLM. Swap this file's implementation to point at the internal gateway in Phase 2.
+- `field_matcher.py` — rule-based confidence matcher, grounded entirely in the target database's extracted schema. Scores a source field name against every candidate field via exact match, a curated table of common ETL abbreviations (DOB, SSN, FName, ZipCode, ...), and exact-substring/token matches (e.g. `Enrollment_Begin_Date` → `Enrollment.BeginDate`), before falling back to generic name-similarity. This is what produces a real "high/medium/low" confidence match with no LLM setup and no network call — the LLM (`llm_gateway.py`) is only consulted when this can't confidently resolve a name.
+- `llm_gateway.py` — the one place that calls an LLM, via `cw_services_toolkit.anthropic_ai` — see "Mapping suggestions (LLM fallback)" above. Lazily imports the toolkit (same pattern as `create_template.py`'s `_load_openpyxl()`), so an install that never set that up still runs fine.
 - `schema_rules.py` — owns the `TARGET_DATABASES` registry and per-database metadata (`TARGET_DB_META`: label, logo, module/tab-scoping behavior and copy), and flags violations against whichever one is active: missing required fields, unmapped FK-dependent tables, duplicate target assignments, and format mismatches — decode/list value mismatches, boolean fields described with more than two options, and text fields whose stated length exceeds the target's max. This is the "prevent a customer from breaking the rules" requirement from the phase plan. All of these are heuristic checks against the customer's typed-in field description, never against real data.
 - `file_import.py` — parses an uploaded CSV/xlsx into Step 2 field rows (see "Import fields from a file" below).
 - `shared_mappings.py` — reads/writes the shared Excel append-log of confirmed mappings (see "Shared mapping log (Excel)" below). Independent of `db.py`; `app.py` consults both.
