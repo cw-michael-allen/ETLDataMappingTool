@@ -23,6 +23,8 @@ import json
 import os
 import socketserver
 import sys
+import threading
+import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, parse_qs
 
@@ -42,6 +44,52 @@ STATIC_DIR = os.path.join(BASE_DIR, "static")
 
 DEFAULT_TARGET_DATABASE = schema_rules.DEFAULT_TARGET_DATABASE
 _SCHEMA_CACHE = {}
+
+# Background flush of db.py's pending_sync queue into the shared mapping
+# log (shared_mappings.py) -- whichever threshold hits first, so a heavy
+# confirming session doesn't sit on a growing local backlog for the full
+# 5 minutes, and a quiet session doesn't flush needlessly often. See
+# shared_mappings.py's own docstring for why this is batched rather than
+# immediate. _FLUSH_CHECK_INTERVAL_SECONDS is just how often the background
+# thread wakes up to check those two thresholds, not a threshold itself.
+_FLUSH_INTERVAL_SECONDS = 300
+_FLUSH_MAX_PENDING = 10
+_FLUSH_CHECK_INTERVAL_SECONDS = 30
+_shutdown_event = threading.Event()
+
+
+def _flush_pending_mappings():
+    """Attempts one flush of whatever's currently queued. Safe to call from
+    anywhere (the background loop, the /api/shutdown handler, the
+    KeyboardInterrupt path) -- shared_mappings.flush_pending never raises
+    for an ordinary failure, and this only clears from db.py's queue
+    exactly what came back confirmed, never speculatively."""
+    pending = db.get_pending_sync()
+    if not pending:
+        return
+    confirmed = shared_mappings.SHARED.flush_pending(pending)
+    if confirmed:
+        db.clear_pending_sync([r["sync_id"] for r in confirmed])
+    if len(confirmed) < len(pending):
+        sys.stderr.write(
+            f"NOTE: {len(pending) - len(confirmed)} confirmation(s) still queued for the shared mapping "
+            f"log (will retry next cycle) — {len(confirmed)}/{len(pending)} flushed this attempt.\n"
+        )
+
+
+def _sync_flush_loop():
+    """Runs in its own daemon thread (started in main(), only if the shared
+    log is actually configured). Flushes whenever _FLUSH_MAX_PENDING rows
+    have piled up OR _FLUSH_INTERVAL_SECONDS have passed since the last
+    flush, whichever comes first -- see this module's own constants above."""
+    last_flush = time.monotonic()
+    while not _shutdown_event.wait(_FLUSH_CHECK_INTERVAL_SECONDS):
+        pending_count = db.count_pending_sync()
+        due_by_time = (time.monotonic() - last_flush) >= _FLUSH_INTERVAL_SECONDS
+        due_by_count = pending_count >= _FLUSH_MAX_PENDING
+        if pending_count and (due_by_time or due_by_count):
+            _flush_pending_mappings()
+            last_flush = time.monotonic()
 
 
 def get_schema(target_db):
@@ -374,6 +422,23 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _handle_shutdown(self):
+        # The graceful half of shutdown -- see poc/stop.bat, which calls this
+        # *before* falling back to a force-kill. A flush here is a real
+        # attempt, not a formality: this is the one shutdown path that can
+        # actually wait for one, unlike a force-kill (which gives Python no
+        # chance to run anything) or a raw Ctrl+C (which the KeyboardInterrupt
+        # handler below best-efforts, but a console window getting closed
+        # outright skips even that).
+        _flush_pending_mappings()
+        self._send_json({"ok": True})
+        # Runs in this request's own handler thread (ThreadingMixIn gives
+        # every request its own), not the thread blocked in serve_forever()
+        # -- shutdown() would deadlock if called from that same thread, but
+        # this isn't it, so this is safe to call directly.
+        _shutdown_event.set()
+        self.server.shutdown()
+
     def do_POST(self):
         path = urlparse(self.path).path
 
@@ -385,6 +450,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._handle_create_template_download("field-definition")
         if path == "/api/create-template/download-staging-excel":
             return self._handle_create_template_download("staging-excel")
+        if path == "/api/shutdown":
+            return self._handle_shutdown()
 
         try:
             payload = self._read_json()
@@ -404,18 +471,17 @@ class Handler(BaseHTTPRequestHandler):
                 )
             except KeyError as e:
                 return self._send_json({"error": f"missing field: {e}"}, 400)
-            # Best-effort: the shared log is an addition on top of the local
-            # SQLite confirm above (which already succeeded), not a
-            # replacement for it -- a shared-file write failure (not
-            # configured, file locked by OneDrive sync, etc.) must not lose
-            # or fail the confirm that already landed locally.
-            try:
-                shared_mappings.SHARED.append(
-                    target_db, payload["sourceSystem"], payload["fieldName"], payload["table"], payload["field"],
-                    desc=payload.get("desc", ""),
+            # Queued for the next background flush rather than written to
+            # the shared file immediately -- see shared_mappings.py's own
+            # docstring for why. Only worth queuing at all if sharing is
+            # actually configured; "disabled" (CW_ETL_SHARED_XLSX unset) is
+            # the common case and queuing then would just grow db.py's
+            # pending_sync table forever with nothing that will ever flush it.
+            if shared_mappings.SHARED.status != "disabled":
+                db.queue_pending_sync(
+                    "mapping", target_db, payload["sourceSystem"], payload["fieldName"],
+                    payload["table"], payload["field"], desc=payload.get("desc", ""),
                 )
-            except Exception as e:  # noqa: BLE001
-                sys.stderr.write(f"WARNING: could not write to shared mapping log: {e}\n")
             return self._send_json({"ok": True})
         if path == "/api/confirm-value-mapping":
             try:
@@ -437,10 +503,10 @@ class Handler(BaseHTTPRequestHandler):
             if not db.get_mapping(source_system, field_name, target_db):
                 db.save_mapping(source_system, field_name, table, field, target_db, desc=payload.get("desc", ""))
             db.save_value_map(source_system, field_name, target_db, value_map)
-            try:
-                shared_mappings.SHARED.append_value_map(target_db, source_system, field_name, table, field, value_map)
-            except Exception as e:  # noqa: BLE001
-                sys.stderr.write(f"WARNING: could not write value map to shared mapping log: {e}\n")
+            if shared_mappings.SHARED.status != "disabled":
+                db.queue_pending_sync(
+                    "value_map", target_db, source_system, field_name, table, field, value_map=value_map,
+                )
             return self._send_json({"ok": True})
         if path == "/api/rulecheck":
             return self._send_json(
@@ -588,6 +654,13 @@ def main():
     else:
         print(f"WARNING: shared mapping log ({shared.status}): {shared.detail} — continuing without it.")
 
+    if shared.status != "disabled":
+        pending_at_startup = db.count_pending_sync()
+        if pending_at_startup:
+            print(f"Shared mapping log: {pending_at_startup} confirmation(s) queued from a prior session — "
+                  "will retry flushing them.")
+        threading.Thread(target=_sync_flush_loop, daemon=True).start()
+
     # Load every registered schema up front so unrecognised `type` strings are
     # reported at startup. Those fields silently skip all format checks, which
     # the UI would otherwise render as "no rule violations detected" — the one
@@ -609,6 +682,8 @@ def main():
     try:
         server.serve_forever()
     except KeyboardInterrupt:
+        _shutdown_event.set()
+        _flush_pending_mappings()
         server.shutdown()
 
 

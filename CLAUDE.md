@@ -111,7 +111,10 @@ low risk for how this tool is actually used (sequential, occasional), not zero.
 
 **`shared_mappings.py`** is a second, independent sharing mechanism on top of (not instead of)
 `CW_ETL_DB_PATH` above — a real `.xlsx` append-only log, human-readable in Excel by anyone, that
-`app.py` reads from and writes to *in addition to* `db.py`'s local SQLite on every suggest/confirm.
+`app.py` reads from *on every suggest* but writes to only in **batches**, not on every confirm
+(Michael's call, 2026-08-16): a confirmation queues into `db.py`'s `pending_sync` table, and a
+background thread flushes the queue to the shared file every 10 confirmations or 5 minutes,
+whichever comes first. `stop.bat` asks the server to flush gracefully before it force-kills.
 Enabled via `CW_ETL_SHARED_XLSX`; needs `openpyxl` (`poc/requirements-optional.txt`) — the one
 deliberate exception to this repo's pure-stdlib rule, because a hand-rolled `.xlsx` writer is a
 much bigger, corruption-prone undertaking than `file_import.py`'s read-only header parser, and
@@ -119,9 +122,14 @@ this file may also be opened directly in Excel by a human. Never edits a row in 
 confirmation appends a new row, and `confirm_count`/field-index counts are derived by aggregating
 the whole log at read time (`SharedLog._reindex_row`), reproducing `db.py`'s exact semantics
 (a changed mind resets the streak; field-index counts every repeat) without ever needing an
-in-place edit, which is the one write shape immune to a same-moment two-writer collision short of
-true file locking. Degrades gracefully (logs a warning, keeps running) if `openpyxl` isn't
-installed or the file can't be reached. See `poc/README.md`'s "Shared mapping log (Excel)".
+in-place edit. `flush_pending` re-reads the file fresh before writing, skips any row whose
+`SyncID` is already present (idempotent retry), and verifies after saving that what it wrote is
+really there before telling `db.py` it's safe to clear from the local queue — a row is never
+dropped from that queue on the strength of "a write was attempted," only on "the write was
+verified." A best-effort lock file narrows (never fully closes — no true lock is possible over an
+asynchronously-synced OneDrive folder) the window for two machines' flushes to collide. Degrades
+gracefully (logs a warning, keeps running) if `openpyxl` isn't installed or the file can't be
+reached. See `poc/README.md`'s "Shared mapping log (Excel)" for the full protocol.
 
 **`file_import.py`** (Step 2 "Import fields") lets a customer upload a `.csv`/`.xlsx` export
 instead of typing each field in by hand. It only ever reads the **header row** — never the data

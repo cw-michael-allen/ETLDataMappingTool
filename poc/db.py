@@ -1,7 +1,9 @@
 import datetime
+import getpass
 import os
 import re
 import sqlite3
+import uuid
 
 # Local by default (gitignored, per-machine). Set CW_ETL_DB_PATH to point this
 # at a synced shared folder instead (e.g. a OneDrive-synced SharePoint library)
@@ -76,6 +78,34 @@ def get_conn():
             target_field TEXT NOT NULL,
             count INTEGER NOT NULL DEFAULT 1,
             UNIQUE(target_db, field_name_norm, target_table, target_field)
+        )"""
+    )
+    # A confirmation not yet written to the shared mapping log (see
+    # shared_mappings.py's flush_pending) -- queued here instead of writing
+    # to the shared file immediately, so a full read-modify-write of that
+    # file happens once per batch (a background flush, every few minutes or
+    # every few confirmations) rather than once per click. sync_id is this
+    # row's identity in BOTH places -- generated here, carried into the
+    # shared file's own SyncID column -- so a retried flush can tell "did
+    # this exact row already make it in" apart from "is this a new row",
+    # and never double-appends on retry. Survives a crash between
+    # confirmations (unlike an in-memory queue would) since it's just
+    # another table in the same local mappings.db this process already
+    # treats as durable.
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS pending_sync (
+            sync_id TEXT PRIMARY KEY,
+            kind TEXT NOT NULL,
+            target_db TEXT NOT NULL,
+            source_system TEXT NOT NULL,
+            field_name TEXT NOT NULL,
+            target_table TEXT NOT NULL,
+            target_field TEXT NOT NULL,
+            desc TEXT NOT NULL DEFAULT '',
+            value_map TEXT NOT NULL DEFAULT '',
+            confirmed_at TEXT NOT NULL,
+            confirmed_by TEXT NOT NULL,
+            queued_at TEXT NOT NULL
         )"""
     )
     # Unlike the target_db migration above, this one runs ALTER TABLE instead
@@ -200,6 +230,67 @@ def save_value_map(source_system, field_name, target_db, value_map):
             "UPDATE mappings SET value_map=? WHERE target_db=? AND source_system_norm=? AND field_name_norm=?",
             (value_map, target_db, normalize(source_system), normalize(field_name)),
         )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def queue_pending_sync(kind, target_db, source_system, field_name, target_table, target_field, desc="", value_map=""):
+    """Queues one confirmation for the next shared-log flush, instead of
+    app.py writing to the shared file immediately -- see this module's own
+    pending_sync table comment for why. kind is "mapping" or "value_map",
+    mirroring shared_mappings.py's append()/append_value_map() distinction.
+    Returns the generated sync_id (not currently used by callers, but handy
+    for tests/debugging)."""
+    conn = get_conn()
+    try:
+        sync_id = str(uuid.uuid4())
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        conn.execute(
+            """INSERT INTO pending_sync
+               (sync_id, kind, target_db, source_system, field_name, target_table, target_field,
+                desc, value_map, confirmed_at, confirmed_by, queued_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (sync_id, kind, target_db, source_system, field_name, target_table, target_field,
+             desc or "", value_map or "", now, getpass.getuser(), now),
+        )
+        conn.commit()
+        return sync_id
+    finally:
+        conn.close()
+
+
+def get_pending_sync():
+    """Every confirmation not yet confirmed-flushed to the shared log,
+    oldest first -- what a flush attempt should try to write."""
+    conn = get_conn()
+    try:
+        rows = conn.execute("SELECT * FROM pending_sync ORDER BY queued_at ASC").fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def count_pending_sync():
+    """Cheap count for the "flush when N have piled up" trigger, without
+    pulling every row's full content just to measure how many there are."""
+    conn = get_conn()
+    try:
+        return conn.execute("SELECT COUNT(*) c FROM pending_sync").fetchone()["c"]
+    finally:
+        conn.close()
+
+
+def clear_pending_sync(sync_ids):
+    """Removes rows a flush has *verified* actually landed in the shared
+    file -- never called speculatively just because a write was attempted;
+    see shared_mappings.py's flush_pending. A row not in sync_ids stays
+    queued for the next attempt."""
+    if not sync_ids:
+        return
+    conn = get_conn()
+    try:
+        conn.executemany("DELETE FROM pending_sync WHERE sync_id=?", [(sid,) for sid in sync_ids])
         conn.commit()
     finally:
         conn.close()

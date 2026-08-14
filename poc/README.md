@@ -145,7 +145,8 @@ A second, independent sharing mechanism, on top of (not instead of) the SQLite o
 `shared_mappings.py` reads from and writes to a real `.xlsx` file — human-readable and directly
 reviewable in Excel by anyone, unlike `mappings.db`. `db.py`'s local SQLite cache is untouched and
 still handles every request as fast as it always has; this is an *additional* source the matching
-logic also checks, and an *additional* place every confirmation also gets written.
+logic also checks, and an *additional* place every confirmation eventually gets written (batched,
+not immediately — see "How writes actually reach the shared file" below).
 
 **The shared workbook** — `MappingLibShared.xlsx` — lives in the CWCollaboration Team Site's
 `ETLSharedMappingLookup - HACKATHON26` document library, the same site used for the SQLite option
@@ -175,8 +176,8 @@ takes the rest of the tool down with it.
 
 **Format — append-only log, one row per confirmation, never edited in place:**
 
-| TargetDatabase | SourceSystem | SourceField | TargetTable | TargetField | ConfirmedAt | ConfirmedBy |
-|---|---|---|---|---|---|---|
+| TargetDatabase | SourceSystem | SourceField | TargetTable | TargetField | ConfirmedAt | ConfirmedBy | Description | ValueMap | SyncID |
+|---|---|---|---|---|---|---|---|---|---|
 
 Confirming the same mapping again adds another row rather than incrementing a counter in place;
 confirming a *different* target for a field previously confirmed differently also just adds a new
@@ -188,7 +189,37 @@ aggregating over the whole log at read time, so nothing needs to be computed or 
 incrementally. This — not update-in-place — is deliberate: an append is the one write shape that
 can't corrupt or silently overwrite an existing row if two consultants write within the same
 OneDrive sync window (see the concurrency caveat two sections up, which applies here too, in the
-same low-but-nonzero way).
+same low-but-nonzero way). `SyncID` is a unique ID generated when a confirmation is *queued*, not
+when it's written — see the next section for why that distinction matters.
+
+**How writes actually reach the shared file — batched, not immediate (Michael's call, 2026-08-16).**
+A per-confirmation write turned out to have two real problems once this was meant for genuinely
+concurrent multi-person use: every confirmation did a full read-modify-write of the *entire* file,
+which gets slower as the log grows over months of real usage; and `stop.bat` hard-kills the
+process (`Stop-Process -Force`), so there was never a reliable moment to depend on for "flush
+before exiting" either. Instead:
+
+- Confirming something writes to local SQLite immediately (unchanged) and queues it in db.py's
+  `pending_sync` table — durable across a crash, unlike an in-memory queue would be.
+- A background thread flushes the queue to the shared file whenever 10 confirmations have piled
+  up *or* 5 minutes have passed since the last flush, whichever comes first — bounding both the
+  per-write cost (one read-modify-write per batch, not per click) and how much could ever be at
+  risk from an ungraceful exit to a few minutes, not the whole session.
+- `stop.bat` now asks the server to shut down gracefully first (`POST /api/shutdown`, which flushes
+  before responding) and only falls back to the force-kill if that doesn't get a response within
+  20 seconds. A raw Ctrl+C in the console window also best-efforts a final flush; the only path
+  that skips one entirely is the console window being closed outright without running `stop.bat`.
+- The flush itself (`shared_mappings.SharedLog.flush_pending`) re-reads the file fresh right
+  before writing (picking up anything already synced down, including another machine's own
+  earlier flush), skips any row whose `SyncID` is already present (so a retried flush can't
+  double-append), appends everything else in one write, and then reads the file back to *verify*
+  those rows are really there. A row is only cleared from the local `pending_sync` queue once
+  that verification succeeds — never just because a write was attempted. Worst case under a real
+  collision is a mapping sits in the local queue a little longer and retries next cycle, not that
+  it silently vanishes. A best-effort lock file (`<the xlsx path>.synclock`) narrows the collision
+  window further but isn't a real lock — OneDrive syncs each machine's own local replica of the
+  folder asynchronously, so a lock written on one machine has no immediate effect on another's
+  view of it until it syncs down.
 
 **How the matching logic actually uses it (`app.py`):** on `/api/suggest`, if `db.get_mapping`
 (local SQLite) finds nothing, `shared_mappings.SHARED.get_exact(...)` gets a turn before falling
@@ -197,17 +228,15 @@ through to the rule matcher/LLM — a mapping only ever confirmed by someone els
 explicitly noting it's *"from the shared mapping library"* so it reads differently from a mapping
 this machine confirmed itself. Cross-system field-index boosting (`combined_field_index` in
 `app.py`) sums counts from `db.py`'s local index and the shared log's — two independent evidence
-pools for "also mapped this way N times," not one overriding the other. On `/api/confirm`, the
-shared-log append happens *after* the local SQLite save already succeeded, wrapped so a failure to
-reach the shared file (not configured, momentarily locked, OneDrive not syncing right now) can
-never fail or roll back the local confirm that already landed.
+pools for "also mapped this way N times," not one overriding the other.
 
 The shared log is read into memory once at startup (`shared_mappings.init()`, called from
-`app.py: main()`) and kept current from there by mirroring this process's own appends straight
-into memory — it does not re-read the whole workbook on every suggestion request. A mapping
-confirmed by someone else *during* this process's run won't show up here until the app restarts;
-for how this tool is actually used (start it, use it, stop it — see `start.bat`/`stop.bat`) that's
-a reasonable enough cadence for a Phase 0 POC, not something worth a live-refresh mechanism yet.
+`app.py: main()`) and kept current from there — a successful flush re-syncs this process's own
+in-memory cache to the file's real state at that point (picking up anything other machines wrote
+too), but it does not re-read the whole workbook on every suggestion request between flushes. A
+mapping confirmed by someone else won't show up in *this* process's suggestions until either this
+process's own next successful flush or a restart — for how this tool is actually used, that's a
+reasonable enough cadence, not something worth a live-refresh mechanism yet.
 
 **Where the file lives, and why that changed:** `MappingLibShared.xlsx` originally started life in
 one person's *personal* OneDrive (confirmed directly from the file's own saved metadata —
