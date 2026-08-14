@@ -82,7 +82,18 @@ Review", Delaware People in Need) rather than guessed at:
   reference/cw_primary_keys.json -- same trust rule as LinkedTo, never
   guessed from a column being named "*ID". Composite primary keys
   synthesize every missing column, not just one; a join can't work on half
-  a key.
+  a key. Whether a join's *target* table counts as "present" is decided
+  from the full export's own tables, never from which fields the customer
+  currently has checked (_group_by_table_with_links' all_rows parameter) --
+  found necessary 2026-08-14 after EntityContactPreference.EntityID ->
+  Entity.EntityID vanished from a real download: Entity's own EntityID/
+  EntityTypeID are both Hidden Fields the form never marks Required, so the
+  app's default "Required only" starting selection left Entity with zero
+  selected fields, and the old per-selection presence check treated that as
+  "Entity isn't in this export." A parent table with no selected fields of
+  its own now still gets its own sheet, containing just its synthesized
+  primary key, rather than the join silently dropping after the preview
+  banner already promised it.
 - Third DataType fallback tier (added 2026-08-14): reference/cw_physical_columns.json,
   a full CaseWorthy database column export (every schema, table, and
   column), consulted only when neither an export's own <Tables> section nor
@@ -724,16 +735,24 @@ def _pk_addition_row(table_name, pk_column):
     }
 
 
-def _needed_link_columns(grouped):
+def _needed_link_columns(grouped, all_tables):
     """tableName -> [synthetic rows] for every foreign key that's real
-    (sourced), whose target table is also present among `grouped`'s own
-    tables, and that isn't already covered by one of that table's own rows.
-    Self-references (a table linking to itself, e.g. a HoH pointer within
-    Client) are skipped -- not a cross-*sheet* concern, which is what this
-    exists for. Always computed the same way regardless of the customer's
-    checkbox selections -- a join key isn't optional the way a data field
-    is (Michael's call, 2026-08-13)."""
-    present_tables = {t.lower() for t in grouped}
+    (sourced), whose target table is also present among `all_tables` (see
+    _group_by_table_with_links -- the FULL export's own tables, independent
+    of which fields the customer currently has selected), and that isn't
+    already covered by one of that table's own rows. Self-references (a
+    table linking to itself, e.g. a HoH pointer within Client) are skipped
+    -- not a cross-*sheet* concern, which is what this exists for. Always
+    computed the same way regardless of the customer's checkbox selections
+    -- a join key isn't optional the way a data field is (Michael's call,
+    2026-08-13) -- which is why this checks `all_tables`, not `grouped`'s
+    own keys: a target table whose own fields all happen to be deselected
+    (or, as found 2026-08-14, never marked Required in the form -- e.g.
+    Entity's EntityID/EntityTypeID are both Hidden Fields the form never
+    flags Required, so the app's default "Required only" selection leaves
+    Entity with nothing selected) is still a real join target, not an
+    absent one."""
+    present_tables = {t.lower() for t in all_tables}
     additions = {}
     for table_name, rows in grouped.items():
         existing_cols = {r["columnName"].lower() for r in rows}
@@ -750,15 +769,24 @@ def _needed_link_columns(grouped):
     return additions
 
 
-def _needed_pk_columns(grouped):
-    """tableName -> [synthetic PK rows] for every present table that's the
-    REFERENCED side of some other present table's real foreign key (self-
-    references excluded, same rule as _needed_link_columns) and whose own
-    primary-key column(s) aren't already present among that table's own
-    rows -- see module docstring: a child's synthesized FK column is dead
-    weight if the parent sheet never surfaces the column it's pointing at.
-    Missing composite-key columns are all added, not just one."""
-    lower_to_actual = {t.lower(): t for t in grouped}
+def _needed_pk_columns(grouped, all_tables):
+    """tableName -> [synthetic PK rows] for every table in `all_tables`
+    (the FULL export's own tables -- see _needed_link_columns for why this
+    isn't just `grouped`'s own keys) that's the REFERENCED side of some
+    present table's real foreign key (self-references excluded, same rule
+    as _needed_link_columns) and whose own primary-key column(s) aren't
+    already present among that table's own selected rows -- see module
+    docstring: a child's synthesized FK column is dead weight if the parent
+    sheet never surfaces the column it's pointing at. A referenced table
+    that currently has zero selected fields of its own (found 2026-08-14:
+    Entity, under the app's default "Required only" selection -- see
+    _needed_link_columns) isn't yet a key in `grouped` at all; this
+    introduces it as a new table/sheet containing just its synthesized
+    primary key, rather than only ever appending to a table already
+    present, since otherwise a child's FK column would point at a sheet
+    that silently doesn't exist in the download. Missing composite-key
+    columns are all added, not just one."""
+    lower_to_actual = {t.lower(): t for t in all_tables}
     referenced_lower = set()
     for table_name in grouped:
         for fk in _foreign_keys_by_table().get(table_name.lower(), []):
@@ -769,14 +797,14 @@ def _needed_pk_columns(grouped):
     additions = {}
     for ref_lower in referenced_lower:
         actual_table = lower_to_actual[ref_lower]
-        existing_cols = {r["columnName"].lower() for r in grouped[actual_table]}
+        existing_cols = {r["columnName"].lower() for r in grouped.get(actual_table, [])}
         missing = [pk for pk in _primary_keys_by_table().get(ref_lower, []) if pk.lower() not in existing_cols]
         if missing:
             additions[actual_table] = [_pk_addition_row(actual_table, pk) for pk in missing]
     return additions
 
 
-def _needed_join_columns(grouped):
+def _needed_join_columns(grouped, all_tables):
     """tableName -> [synthetic rows] combining both halves of what a real
     join needs: the child table's own FK column (_needed_link_columns) and
     the parent table's own primary key column(s) (_needed_pk_columns) --
@@ -784,9 +812,11 @@ def _needed_join_columns(grouped):
     are listed first (the table's own identity), then FK rows, matching
     every reference example's convention of ID/link columns reading first;
     deduplicated by column name in the rare case a table needs the same
-    column name from both halves."""
-    fk_additions = _needed_link_columns(grouped)
-    pk_additions = _needed_pk_columns(grouped)
+    column name from both halves. all_tables: see _needed_link_columns --
+    the full export's own tables, not just `grouped`'s (currently
+    selected) ones."""
+    fk_additions = _needed_link_columns(grouped, all_tables)
+    pk_additions = _needed_pk_columns(grouped, all_tables)
     combined = {}
     for table_name in set(fk_additions) | set(pk_additions):
         rows, seen = [], set()
@@ -800,14 +830,28 @@ def _needed_join_columns(grouped):
     return combined
 
 
-def _group_by_table_with_links(rows):
+def _group_by_table_with_links(rows, all_rows=None):
     """_group_by_table, plus synthetic join columns (see
     _needed_join_columns) prepended to each affected table -- ID/link
     columns read first in every reference example seen, so a synthesized
-    one is placed the same way."""
+    one is placed the same way.
+
+    all_rows: the FULL, unfiltered row set for this export -- defaults to
+    `rows` itself when omitted, so the browser preview's own call (which
+    already passes every row, unfiltered, since a join key isn't optional
+    per-selection) is unchanged. The actual downloads (build_field_definition_workbook,
+    build_staging_excel_workbook) pass `rows` as whatever the customer
+    currently has selected but `all_rows` as everything, so a join target
+    whose own fields are all deselected -- or, as found 2026-08-14, never
+    marked Required in the form at all, so never auto-selected by the
+    app's default "Required only" starting selection -- still gets counted
+    as present and, if needed, gets its own synthesized-PK-only sheet
+    (_needed_pk_columns) rather than silently vanishing from the real
+    download after the preview banner already promised it."""
     grouped = _group_by_table(rows)
-    for table_name, additions in _needed_join_columns(grouped).items():
-        grouped[table_name] = additions + grouped[table_name]
+    all_tables = _group_by_table(rows if all_rows is None else all_rows).keys()
+    for table_name, additions in _needed_join_columns(grouped, all_tables).items():
+        grouped[table_name] = additions + grouped.get(table_name, [])
     return grouped
 
 
@@ -822,7 +866,7 @@ def compute_link_additions(form_templates):
     grouped = _group_by_table(_selected_rows(form_templates, None))
     return [
         {"table": table_name, "column": row["columnName"], "linkedTo": row["linkedTo"], "kind": row["kind"]}
-        for table_name, rows in _needed_join_columns(grouped).items()
+        for table_name, rows in _needed_join_columns(grouped, grouped.keys()).items()
         for row in rows
     ]
 
@@ -839,7 +883,7 @@ def compute_link_additions_by_form(form_templates):
     selections, same as compute_link_additions -- a join key isn't
     optional. Returns a list aligned 1:1 with form_templates."""
     grouped = _group_by_table(_selected_rows(form_templates, None))
-    additions_by_table = _needed_join_columns(grouped)
+    additions_by_table = _needed_join_columns(grouped, grouped.keys())
     result = []
     for form in form_templates:
         tables_touched, seen_tables = [], set()
@@ -865,12 +909,21 @@ def build_field_definition_workbook(form_templates, selections=None):
     selections: a list, one entry per form (same order as form_templates),
     of row indices into that form's own "rows" to include. Both this and
     build_staging_excel_workbook honor the same selections shape (Michael's
-    call, 2026-08-12) -- None includes every row, unfiltered."""
+    call, 2026-08-12) -- None includes every row, unfiltered.
+
+    Passes the full unfiltered rows to _group_by_table_with_links alongside
+    the selected ones (found necessary 2026-08-14) so a join target whose
+    own fields are all deselected -- or never marked Required in the form,
+    so never auto-selected by the app's default selection -- still counts
+    as present instead of silently dropping its synthesized primary key
+    (and, transitively, any other table's link to it) from the download."""
     openpyxl = _load_openpyxl()
     if openpyxl is None:
         raise CreateTemplateError(_openpyxl_unavailable)
 
-    grouped = _group_by_table_with_links(_selected_rows(form_templates, selections))
+    grouped = _group_by_table_with_links(
+        _selected_rows(form_templates, selections), _selected_rows(form_templates, None)
+    )
     wb = openpyxl.Workbook()
     wb.remove(wb.active)
     used_names = set()
@@ -897,12 +950,17 @@ def build_staging_excel_workbook(form_templates, selections=None):
     CreateTemplateError if openpyxl isn't installed.
 
     selections: same shape as build_field_definition_workbook's own -- None
-    (or a form with no corresponding entry) includes every row, unfiltered."""
+    (or a form with no corresponding entry) includes every row, unfiltered.
+    Passes the full unfiltered rows to _group_by_table_with_links alongside
+    the selected ones -- see build_field_definition_workbook's own
+    docstring for why."""
     openpyxl = _load_openpyxl()
     if openpyxl is None:
         raise CreateTemplateError(_openpyxl_unavailable)
 
-    grouped = _group_by_table_with_links(_selected_rows(form_templates, selections))
+    grouped = _group_by_table_with_links(
+        _selected_rows(form_templates, selections), _selected_rows(form_templates, None)
+    )
     wb = openpyxl.Workbook()
     wb.remove(wb.active)
     used_names = set()
