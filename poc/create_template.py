@@ -64,13 +64,13 @@ Review", Delaware People in Need) rather than guessed at:
   ClientAddress.ClientID -> Client.EntityID -- this is what tells a
   consultant an ID in one sheet is the same thing as an ID in another,
   without which two sheets full of numbers can look unrelated even when
-  they're not. Sourced from reference/cw_foreign_keys.json, a real
-  database-wide FK export Michael provided directly (2026-08-13) after an
-  earlier attempt to *infer* this from a Form export's own Query Rule
-  operand codes was deliberately not built without that confirmation -- see
-  tools/build_cw_foreign_keys.py. A field with no matching entry has no
-  known link, reported as such, never guessed at from column naming alone
-  (an "*ID"-named column is not, by itself, evidence of anything).
+  they're not. Sourced from reference/cw_foreign_keys.json. A field with no
+  matching entry has no known link, reported as such, never guessed at from
+  column naming alone (an "*ID"-named column is not, by itself, evidence of
+  anything) -- e.g. FamilyMember.OrgGroupID and
+  EntityContactPreference.DeletedBy/LastModifiedBy/CreatedFormID have no
+  entry here because the live database confirms they aren't real FK
+  constraints, not because nobody checked.
 - Synthesized join columns (both downloads, plus the browser preview since
   2026-08-12) come in two kinds, because joining two sheets needs a real
   column on BOTH sides: a child table's own FK column (_needed_link_columns,
@@ -79,27 +79,34 @@ Review", Delaware People in Need) rather than guessed at:
   pointed out a child's synthesized FK column is useless if the parent sheet
   never surfaces the column it's actually pointing at -- e.g. Client's own
   EntityID not being a field on any uploaded form). Sourced from
-  reference/cw_primary_keys.json, the primary-key half of the same real
-  database-wide key export build_cw_foreign_keys.py produces alongside the
-  FK registry -- same trust rule as LinkedTo, never guessed from a column
-  being named "*ID". Composite primary keys synthesize every missing
-  column, not just one; a join can't work on half a key.
+  reference/cw_primary_keys.json -- same trust rule as LinkedTo, never
+  guessed from a column being named "*ID". Composite primary keys
+  synthesize every missing column, not just one; a join can't work on half
+  a key.
 - Third DataType fallback tier (added 2026-08-14): reference/cw_physical_columns.json,
-  a full CaseWorthy database column export (every schema, table, and column
-  -- see tools/build_cw_physical_columns.py) consulted only when neither an
-  export's own <Tables> section nor the curated 28-table base CaseWorthy
-  schema resolves a field. This is what closes the "table-alias gap" flagged
-  after the base-schema fallback shipped: a Form export's FormElement
-  DataInput references CaseWorthy's live *physical* table names (Entity,
-  EntityContactPreference, ClientAddress, Family, FamilyMember, ...), which
-  don't match the curated schema's own names (Client, AddressHistory) for
-  the same conceptual data -- so a field on one of those physical tables
-  stayed unresolved even with the base-schema fallback in place. This tier
-  only ever supplies raw SQL type/length, never required/decode/ListID
-  richness (the physical export has none of that -- it's a column dump, not
-  an ETL-authored rule set), and only ever looks at the dbo schema, since a
-  Form export's own physical table names are always dbo's even though the
-  registry itself keeps every schema in the source export.
+  a full CaseWorthy database column export (every schema, table, and
+  column), consulted only when neither an export's own <Tables> section nor
+  the curated 28-table base CaseWorthy schema resolves a field. This is
+  what closes the "table-alias gap" flagged after the base-schema fallback
+  shipped: a Form export's FormElement DataInput references CaseWorthy's
+  live *physical* table names (Entity, EntityContactPreference,
+  ClientAddress, Family, FamilyMember, ...), which don't match the curated
+  schema's own names (Client, AddressHistory) for the same conceptual data
+  -- so a field on one of those physical tables stayed unresolved even with
+  the base-schema fallback in place. This tier only ever supplies raw SQL
+  type/length, never required/decode/ListID richness (the physical export
+  has none of that -- it's a column dump, not an ETL-authored rule set),
+  and only ever looks at the dbo schema, since a Form export's own physical
+  table names are always dbo's even though the registry itself keeps every
+  schema in the source export.
+
+reference/cw_foreign_keys.json, reference/cw_primary_keys.json, and
+reference/cw_physical_columns.json are all built by
+tools/build_cw_baseline_schema.py from one consolidated, database-wide
+schema+key export (provided directly by Michael, 2026-08-14) -- a single
+source of these three facts, not three separate exports each with their own
+staleness. See that script's own docstring for the source format and the
+one-export-per-fact trust rule this repo holds all of them to.
 """
 
 import json

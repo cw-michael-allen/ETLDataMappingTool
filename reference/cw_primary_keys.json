@@ -3424,6 +3424,16 @@
     "schema": "dbo",
     "table": "FormHistory"
   },
+  "formimport.formimportid": {
+    "column": "FormImportID",
+    "schema": "dbo",
+    "table": "FormImport"
+  },
+  "formimportxmldata.formimportxmldataid": {
+    "column": "FormImportXmlDataID",
+    "schema": "dbo",
+    "table": "FormImportXmlData"
+  },
   "formkeyword.keywordid": {
     "column": "KeywordID",
     "schema": "dbo",
@@ -5423,6 +5433,11 @@
     "column": "NewsFeedTypeID",
     "schema": "dbo",
     "table": "NewsFeedType"
+  },
+  "newtransacttable.newtransacttableid": {
+    "column": "NewTransactTableID",
+    "schema": "dbo",
+    "table": "NewTransactTable"
   },
   "nonassessmenttype.nonassessmenttypeid": {
     "column": "NonAssessmentTypeID",
@@ -8303,6 +8318,736 @@
     "column": "ProjectID",
     "schema": "dbo",
     "table": "WZQualityControlInspection"
+  },
+  "x324tablemlc.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "X324TableMlc"
+  },
+  "xagclientmore.xagclientmoreid": {
+    "column": "XAGClientMoreID",
+    "schema": "dbo",
+    "table": "XAGClientMore"
+  },
+  "xallmobiles.xallmobilesid": {
+    "column": "XAllMobilesID",
+    "schema": "dbo",
+    "table": "XAllMobiles"
+  },
+  "xasmtna.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XASMTNA"
+  },
+  "xassessfostercare.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XAssessFosterCare"
+  },
+  "xassesslegalhistorybyraghava.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XAssessLegalHistorybyRaghava"
+  },
+  "xassessmentdemo522.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XAssessmentdemo522"
+  },
+  "xassessmentfa626mlc.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XAssessmentFA626mlc"
+  },
+  "xassessmentmlc.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "Xassessmentmlc"
+  },
+  "xassessments.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XAssessments"
+  },
+  "xassessmenttable323mlc.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XAssessmentTable323mlc"
+  },
+  "xassessmenttable425sd.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XAssessmentTable425SD"
+  },
+  "xassessmenttablejlp.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XAssessmentTableJLP"
+  },
+  "xassessmenttablemlc.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XAssessmentTablemlc"
+  },
+  "xassessmenttabletraining.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XAssessmentTabletraining"
+  },
+  "xassessmenttrain523mlc.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XAssessmentTrain523mlc"
+  },
+  "xassessmenttraining.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XAssessmentTraining"
+  },
+  "xassessmenttrainingmlc.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XassessmentTrainingMLC"
+  },
+  "xassessmenttrainingtable.xassessmenttrainingtableid": {
+    "column": "XAssessmentTrainingTableID",
+    "schema": "dbo",
+    "table": "XAssessmentTrainingTable"
+  },
+  "xassessmentttf.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XAssessmentTTF"
+  },
+  "xassessself.xassessselfid": {
+    "column": "XassessSelfID",
+    "schema": "dbo",
+    "table": "XassessSelf"
+  },
+  "xassesssl.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XAssessSL"
+  },
+  "xbabysitter.xbabysitterid": {
+    "column": "XBabySitterID",
+    "schema": "dbo",
+    "table": "XBabySitter"
+  },
+  "xbabysitterclient.xbabysitterclientid": {
+    "column": "XbabysitterclientID",
+    "schema": "dbo",
+    "table": "Xbabysitterclient"
+  },
+  "xbabysittercustomform.xbabysittercustomformid": {
+    "column": "XBabySitterCustomformID",
+    "schema": "dbo",
+    "table": "XBabySitterCustomform"
+  },
+  "xbackupplan.xbackupplanid": {
+    "column": "XBackupPlanID",
+    "schema": "dbo",
+    "table": "XBackupPlan"
+  },
+  "xbanks.xbanksid": {
+    "column": "XBanksID",
+    "schema": "dbo",
+    "table": "XBanks"
+  },
+  "xbgassessment524.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XBGAssessment524"
+  },
+  "xbiopsychosocialassessment.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XBioPsychoSocialAssessment"
+  },
+  "xbroughttooffice.xbroughttoofficeid": {
+    "column": "XBroughtToOfficeID",
+    "schema": "dbo",
+    "table": "XBroughtToOffice"
+  },
+  "xcatscaregiver.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XCatsCaregiver"
+  },
+  "xcgbrassessmenttable.xcgbrassessmenttableid": {
+    "column": "XcgbrAssessmentTableID",
+    "schema": "dbo",
+    "table": "XcgbrAssessmentTable"
+  },
+  "xclass4224mlc.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XClass4224Mlc"
+  },
+  "xclass4mlc.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XClass4mlc"
+  },
+  "xclass4table.xclass4tableid": {
+    "column": "XClass4TableID",
+    "schema": "dbo",
+    "table": "XClass4Table"
+  },
+  "xclientfavoritebands.xclientfavoritebandsid": {
+    "column": "XclientFavoriteBandsID",
+    "schema": "dbo",
+    "table": "XclientFavoriteBands"
+  },
+  "xclientinfomlc.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XClientInfoMlc"
+  },
+  "xclientinfotm.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XclientinfoTm"
+  },
+  "xclientresume.xclientresumeid": {
+    "column": "XClientResumeID",
+    "schema": "dbo",
+    "table": "XClientResume"
+  },
+  "xclientresumes.xclientresumesid": {
+    "column": "XClientResumesID",
+    "schema": "dbo",
+    "table": "XClientResumes"
+  },
+  "xclientteamhistory.xclientteamhistoryid": {
+    "column": "XClientTeamHistoryID",
+    "schema": "dbo",
+    "table": "XClientTeamHistory"
+  },
+  "xclres.xclresid": {
+    "column": "XclresID",
+    "schema": "dbo",
+    "table": "Xclres"
+  },
+  "xcommlinktesting.xcommlinktestingid": {
+    "column": "XCommLinkTestingID",
+    "schema": "dbo",
+    "table": "XCommLinkTesting"
+  },
+  "xcres.xcresid": {
+    "column": "XcresID",
+    "schema": "dbo",
+    "table": "Xcres"
+  },
+  "xcrime.xcrimeid": {
+    "column": "XcrimeID",
+    "schema": "dbo",
+    "table": "Xcrime"
+  },
+  "xcrisistothrivingassessments.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XCrisistoThrivingAssessments"
+  },
+  "xcssrsscreening.xcssrsscreeningid": {
+    "column": "XCSSRSScreeningID",
+    "schema": "dbo",
+    "table": "XCSSRSScreening"
+  },
+  "xcustomassess123.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XCustomAssess123"
+  },
+  "xcustomassesshmoct2023.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XCustomAssessHMOct2023"
+  },
+  "xcustomassessmentaeb.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XCustomAssessmentAEB"
+  },
+  "xcustomassessmentcb.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XcustomAssessmentcb"
+  },
+  "xcustomassessmentmlc.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XCustomAssessmentMlc"
+  },
+  "xcustomassessmentmlc424.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XCustomAssessmentMLC424"
+  },
+  "xcustomassessmentmlc923.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XCustomAssessmentMLC923"
+  },
+  "xcustomassessmlc.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "Xcustomassessmlc"
+  },
+  "xcustomeassesmentdwm424.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XCustomeAssesmentDWM424"
+  },
+  "xcustomnonassesment.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XCustomNonAssesment"
+  },
+  "xdemo.xdemoid": {
+    "column": "XdemoID",
+    "schema": "dbo",
+    "table": "Xdemo"
+  },
+  "xeducationhistory.xeducationhistoryid": {
+    "column": "XEducationHistoryID",
+    "schema": "dbo",
+    "table": "XEducationHistory"
+  },
+  "xemerysassessment.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XEmerysAssessment"
+  },
+  "xenrollmenttest.xenrollmenttestid": {
+    "column": "XEnrollmentTestID",
+    "schema": "dbo",
+    "table": "XEnrollmentTest"
+  },
+  "xexit.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "Xexit"
+  },
+  "xfaclassassessmentmlc723.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XfaClassAssessmentmlc723"
+  },
+  "xfacutomassessmentmlc.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XFAcutomassessmentmlc"
+  },
+  "xfavoritexmen.xfavoritexmenid": {
+    "column": "XfavoritexmenID",
+    "schema": "dbo",
+    "table": "Xfavoritexmen"
+  },
+  "xfootballmatches.xfootballmatchesid": {
+    "column": "XFootballMatchesID",
+    "schema": "dbo",
+    "table": "XFootballMatches"
+  },
+  "xfootballmatchesv3.xfootballmatchesv3id": {
+    "column": "XFootballMatchesV3ID",
+    "schema": "dbo",
+    "table": "XFootballMatchesV3"
+  },
+  "xformapbasessment624mlc.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XFormapbAsessment624mlc"
+  },
+  "xformapbassessmentjp.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XFormapBAssessmentJP"
+  },
+  "xfostecarebabysitter.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XFosteCareBabySitter"
+  },
+  "xfosterhomeclosure.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XFosterHomeCLosure"
+  },
+  "xgibsonpets.xgibsonpetsid": {
+    "column": "XGibsonPetsID",
+    "schema": "dbo",
+    "table": "XGibsonPets"
+  },
+  "xgibsontesttable.xgibsontesttableid": {
+    "column": "XGibsonTestTableID",
+    "schema": "dbo",
+    "table": "XGibsonTestTable"
+  },
+  "xhealingassess.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XHealingAssess"
+  },
+  "xhobbies.xhobbiesid": {
+    "column": "XHobbiesID",
+    "schema": "dbo",
+    "table": "XHobbies"
+  },
+  "xhospital.xhospitalid": {
+    "column": "XHospitalID",
+    "schema": "dbo",
+    "table": "XHospital"
+  },
+  "xhousingstabilityplan.xhousingstabilityplanid": {
+    "column": "XHousingStabilityPlanID",
+    "schema": "dbo",
+    "table": "XHousingStabilityPlan"
+  },
+  "xincidentreport.xincidentreportid": {
+    "column": "XIncidentReportID",
+    "schema": "dbo",
+    "table": "XIncidentReport"
+  },
+  "xincomeverificationassessmentform.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XIncomeVerificationAssessmentForm"
+  },
+  "xinitialintakeassess.encounterid": {
+    "column": "EncounterID",
+    "schema": "dbo",
+    "table": "XInitialIntakeAssess"
+  },
+  "xinternalinvestigation.xinternalinvestigationid": {
+    "column": "XInternalInvestigationID",
+    "schema": "dbo",
+    "table": "XInternalInvestigation"
+  },
+  "xjdpets.xjdpetsid": {
+    "column": "XjdPetsID",
+    "schema": "dbo",
+    "table": "XjdPets"
+  },
+  "xjfassessment.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XJFAssessment"
+  },
+  "xjobplacement.xjobplacementid": {
+    "column": "XJobPlacementID",
+    "schema": "dbo",
+    "table": "XJobPlacement"
+  },
+  "xjobplacement2.xjobplacement2id": {
+    "column": "XJobPlacement2ID",
+    "schema": "dbo",
+    "table": "XJobPlacement2"
+  },
+  "xjobplacements.xjobplacementsid": {
+    "column": "XJobPlacementsID",
+    "schema": "dbo",
+    "table": "XJobPlacements"
+  },
+  "xjobplacementsrt.xjobplacementsrtid": {
+    "column": "XJobPlacementsRTID",
+    "schema": "dbo",
+    "table": "XJobPlacementsRT"
+  },
+  "xjoshtest.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "Xjoshtest"
+  },
+  "xjoshtest2.xjoshtest2id": {
+    "column": "Xjoshtest2ID",
+    "schema": "dbo",
+    "table": "Xjoshtest2"
+  },
+  "xjoshtest22.xjoshtest22id": {
+    "column": "Xjoshtest22ID",
+    "schema": "dbo",
+    "table": "Xjoshtest22"
+  },
+  "xjoshtest3.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "Xjoshtest3"
+  },
+  "xjtsjobplacements.xjtsjobplacementsid": {
+    "column": "XJTSJobPlacementsID",
+    "schema": "dbo",
+    "table": "XJTSJobPlacements"
+  },
+  "xjtslivingconditions.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XJTSLivingConditions"
+  },
+  "xleaguestandings.xleaguestandingsid": {
+    "column": "XLeagueStandingsID",
+    "schema": "dbo",
+    "table": "XLeagueStandings"
+  },
+  "xmelassessment524.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XMelAssessment524"
+  },
+  "xmelsassessment.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XMelsAssessment"
+  },
+  "xmelsassessment823.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XMelsAssessment823"
+  },
+  "xmelsassessmenttable.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XMelsAssessmentTable"
+  },
+  "xmjassessmenttable.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XMJAssessmentTable"
+  },
+  "xmobiles.xmobilesid": {
+    "column": "XMobilesID",
+    "schema": "dbo",
+    "table": "XMobiles"
+  },
+  "xnaspets.xnaspetsid": {
+    "column": "XNASPetsID",
+    "schema": "dbo",
+    "table": "XNASPets"
+  },
+  "xnewassessment.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XNewAssessment"
+  },
+  "xnewassessmentdata.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XNewAssessmentData"
+  },
+  "xnewenity.xnewenityid": {
+    "column": "XNewEnityID",
+    "schema": "dbo",
+    "table": "XNewEnity"
+  },
+  "xnewtable.xnewtableid": {
+    "column": "XNewTableID",
+    "schema": "dbo",
+    "table": "XNewTable"
+  },
+  "xotva.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "Xotva"
+  },
+  "xpets.xpetsid": {
+    "column": "XPetsID",
+    "schema": "dbo",
+    "table": "XPets"
+  },
+  "xpetshariq.xpetshariqid": {
+    "column": "XPetShariqID",
+    "schema": "dbo",
+    "table": "XPetShariq"
+  },
+  "xpetslisa.xpetslisaid": {
+    "column": "XPetsLisaID",
+    "schema": "dbo",
+    "table": "XPetsLisa"
+  },
+  "xpokemon.xpokemonid": {
+    "column": "XPokemonID",
+    "schema": "dbo",
+    "table": "XPokemon"
+  },
+  "xpokemonteam.xpokemonteamid": {
+    "column": "XPokemonTeamID",
+    "schema": "dbo",
+    "table": "XPokemonTeam"
+  },
+  "xpregnantmothers.xpregnantmothersid": {
+    "column": "XPregnantMothersID",
+    "schema": "dbo",
+    "table": "XPregnantMothers"
+  },
+  "xraghavafootball.xraghavafootballid": {
+    "column": "XRaghavaFootballID",
+    "schema": "dbo",
+    "table": "XRaghavaFootball"
+  },
+  "xraghavafootballentity.xraghavafootballentityid": {
+    "column": "XRaghavaFootballEntityID",
+    "schema": "dbo",
+    "table": "XRaghavaFootballEntity"
+  },
+  "xraghavatestresult.xraghavatestresultid": {
+    "column": "XRaghavaTestResultID",
+    "schema": "dbo",
+    "table": "XRaghavaTestResult"
+  },
+  "xraghavatestresulteducationv2.xraghavatestresulteducationv2id": {
+    "column": "XRaghavaTestResultEducationV2ID",
+    "schema": "dbo",
+    "table": "XRaghavaTestResultEducationV2"
+  },
+  "xraghavatestresulteducationv3.xraghavatestresulteducationv3id": {
+    "column": "XRaghavaTestResultEducationV3ID",
+    "schema": "dbo",
+    "table": "XRaghavaTestResultEducationV3"
+  },
+  "xraghavatestresults.xraghavatestresultsid": {
+    "column": "XRaghavaTestResultsID",
+    "schema": "dbo",
+    "table": "XRaghavaTestResults"
+  },
+  "xraghavatestresultseducation.xraghavatestresultseducationid": {
+    "column": "XRaghavaTestResultsEducationID",
+    "schema": "dbo",
+    "table": "XRaghavaTestResultsEducation"
+  },
+  "xraghavatestresultsv2.xraghavatestresultsv2id": {
+    "column": "XRaghavaTestResultsV2ID",
+    "schema": "dbo",
+    "table": "XRaghavaTestResultsV2"
+  },
+  "xraghavatesttype.xraghavatesttypeid": {
+    "column": "XRaghavaTestTypeID",
+    "schema": "dbo",
+    "table": "XRaghavaTestType"
+  },
+  "xrefugeeservicesassessment.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XRefugeeServicesAssessment"
+  },
+  "xrequestforassistance.xrequestforassistanceid": {
+    "column": "XRequestforAssistanceID",
+    "schema": "dbo",
+    "table": "XRequestforAssistance"
+  },
+  "xresumes.xresumesid": {
+    "column": "XResumesID",
+    "schema": "dbo",
+    "table": "XResumes"
+  },
+  "xskills.xskillsid": {
+    "column": "XskillsID",
+    "schema": "dbo",
+    "table": "Xskills"
+  },
+  "xskillsnew.xskillsnewid": {
+    "column": "XSkillsNewID",
+    "schema": "dbo",
+    "table": "XSkillsNew"
+  },
+  "xsupermarket.xsupermarketid": {
+    "column": "XSuperMarketID",
+    "schema": "dbo",
+    "table": "XSuperMarket"
+  },
+  "xsupportiveservices.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XSupportiveServices"
+  },
+  "xtargetpopulations.xtargetpopulationsid": {
+    "column": "XTargetPopulationsID",
+    "schema": "dbo",
+    "table": "XTargetPopulations"
+  },
+  "xtestds.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XtestDS"
+  },
+  "xtestresulteduv4.xtestresulteduv4id": {
+    "column": "XTestResultEduV4ID",
+    "schema": "dbo",
+    "table": "XTestResultEduV4"
+  },
+  "xtesttesttest.xtesttesttestid": {
+    "column": "XtesttesttestID",
+    "schema": "dbo",
+    "table": "Xtesttesttest"
+  },
+  "xtestvolunteer.volunteerid": {
+    "column": "VolunteerID",
+    "schema": "dbo",
+    "table": "XtestVolunteer"
+  },
+  "xtestvolunteerb.xtestvolunteerbid": {
+    "column": "XtestVolunteerBID",
+    "schema": "dbo",
+    "table": "XtestVolunteerB"
+  },
+  "xtrasessment423mlc.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XtrAsessment423mlc"
+  },
+  "xtrassess423mj.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XtrAssess423Mj"
+  },
+  "xtrassess423tcd.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XtrAssess423TCD"
+  },
+  "xtrtablekmc1221.assessmentid": {
+    "column": "AssessmentID",
+    "schema": "dbo",
+    "table": "XTRTableKMC1221"
+  },
+  "xutilityassist.xutilityassistid": {
+    "column": "XUtilityAssistID",
+    "schema": "dbo",
+    "table": "XUtilityAssist"
+  },
+  "xvwprojecttransactionamo.xvwprojecttransactionamoid": {
+    "column": "XVWProjectTransactionAmoID",
+    "schema": "dbo",
+    "table": "XVWProjectTransactionAmo"
+  },
+  "xweaponsdepots.xweaponsdepotsid": {
+    "column": "XWeaponsDepotsID",
+    "schema": "dbo",
+    "table": "XWeaponsDepots"
+  },
+  "xxxxx.xxxxxid": {
+    "column": "XxxxxID",
+    "schema": "dbo",
+    "table": "Xxxxx"
+  },
+  "xzze12alpha.xzze12alphaid": {
+    "column": "XZZE12AlphaID",
+    "schema": "dbo",
+    "table": "XZZE12Alpha"
+  },
+  "xzze12beta.xzze12betaid": {
+    "column": "XZZE12BetaID",
+    "schema": "dbo",
+    "table": "XZZE12Beta"
+  },
+  "xzze17gamma.xzze17gammaid": {
+    "column": "XZZE17GammaID",
+    "schema": "dbo",
+    "table": "XZZE17Gamma"
+  },
+  "xzzelementzoo.xzzelementzooid": {
+    "column": "XZZElementZooID",
+    "schema": "dbo",
+    "table": "XZZElementZoo"
   },
   "zipcode.zipcode": {
     "column": "ZipCode",
