@@ -12,11 +12,20 @@ Then open http://127.0.0.1:8000 in a browser, or double-click `start.bat` (see b
 
 Optional env vars:
 - `PORT` — defaults to 8000.
+- `HOST` — defaults to `127.0.0.1`. Set to `0.0.0.0` to bind on every interface (reachable on your
+  LAN) — see the startup warning `app.py` prints when you do; there's no auth on this POC by design.
 - `CW_ETL_DB_PATH` — points the learned-mappings SQLite file at a shared location instead of the
   local `data/` folder; see "Shared learned-mappings library" below.
 - `CW_ETL_SHARED_XLSX` — path to a shared Excel append-log that the matching logic also reads
   from and writes to; see "Shared mapping log (Excel)" below. Independent of `CW_ETL_DB_PATH` —
   either, both, or neither can be set.
+
+**No config files, and no credentials.** Every setting above is an environment variable, read
+straight from `os.environ` — nothing is ever written to or read from a `config.yaml`/`.env`/etc.
+file anywhere in this tool. There's also no credential of any kind to store: the LLM fallback
+authenticates via Claude Code's own subscription login (`cw_services_toolkit.anthropic_ai`), not
+an API key, so there's nothing for Windows Credential Manager to hold and no `setup_credentials`
+step needed here.
 
 ## Mapping suggestions (LLM fallback)
 

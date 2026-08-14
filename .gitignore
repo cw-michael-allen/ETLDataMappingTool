@@ -1,5 +1,16 @@
+# Claude Code session-local files -- not something a shared/generic
+# .gitignore elsewhere (e.g. the services-utilities hub root) can know
+# about, since these are specific to how this repo's own Claude sessions
+# run.
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
+
+# Local per-machine data this tool creates at runtime, never something to
+# commit -- mappings.db (learned field mappings) lives here. No generic
+# "*.db" or "data/" pattern exists in a shared root .gitignore, so this
+# repo needs its own line for it regardless of where it's checked out.
 poc/data/
+
+# Standard Python build artifacts.
 __pycache__/
 *.pyc
-.claude/scheduled_tasks.lock
