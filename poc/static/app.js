@@ -111,6 +111,12 @@ let state = {
   suggestions: [],
   schema: null,
   schemaKey: null,
+  // Live Migration Readiness summary for the Mapping Suggestions page (Step
+  // 3) -- null until the first fetch resolves, then refreshed after every
+  // confirmed mapping so the panel reflects db.py's real state without a
+  // manual trip to the full readiness page. Reset per source-system/target-
+  // database switch the same way suggestions/schema already are.
+  readinessMini: null,
   // "Create Template" mode's own state -- separate from everything above
   // since it isn't part of the mapping wizard at all. selections mirrors
   // result.formTemplates 1:1 (array of Set<row index>, one per form) once a
@@ -351,10 +357,10 @@ async function renderStep1() {
         <select id="target-db">${dbOptions}</select>
         ${warning}
       </div>
-      ${moduleBlock}
       <label for="src-sys">Source system name</label>
       <input type="text" id="src-sys" placeholder="e.g. Bonterra Case Manager, Apricot, a homegrown Access database" value="${escapeHtml(state.sourceSystem)}">
       ${!unavailable ? `<div style="margin-top:6px;"><button type="button" class="ghost" id="view-readiness-link">View Migration Readiness →</button></div>` : ""}
+      ${moduleBlock}
       <div class="target-db-row" style="margin-top:14px;">
         <label style="display:flex;align-items:center;gap:8px;font-weight:600;">
           <input type="checkbox" id="advanced-toggle" ${state.advancedMode ? "checked" : ""} style="width:auto;">
@@ -1009,6 +1015,7 @@ async function renderStep3() {
   await ensureSchema();
 
   state.suggestions = [];
+  state.readinessMini = null;
   for (const f of state.fields) {
     const sug = await api("/api/suggest", {
       method: "POST",
@@ -1019,6 +1026,51 @@ async function renderStep3() {
     state.suggestions.push({ source: f.name, desc: f.desc, sourceTable: f.sourceTable || "", sourceValues: f.sourceValues || "", suggestion: sug, targetMeta, confirmedTable: sug.table, confirmedField: sug.field });
   }
   renderStep3Results();
+  refreshReadinessMini();
+}
+
+// Compact Migration Readiness summary shown on the Mapping Suggestions page
+// itself (Michael, 2026-08-18) -- reads whatever refreshReadinessMini last
+// fetched from /api/readiness (same rollup the full readiness page uses),
+// so it's always the real db.py state, never a locally-recomputed guess.
+// Root element keeps a stable id so refreshReadinessMini can swap it in
+// place via outerHTML without a full Step 3 re-render.
+function renderReadinessMiniPanel() {
+  const result = state.readinessMini;
+  if (!result) {
+    return `<div class="card" id="mapping-readiness-mini" style="margin-top:0;padding:10px 14px;font-size:13px;color:var(--surface-text-muted);">Checking migration readiness…</div>`;
+  }
+  const coverageLine = result.coveragePercent == null
+    ? `No in-scope target fields to measure coverage against yet.`
+    : `<strong>${result.coveragePercent}%</strong> of ${result.totalInScopeFieldCount} in-scope target fields mapped (${result.mappedFieldCount} confirmed).`;
+  const missingCount = result.requiredMissing.length;
+  const missingNote = missingCount
+    ? `<span style="color:var(--cw-orange);">${missingCount} required field${missingCount === 1 ? "" : "s"} still missing.</span>`
+    : `<span style="color:var(--surface-text-muted);">No required-field gaps in scope.</span>`;
+  return `
+    <div class="card" id="mapping-readiness-mini" style="margin-top:0;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+      <div style="font-size:13px;"><strong>Migration Readiness:</strong> ${coverageLine} ${missingNote}</div>
+      <button type="button" class="ghost" id="mapping-readiness-link" style="white-space:nowrap;">View full readiness →</button>
+    </div>`;
+}
+
+function bindReadinessMiniHandlers() {
+  const link = document.getElementById("mapping-readiness-link");
+  if (link) link.onclick = () => { state.step = "readiness"; renderMigrationReadinessStep(); };
+}
+
+// Fire-and-forget: fetches the same rollup the full readiness page uses and
+// swaps the mini panel in place, without disturbing whatever the customer's
+// doing on the rest of the page (a full renderStep3Results() would blow away
+// in-progress overrides on unrelated cards). Called once when Step 3 first
+// loads and again after every confirmed mapping.
+async function refreshReadinessMini() {
+  const q = new URLSearchParams({ targetDatabase: state.targetDatabase, sourceSystem: state.sourceSystem });
+  const result = await api(`/api/readiness?${q.toString()}`);
+  state.readinessMini = result;
+  const panelHost = document.getElementById("mapping-readiness-mini");
+  if (panelHost) panelHost.outerHTML = renderReadinessMiniPanel();
+  bindReadinessMiniHandlers();
 }
 
 function renderStep3Results() {
@@ -1066,6 +1118,7 @@ function renderStep3Results() {
 
   app.innerHTML = `
     ${renderHeader()}
+    ${renderReadinessMiniPanel()}
     <div class="card">
       <h3>Mapping Suggestions for ${escapeHtml(state.sourceSystem)}</h3>
       <div style="color:var(--surface-text-muted);font-size:13px;margin-bottom:14px;">Confirm each mapping, pick a different target field, or flag anything ambiguous for manual review. Confirmed mappings are saved so the next customer on ${escapeHtml(state.sourceSystem)} sees them instantly.</div>
@@ -1078,6 +1131,7 @@ function renderStep3Results() {
     ${renderFooter()}
   `;
   refreshLibStat();
+  bindReadinessMiniHandlers();
 
   document.querySelectorAll(".suggestion-card").forEach(card => {
     const idx = parseInt(card.dataset.idx, 10);
@@ -1092,6 +1146,7 @@ function renderStep3Results() {
       s.confirmed = true;
       s.flagged = false;
       renderStep3Results();
+      refreshReadinessMini();
     };
     card.querySelector(".override-save").onclick = () => {
       const val = card.querySelector(".override-select").value;
