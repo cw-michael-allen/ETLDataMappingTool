@@ -654,9 +654,12 @@ async function renderCreateTemplateStep() {
   const formReadiness = ct.result && ct.result.readiness;
   const readinessHtml = formReadiness ? `
     <div class="card" style="margin-top:0;">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
         <h4 style="margin:0;">Migration Readiness (all forms uploaded so far)</h4>
-        <button type="button" class="ghost" id="ct-clear-uploads">Clear uploaded forms</button>
+        <div style="display:flex;gap:8px;">
+          <button type="button" class="ghost" id="ct-print-readiness">Print</button>
+          <button type="button" class="ghost" id="ct-clear-uploads">Clear uploaded forms</button>
+        </div>
       </div>
       ${renderFormReadinessPanel(formReadiness.requiredFields)}
     </div>` : "";
@@ -796,9 +799,25 @@ async function renderCreateTemplateStep() {
   if (clearUploadsBtn) clearUploadsBtn.onclick = async () => {
     if (!confirm("Clear the accumulated coverage from every form uploaded so far? This can't be undone.")) return;
     await api("/api/create-template/clear-uploads", { method: "POST" });
-    // Re-parse the already-loaded file so the readiness panel immediately
-    // reflects the now-empty ledger, without asking the user to re-pick it.
-    await reparseFile(ct.file);
+    // Deliberately does NOT re-parse the already-loaded file afterward --
+    // that re-parse itself writes that file's own coverage straight back
+    // into the ledger (parse-xml records on every call, not just the
+    // first), so the readiness panel looked like it never fully cleared --
+    // "one required target stuck" (Michael, 2026-08-17) was really every
+    // field the still-loaded file covers, re-seeded immediately. Clearing
+    // now blanks the whole preview; re-upload (or re-click "Preview
+    // Structure") to start tracking again from a genuinely empty ledger.
+    ct.result = null;
+    ct.file = null;
+    ct.selections = null;
+    renderCreateTemplateStep();
+  };
+  const printReadinessBtn = document.getElementById("ct-print-readiness");
+  if (printReadinessBtn) printReadinessBtn.onclick = () => {
+    // window.open must run synchronously inside the click handler (no
+    // await before it) or browsers treat it as an unrequested popup and
+    // block it.
+    printReadinessReport(formReadiness.requiredFields, ct.result.sourceFile);
   };
   document.getElementById("ct-back").onclick = () => {
     state.targetDatabase = "CaseWorthy";
@@ -1336,6 +1355,61 @@ function renderFormReadinessPanel(requiredFields) {
       <ul>${covered.map(r => `<li>${tableDisplayName(r.table)} → ${escapeHtml(r.field)} <span style="color:var(--surface-text-muted);">— from ${escapeHtml(r.mappedBy)}</span></li>`).join("")}</ul>
     </div>` : "";
   return `<div class="readiness-panel">${missingBlock}${coveredBlock}</div>`;
+}
+
+// Opens a standalone, purpose-built print view of the Create Template
+// readiness check (not the interactive SPA screen itself, which has too
+// much unrelated chrome -- upload controls, other buttons, raw XML tree --
+// to print cleanly) and triggers the browser's print dialog on it.
+// mostRecentFile is just for the report's own header line -- the table
+// below already names the real source file per field via each row's own
+// "Source File" column.
+function printReadinessReport(requiredFields, mostRecentFile) {
+  const rows = requiredFields.slice().sort((a, b) =>
+    tableDisplayName(a.table).localeCompare(tableDisplayName(b.table)) || a.field.localeCompare(b.field)
+  );
+  const coveredCount = rows.filter(r => r.mappedBy).length;
+  const generatedAt = new Date().toLocaleString();
+  const rowsHtml = rows.map(r => `
+    <tr class="${r.mappedBy ? "covered" : "missing"}">
+      <td>${escapeHtml(tableDisplayName(r.table))}</td>
+      <td>${escapeHtml(r.field)}</td>
+      <td>${r.mappedBy ? escapeHtml(r.mappedBy) : "Missing"}</td>
+    </tr>`).join("");
+  const html = `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Migration Readiness Report</title>
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; color: #1a1a1a; padding: 24px; }
+  h1 { font-size: 18px; margin: 0 0 4px 0; }
+  .meta { color: #555; font-size: 12px; margin-bottom: 4px; }
+  .summary { margin: 12px 0; font-size: 13px; font-weight: bold; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+  th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
+  th { background: #f0f0f0; }
+  tr.missing td { background: #fdeae3; }
+  tr.covered td { background: #e2f4f1; }
+  .print-btn { margin-bottom: 16px; }
+  @media print { .print-btn { display: none; } }
+</style>
+</head>
+<body>
+  <button class="print-btn" onclick="window.print()">Print</button>
+  <h1>Migration Readiness Report</h1>
+  <div class="meta">Generated ${escapeHtml(generatedAt)}${mostRecentFile ? ` &middot; Most recently uploaded: ${escapeHtml(mostRecentFile)}` : ""}</div>
+  <div class="summary">${coveredCount} of ${rows.length} required field${rows.length === 1 ? "" : "s"} covered so far.</div>
+  <table>
+    <thead><tr><th>Target Table</th><th>Field</th><th>Source File / Status</th></tr></thead>
+    <tbody>${rowsHtml}</tbody>
+  </table>
+</body>
+</html>`;
+  const win = window.open("", "_blank");
+  if (!win) { alert("Your browser blocked the print report popup -- allow popups for this page and try again."); return; }
+  win.document.write(html);
+  win.document.close();
 }
 
 // Aggregates coverage/confidence/gaps across EVERY mapping persisted so far
