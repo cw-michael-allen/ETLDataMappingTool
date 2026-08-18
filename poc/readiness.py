@@ -257,28 +257,43 @@ def required_missing_for_pairs(target_db, mapped_pairs, scope_tables):
     ]
 
 
-def compute_readiness(target_db, source_system):
+def compute_readiness(target_db, source_system, modules=None):
+    """modules: the customer's own CURRENT tab/module-picker selection from
+    Step 1 (effectiveModules() in app.js), passed by every real caller today
+    (the "View Migration Readiness" link and the Step 3 live panel both
+    render after that picker exists) -- see module docstring's own framing
+    of "the modules a user is mapping to" as the actual scope, not a fixed
+    default. Wins outright over a saved scope when given (Michael,
+    2026-08-18): the live checkboxes are the freshest, most direct signal of
+    intent available. Only falls back to the saved/default scope chain below
+    when modules is empty/omitted -- covers a caller that genuinely has no
+    live selection to offer, not a real path from the UI today, but cheaper
+    to keep than to delete outright."""
     mappings = db.get_all_mappings(source_system, target_db)
-    scope = db.get_migration_scope(source_system, target_db)
     full_schema = schema_rules.load_schema(target_db)
 
     master = load_master_template() if target_db == MASTER_TEMPLATE_TARGET_DATABASE else None
-    scope_known = bool(scope and scope.get("modules"))
 
     # Which tables define this rollup's scope, and where that scope came
     # from -- surfaced as scopeSource so the UI can caption accurately
     # instead of implying "full schema" when it's actually "the Master
     # Template's own tables" (2026-08-17: CaseWorthy's default used to be
     # all 28 tables, which is broader than any real migration needs).
-    if scope_known:
-        scope_tables = scope["modules"]
-        scope_source = "saved"
-    elif master:
-        scope_tables = master["tables"]
-        scope_source = "masterTemplateDefault"
+    if modules:
+        scope_tables = modules
+        scope_source = "current"
     else:
-        scope_tables = []
-        scope_source = "fullSchema"
+        scope = db.get_migration_scope(source_system, target_db)
+        if scope and scope.get("modules"):
+            scope_tables = scope["modules"]
+            scope_source = "saved"
+        elif master:
+            scope_tables = master["tables"]
+            scope_source = "masterTemplateDefault"
+        else:
+            scope_tables = []
+            scope_source = "fullSchema"
+    scope_known = scope_source in ("current", "saved")
 
     in_scope_schema = schema_rules.scope_schema(full_schema, target_db, scope_tables)
     mapped_pairs = {(r["target_table"], r["target_field"]) for r in mappings}

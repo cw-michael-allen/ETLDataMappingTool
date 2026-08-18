@@ -1065,7 +1065,7 @@ function bindReadinessMiniHandlers() {
 // in-progress overrides on unrelated cards). Called once when Step 3 first
 // loads and again after every confirmed mapping.
 async function refreshReadinessMini() {
-  const q = new URLSearchParams({ targetDatabase: state.targetDatabase, sourceSystem: state.sourceSystem });
+  const q = new URLSearchParams({ targetDatabase: state.targetDatabase, sourceSystem: state.sourceSystem, modules: effectiveModules().join(",") });
   const result = await api(`/api/readiness?${q.toString()}`);
   state.readinessMini = result;
   const panelHost = document.getElementById("mapping-readiness-mini");
@@ -1537,7 +1537,7 @@ async function renderMigrationReadinessStep() {
   `;
   refreshLibStat();
 
-  const q = new URLSearchParams({ targetDatabase: state.targetDatabase, sourceSystem });
+  const q = new URLSearchParams({ targetDatabase: state.targetDatabase, sourceSystem, modules: effectiveModules().join(",") });
   const result = await api(`/api/readiness?${q.toString()}`);
 
   const confBuckets = ["high", "medium", "low", "learned", "none", "unknown"];
@@ -1550,11 +1550,16 @@ async function renderMigrationReadinessStep() {
     ? `No fields exist yet for the modules in scope — nothing to measure coverage against.`
     : `<strong>${result.coveragePercent}%</strong> of ${result.totalInScopeFieldCount} in-scope target fields mapped (${result.mappedFieldCount} confirmed mapping${result.mappedFieldCount === 1 ? "" : "s"} total).`;
 
-  // scopeSource: "saved" (an explicit migration_scope exists), "masterTemplateDefault"
-  // (CaseWorthy, no saved scope yet -- defaults to the Master Migration
-  // Template's own tables, not all 28), or "fullSchema" (ServTracker, or a
-  // CaseWorthy install with no Master Template loaded -- see readiness.py).
-  const scopeNote = result.scopeSource === "saved"
+  // scopeSource: "current" (the live tab/module-picker selection from Step 1
+  // -- wins whenever it's available, see readiness.py), "saved" (an
+  // explicit migration_scope exists, only ever consulted when there's no
+  // live selection to offer), "masterTemplateDefault" (CaseWorthy, neither
+  // of the above -- defaults to the Master Migration Template's own
+  // tables, not all 28), or "fullSchema" (ServTracker, or a CaseWorthy
+  // install with no Master Template loaded).
+  const scopeNote = result.scopeSource === "current"
+    ? `Scoped to what's currently selected on Step 1: ${result.scopeModules.map(escapeHtml).join(", ")}.`
+    : result.scopeSource === "saved"
     ? `Scoped to: ${result.scopeModules.map(escapeHtml).join(", ")}.`
     : result.scopeSource === "masterTemplateDefault"
     ? `No saved module scope yet — showing gaps against the Master Migration Template's own tables: ${result.scopeModules.map(escapeHtml).join(", ")}. Use "Save current module scope" below once you know exactly which ${groupNounPlural()} this migration covers.`

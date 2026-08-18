@@ -437,7 +437,8 @@ class Handler(BaseHTTPRequestHandler):
             source_system = (query.get("sourceSystem") or [""])[0]
             if not source_system:
                 return self._send_json({"error": "missing sourceSystem"}, 400)
-            return self._send_json(readiness.compute_readiness(target_db, source_system))
+            modules = parse_modules(query.get("modules"))
+            return self._send_json(readiness.compute_readiness(target_db, source_system, modules))
         self._serve_static(parsed.path)
 
     def _serve_static(self, path):
