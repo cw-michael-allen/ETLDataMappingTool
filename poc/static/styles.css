@@ -328,6 +328,11 @@ footer { text-align: center; font-size: 11px; color: var(--surface-text-muted); 
 .field-def-table td.ft-select-cell { text-align: center; width: 1%; }
 .ft-unresolved { color: var(--cw-orange); font-weight: 600; }
 .ft-linked { color: var(--cw-teal); font-weight: 600; }
+/* A numeric target field entered through a free-text form control with no
+   numeric validation configured at all (create_template.py's
+   _validation_issue) -- title attribute on the cell itself carries the
+   full reason on hover. */
+.field-def-table td.ft-validation-issue { background: #FDEAE3; color: var(--cw-orange); font-weight: 600; }
 
 /* Synthetic join columns (renderSyntheticRow) -- grayed out and italic so
    they read as "added automatically," never mistaken for a real field the

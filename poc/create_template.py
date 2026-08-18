@@ -124,6 +124,7 @@ import json
 import os
 import re
 import xml.etree.ElementTree as ET
+from urllib.parse import unquote
 
 import form_xml
 import schema_rules
@@ -373,15 +374,135 @@ def _physical_schema_lookup(table_name, column_name, schema="dbo"):
     }
 
 
+# Free-text data-entry element types -- the only kinds where a customer can
+# type literally anything, so ValidationMode (see _parse_properties) is the
+# actual defense against bad data. Grounded directly in a survey of 321 real
+# FormElements across 7 real exports, 2026-08-18: ValidationMode never once
+# appeared on a Checkbox/DropDownList/DateChooser/Lookup -- those element
+# types already constrain input structurally (a checkbox is binary, a date
+# picker enforces a date, a dropdown can only submit one of its own list
+# values), so their own lack of ValidationMode isn't a gap worth flagging.
+# Excludes RichTextBox/RichTextEditor (3/34/35, formatted prose/notes, never
+# a numeric target) and PageText/SectionText (14/184, display-only, not data
+# entry) -- narrower than "every TextBox-shaped ElementTypeID" on purpose.
+FREE_TEXT_ELEMENT_TYPE_IDS = {"1", "2", "32", "68", "90"}  # TextBox, LongTextBox(x2 IDs), FullLineTextBox, SSN
+
+# DataType arrives in two different vocabularies depending on which of the
+# three fallback tiers resolved it (see extract_form_templates below): real
+# SQL Server type names ("int", "decimal(18,2)", "money" -- tiers 1 and 3,
+# this export's own <Tables> block or reference/cw_physical_columns.json) or
+# schema_rules.py's own descriptive strings ("Integer", "Decimal", "Float",
+# "Unique ID (numeric)" -- tier 2, the curated base schema). Both are
+# recognized; neither is translated into the other, matching this module's
+# existing "never guess a type that wasn't actually confirmed anywhere" rule
+# (see _base_schema_lookup's own docstring).
+_NUMERIC_SQL_TYPE_RE = re.compile(
+    r"^\s*(int|bigint|smallint|tinyint|decimal|numeric|float|real|money|smallmoney)\b", re.IGNORECASE
+)
+_NUMERIC_SCHEMA_TYPES = {"integer", "decimal", "float", "unique id (numeric)"}
+
+
+def _is_numeric_type(data_type):
+    if not data_type:
+        return False
+    if _NUMERIC_SQL_TYPE_RE.match(data_type):
+        return True
+    return data_type.strip().lower() in _NUMERIC_SCHEMA_TYPES
+
+
+def _parse_properties(props):
+    """A FormElement's own Properties attribute ('&'-delimited key=value
+    pairs, e.g. "ValidationMode=Number&MinVal=0&MaxVal=999999999&Precision=5")
+    into a plain dict. Tolerates blank/missing values and duplicate empty
+    segments (this export format has plenty, e.g. "...&&PageText=...") --
+    same "an absent/blank key just means not configured, not an error"
+    posture as schema_rules.parse_value_list. Values are unquoted (some
+    exports URL-encode them inconsistently -- e.g. a phone mask observed as
+    both "USPhoneNumber" and "US%20Phone%20Number" across real samples);
+    unquote() is a no-op on a value with no percent-encoding, so this is
+    safe either way."""
+    pairs = {}
+    for part in (props or "").split("&"):
+        if "=" not in part:
+            continue
+        k, v = part.split("=", 1)
+        if k:
+            pairs[k] = unquote(v)
+    return pairs
+
+
+def _validation_summary(properties):
+    """Human-readable summary of whatever real input validation this field's
+    own form configured (ValidationMode + its companion keys) -- reference
+    for a data person, not a judgment call. None means no ValidationMode was
+    configured at all (only ever meaningful on FREE_TEXT_ELEMENT_TYPE_IDS --
+    see that set's own comment for why every other element kind validates
+    input structurally instead). TextType/NoFilter are deliberately never
+    read here -- the 2026-08-18 survey found TextType only ever holds
+    "--Choose--" (an unset UI default) or "Info" (Page Text only) across 321
+    real elements, never an actual content-type signal despite its name, and
+    NoFilter means "exclude from grid filters," unrelated to validity."""
+    mode = (properties.get("ValidationMode") or "").strip()
+    if not mode:
+        return None
+    parts = [mode]
+    if mode == "Masked" and properties.get("Mask"):
+        parts.append(f"mask: {properties['Mask']}")
+    if properties.get("MinVal") or properties.get("MaxVal"):
+        parts.append(f"range {properties.get('MinVal') or '?'}-{properties.get('MaxVal') or '?'}")
+    if properties.get("Precision"):
+        parts.append(f"precision {properties['Precision']}")
+    if properties.get("Scale"):
+        parts.append(f"scale {properties['Scale']}")
+    return ", ".join(parts)
+
+
+def _validation_issue(usage, element_type_id, data_type, properties):
+    """None, or a short human-readable reason this field's own form
+    validation doesn't match what its target field needs. Deliberately
+    narrow and conservative -- same "avoid false positives rather than
+    catch every mismatch" posture as schema_rules.check_batch's own
+    FORMAT_CHECKS -- flags exactly one clear-cut case: a target field whose
+    own DataType is numeric, entered through a free-text element with no
+    numeric (or masked-numeric, e.g. Money) validation configured at all.
+    A free-text field with no numeric target isn't flagged just because it
+    lacks ValidationMode -- plain text legitimately never needs one.
+
+    Skips Hidden Fields (same Usage override _form_element_type uses, not
+    just ElementTypeID) -- this module's own docstring records real
+    passthrough ID fields (XKioskIntakeID, X_ClientID) that are
+    ElementTypeID="1" (TextBox) but Usage="4" (Hidden): auto-populated by
+    the system, never manually typed into, so "no numeric ValidationMode
+    configured" would be a false positive -- there's no user input to
+    validate in the first place."""
+    if usage in HIDDEN_USAGE:
+        return None
+    if element_type_id not in FREE_TEXT_ELEMENT_TYPE_IDS:
+        return None
+    if not _is_numeric_type(data_type):
+        return None
+    mode = (properties.get("ValidationMode") or "").strip()
+    if mode in ("Number", "Masked"):  # Masked still enforces numeric-shaped input (e.g. Mask=Money)
+        return None
+    return f"Target field expects a numeric value ({data_type}), but this form field has no numeric input validation configured."
+
+
 def extract_form_templates(raw_bytes):
     """raw_bytes -> list of {"formName", "formDisplayName", "rows": [...],
     "unresolvedColumns": [...]}, one entry per <Form> found.
 
     rows: [{"columnName", "tableName", "fieldLabel", "dataType",
             "formElementType", "required", "listId", "characterMaxLength",
-            "linkedTo", "comments"}], in the same order fields appear in the
-    export. linkedTo is a "Table.Column" string when this field is a real
-    foreign key (reference/cw_foreign_keys.json), else None.
+            "linkedTo", "comments", "validation", "validationIssue"}], in
+    the same order fields appear in the export. linkedTo is a "Table.Column"
+    string when this field is a real foreign key (reference/cw_foreign_keys.json),
+    else None. validation is a human-readable summary of whatever real input
+    validation the form itself configured for this field (see
+    _validation_summary), or None if none was configured. validationIssue
+    is None, or a short reason this field's own form validation doesn't
+    match what its target field needs (see _validation_issue) -- addresses
+    Russ's 2026-08-18 comment that it takes manual form-by-form digging
+    today to notice things like missing validation.
 
     unresolvedColumns: "Table.Column" strings for fields whose (table, column)
     isn't described in this export's own <Tables> section, the curated base
@@ -458,17 +579,22 @@ def extract_form_templates(raw_bytes):
                         char_max = None
                         unresolved.append(f"{table_name}.{column_name}")
 
+            element_type_id = fe.get("ElementTypeID")
+            properties = _parse_properties(fe.get("Properties"))
+
             rows.append({
                 "columnName": column_name,
                 "tableName": table_name,
                 "fieldLabel": field_label,
                 "dataType": data_type,
-                "formElementType": _form_element_type(fe.get("Usage"), fe.get("ElementTypeID")),
+                "formElementType": _form_element_type(fe.get("Usage"), element_type_id),
                 "required": "Required" if fe.get("Required") == "1" else "Optional",
                 "listId": list_id,
                 "characterMaxLength": char_max,
                 "linkedTo": _linked_to(table_name, column_name),
                 "comments": _comments_for_list(list_id, lists, base_row),
+                "validation": _validation_summary(properties),
+                "validationIssue": _validation_issue(fe.get("Usage"), element_type_id, data_type, properties),
             })
 
         forms_out.append({
@@ -506,6 +632,7 @@ FIELD_DEF_ATTRS = [
     ("Required", "required"),
     ("ListID", "listId"),
     ("CharacterMaxLength", "characterMaxLength"),
+    ("Validation", "validation"),
     ("LinkedTo", "linkedTo"),
     ("Comments", "comments"),
 ]
@@ -703,6 +830,8 @@ def _link_addition_row(table_name, fk_entry):
             f"Added automatically -- needed to join {table_name} rows back to "
             f"{fk_entry['referencedTable']}, but wasn't a field on the original form."
         ),
+        "validation": None,
+        "validationIssue": None,
         "kind": "foreign-key",
     }
 
@@ -731,6 +860,8 @@ def _pk_addition_row(table_name, pk_column):
             f"Added automatically -- {table_name}'s own primary key, needed so other "
             f"sheets' linking columns can actually join back to a real row here."
         ),
+        "validation": None,
+        "validationIssue": None,
         "kind": "primary-key",
     }
 

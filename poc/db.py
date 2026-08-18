@@ -173,6 +173,19 @@ def get_conn():
             UNIQUE(table_name, column_name)
         )"""
     )
+    # Non-destructive ALTER, not the _has_column/_KNOWN_TABLES helper above
+    # -- that helper's own frozenset doubles as the trigger list for the
+    # target_db drop-and-recreate migration dance, and create_template_uploads
+    # was never meant to go through that (it has no target_db column at all
+    # by design -- see its own comment). Whether this field's own coverage
+    # ran afoul of Russ's "form validations aren't obvious" comment
+    # (2026-08-18) -- see create_template.py's _validation_issue -- recorded
+    # per (table, column) the same way file_name already is: most-recent
+    # upload wins, real ledger data may already exist so this can't just
+    # drop-and-recreate.
+    existing_ct_cols = {row["name"] for row in conn.execute("PRAGMA table_info(create_template_uploads)").fetchall()}
+    if "validation_issue" not in existing_ct_cols:
+        conn.execute("ALTER TABLE create_template_uploads ADD COLUMN validation_issue TEXT NOT NULL DEFAULT ''")
     conn.commit()
     return conn
 
@@ -419,20 +432,29 @@ def save_migration_scope(source_system, modules, target_db=DEFAULT_TARGET_DATABA
         conn.close()
 
 
-def save_create_template_upload(file_name, mapped_pairs):
+def save_create_template_upload(file_name, field_rows):
     """Records `file_name` as the source for every (table, column) pair in
-    `mapped_pairs` -- most-recent upload wins per pair, same upsert
+    `field_rows` -- most-recent upload wins per pair, same upsert
     convention as save_mapping. Called automatically on every successful
     Create Template parse (poc/app.py), not gated behind a button -- the
-    whole point is passive accumulation across a session's uploads."""
+    whole point is passive accumulation across a session's uploads.
+
+    field_rows: iterable of (table, column, validation_issue) -- the last
+    item is create_template.py's own _validation_issue result (a short
+    reason string, or None/empty if that field's own form validation is
+    fine) for THIS upload's own copy of the field. Persisted the same
+    most-recent-wins way as file_name -- if a later upload's own copy of a
+    field has no issue, that upload's clean state is what the ledger
+    reports, same as its coverage already works."""
     conn = get_conn()
     try:
         now = datetime.datetime.now(datetime.timezone.utc).isoformat()
         conn.executemany(
-            """INSERT INTO create_template_uploads (table_name, column_name, file_name, uploaded_at)
-               VALUES (?,?,?,?)
-               ON CONFLICT(table_name, column_name) DO UPDATE SET file_name=excluded.file_name, uploaded_at=excluded.uploaded_at""",
-            [(table, column, file_name, now) for table, column in mapped_pairs],
+            """INSERT INTO create_template_uploads (table_name, column_name, file_name, uploaded_at, validation_issue)
+               VALUES (?,?,?,?,?)
+               ON CONFLICT(table_name, column_name) DO UPDATE SET
+                   file_name=excluded.file_name, uploaded_at=excluded.uploaded_at, validation_issue=excluded.validation_issue""",
+            [(table, column, file_name, now, issue or "") for table, column, issue in field_rows],
         )
         conn.commit()
     finally:
@@ -440,8 +462,10 @@ def save_create_template_upload(file_name, mapped_pairs):
 
 
 def get_create_template_uploads():
-    """Every (table, column) -> which file most recently covered it, across
-    every Create Template upload since the last clear_create_template_uploads()."""
+    """Every (table, column) -> which file most recently covered it (and
+    whether that upload's own copy of the field had a validation issue),
+    across every Create Template upload since the last
+    clear_create_template_uploads()."""
     conn = get_conn()
     try:
         rows = conn.execute("SELECT * FROM create_template_uploads").fetchall()

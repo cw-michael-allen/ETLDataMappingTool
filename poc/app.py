@@ -329,9 +329,11 @@ class Handler(BaseHTTPRequestHandler):
             # (those are template scaffolding, not a customer-confirmed
             # fact), and regardless of checkbox selections -- same "not
             # optional" precedent as linkAdditions itself.
-            mapped_pairs = {
-                (row["tableName"], row["columnName"]) for form in form_templates for row in form["rows"]
-            }
+            field_rows = [
+                (row["tableName"], row["columnName"], row.get("validationIssue"))
+                for form in form_templates for row in form["rows"]
+            ]
+            mapped_pairs = {(table, column) for table, column, _ in field_rows}
             # Recorded automatically, not gated behind a button -- see
             # db.save_create_template_upload's own docstring. Then folded
             # together with every OTHER upload recorded so far (found
@@ -339,17 +341,29 @@ class Handler(BaseHTTPRequestHandler):
             # earlier upload in the same working session already covered --
             # each upload's own check was fully independent) so this
             # response reflects everything covered across every upload to
-            # date, not just this one file.
-            db.save_create_template_upload(filename, mapped_pairs)
+            # date, not just this one file. Same for validation issues
+            # (2026-08-18, closing Russ's "form validations aren't obvious"
+            # comment) -- each field's own most-recently-uploaded copy is
+            # what the report shows, same most-recent-wins rule as coverage.
+            db.save_create_template_upload(filename, field_rows)
             coverage = db.get_create_template_uploads()
             coverage_by_pair = {(c["table_name"], c["column_name"]): c["file_name"] for c in coverage}
-            scope_tables = sorted({t for t, _ in coverage_by_pair} | {row["tableName"] for form in form_templates for row in form["rows"]})
+            scope_tables = sorted({t for t, _ in coverage_by_pair} | {t for t, _ in mapped_pairs})
             required_fields = readiness.required_fields_for_tables("CaseWorthy", scope_tables)
+            validation_issues = sorted(
+                (
+                    {"table": c["table_name"], "field": c["column_name"], "file": c["file_name"], "issue": c["validation_issue"]}
+                    for c in coverage
+                    if c.get("validation_issue")
+                ),
+                key=lambda v: (v["table"], v["field"]),
+            )
             result["readiness"] = {
                 "requiredFields": [
                     {"table": r["table"], "field": r["field"], "mappedBy": coverage_by_pair.get((r["table"], r["field"]))}
                     for r in required_fields
-                ]
+                ],
+                "validationIssues": validation_issues,
             }
         except create_template.CreateTemplateError as e:
             result["formTemplatesError"] = str(e)

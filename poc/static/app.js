@@ -513,6 +513,21 @@ function renderCommentsCell(comments) {
 // call, 2026-08-12) -- no checkbox (a join key isn't optional the way a data
 // field is) and a distinct "synthetic" tint so it's never mistaken for
 // something the form actually asked for.
+// Validation cell shared by both real and synthetic rows: r.validation is a
+// human-readable summary of whatever the form itself configured
+// (create_template.py's _validation_summary), r.validationIssue (real rows
+// only -- always null on synthetic ones, which have no form validation of
+// their own to judge) is a short reason that configuration doesn't match
+// what the target field needs (_validation_issue) -- addresses Russ's
+// 2026-08-18 comment that it takes manual form-by-form digging today to
+// notice things like missing validation.
+function renderValidationCell(r) {
+  if (r.validationIssue) {
+    return `<td class="ft-validation-issue" title="${escapeHtml(r.validationIssue)}">⚠ ${escapeHtml(r.validation || "None")}</td>`;
+  }
+  return `<td>${r.validation ? escapeHtml(r.validation) : ""}</td>`;
+}
+
 function renderSyntheticRow(r) {
   return `
     <tr class="ft-synthetic-row" title="Added automatically -- not a field on the original form">
@@ -525,6 +540,7 @@ function renderSyntheticRow(r) {
       <td>${escapeHtml(r.required)}</td>
       <td>${r.listId ? escapeHtml(r.listId) : ""}</td>
       <td>${r.characterMaxLength != null ? escapeHtml(String(r.characterMaxLength)) : ""}</td>
+      ${renderValidationCell(r)}
       <td>${r.linkedTo ? `<span class="ft-linked">${escapeHtml(r.linkedTo)}</span>` : ""}</td>
       <td class="ft-comments">${renderCommentsCell(r.comments)}</td>
     </tr>`;
@@ -543,6 +559,7 @@ function renderFormTemplateTable(form, formIndex, selected, linkAdditions) {
       <td>${escapeHtml(r.required)}</td>
       <td>${r.listId ? escapeHtml(r.listId) : ""}</td>
       <td>${r.characterMaxLength != null ? escapeHtml(String(r.characterMaxLength)) : ""}</td>
+      ${renderValidationCell(r)}
       <td>${r.linkedTo ? `<span class="ft-linked">${escapeHtml(r.linkedTo)}</span>` : ""}</td>
       <td class="ft-comments">${renderCommentsCell(r.comments)}</td>
     </tr>`).join("");
@@ -565,9 +582,9 @@ function renderFormTemplateTable(form, formIndex, selected, linkAdditions) {
         <table class="field-def-table">
           <thead><tr>
             <th></th><th>ColumnName</th><th>TableName</th><th>FieldLabel</th><th>DataType</th>
-            <th>FormElementType</th><th>Required</th><th>ListID</th><th>CharacterMaxLength</th><th>LinkedTo</th><th>Comments</th>
+            <th>FormElementType</th><th>Required</th><th>ListID</th><th>CharacterMaxLength</th><th>Validation</th><th>LinkedTo</th><th>Comments</th>
           </tr></thead>
-          <tbody>${syntheticRows}${rows || (syntheticRows ? "" : `<tr><td colspan="11" class="empty">No data fields found on this form.</td></tr>`)}</tbody>
+          <tbody>${syntheticRows}${rows || (syntheticRows ? "" : `<tr><td colspan="12" class="empty">No data fields found on this form.</td></tr>`)}</tbody>
         </table>
       </div>
     </div>`;
@@ -662,6 +679,7 @@ async function renderCreateTemplateStep() {
         </div>
       </div>
       ${renderFormReadinessPanel(formReadiness.requiredFields)}
+      ${renderValidationIssuesPanel(formReadiness.validationIssues)}
     </div>` : "";
   // Once the structured table renders, the raw tree is only useful for
   // double-checking something the table doesn't explain -- tuck it behind a
@@ -817,7 +835,7 @@ async function renderCreateTemplateStep() {
     // window.open must run synchronously inside the click handler (no
     // await before it) or browsers treat it as an unrequested popup and
     // block it.
-    printReadinessReport(formReadiness.requiredFields, ct.result.sourceFile);
+    printReadinessReport(formReadiness.requiredFields, formReadiness.validationIssues, ct.result.sourceFile);
   };
   document.getElementById("ct-back").onclick = () => {
     state.targetDatabase = "CaseWorthy";
@@ -1357,6 +1375,25 @@ function renderFormReadinessPanel(requiredFields) {
   return `<div class="readiness-panel">${missingBlock}${coveredBlock}</div>`;
 }
 
+// Calls out fields whose own form validation doesn't match what their
+// target field needs (create_template.py's _validation_issue, surfaced
+// per-upload via db.get_create_template_uploads) -- Russ's 2026-08-18
+// comment was specifically that this kind of thing takes manual form-by-
+// form digging today; this is the "we already noticed it for you" answer.
+// Named by table/field/file so a TC knows exactly which form to go fix.
+function renderValidationIssuesPanel(validationIssues) {
+  if (!validationIssues || !validationIssues.length) {
+    return `<div class="readiness-panel"><div class="readiness-clean">✓ No validation issues found in any form uploaded so far.</div></div>`;
+  }
+  return `
+    <div class="readiness-panel">
+      <div class="readiness-group">
+        <h4>Validation issues</h4>
+        <ul>${validationIssues.map(v => `<li>${tableDisplayName(v.table)} → ${escapeHtml(v.field)} <span style="color:var(--surface-text-muted);">(${escapeHtml(v.file)})</span> — ${escapeHtml(v.issue)}</li>`).join("")}</ul>
+      </div>
+    </div>`;
+}
+
 // Opens a standalone, purpose-built print view of the Create Template
 // readiness check (not the interactive SPA screen itself, which has too
 // much unrelated chrome -- upload controls, other buttons, raw XML tree --
@@ -1364,7 +1401,7 @@ function renderFormReadinessPanel(requiredFields) {
 // mostRecentFile is just for the report's own header line -- the table
 // below already names the real source file per field via each row's own
 // "Source File" column.
-function printReadinessReport(requiredFields, mostRecentFile) {
+function printReadinessReport(requiredFields, validationIssues, mostRecentFile) {
   const rows = requiredFields.slice().sort((a, b) =>
     tableDisplayName(a.table).localeCompare(tableDisplayName(b.table)) || a.field.localeCompare(b.field)
   );
@@ -1376,6 +1413,19 @@ function printReadinessReport(requiredFields, mostRecentFile) {
       <td>${escapeHtml(r.field)}</td>
       <td>${r.mappedBy ? escapeHtml(r.mappedBy) : "Missing"}</td>
     </tr>`).join("");
+  const validationRowsHtml = (validationIssues || []).map(v => `
+    <tr class="missing">
+      <td>${escapeHtml(tableDisplayName(v.table))}</td>
+      <td>${escapeHtml(v.field)}</td>
+      <td>${escapeHtml(v.file)}</td>
+      <td>${escapeHtml(v.issue)}</td>
+    </tr>`).join("");
+  const validationSection = (validationIssues || []).length ? `
+  <div class="summary">${validationIssues.length} validation issue${validationIssues.length === 1 ? "" : "s"} found.</div>
+  <table>
+    <thead><tr><th>Target Table</th><th>Field</th><th>Form</th><th>Issue</th></tr></thead>
+    <tbody>${validationRowsHtml}</tbody>
+  </table>` : `<div class="summary">No validation issues found in any form uploaded so far.</div>`;
   const html = `<!doctype html>
 <html>
 <head>
@@ -1383,7 +1433,8 @@ function printReadinessReport(requiredFields, mostRecentFile) {
 <title>Migration Readiness Report</title>
 <style>
   body { font-family: Arial, Helvetica, sans-serif; color: #1a1a1a; padding: 24px; }
-  h1 { font-size: 18px; margin: 0 0 4px 0; }
+  h1 { font-size: 18px; margin: 24px 0 4px 0; }
+  h1:first-of-type { margin-top: 0; }
   .meta { color: #555; font-size: 12px; margin-bottom: 4px; }
   .summary { margin: 12px 0; font-size: 13px; font-weight: bold; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
@@ -1404,6 +1455,8 @@ function printReadinessReport(requiredFields, mostRecentFile) {
     <thead><tr><th>Target Table</th><th>Field</th><th>Source File / Status</th></tr></thead>
     <tbody>${rowsHtml}</tbody>
   </table>
+  <h1>Validation Issues</h1>
+  ${validationSection}
 </body>
 </html>`;
   const win = window.open("", "_blank");
