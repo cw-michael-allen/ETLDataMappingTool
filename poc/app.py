@@ -35,6 +35,7 @@ import field_matcher  # noqa: E402
 import file_import  # noqa: E402
 import form_xml  # noqa: E402
 import llm_gateway  # noqa: E402
+import readiness  # noqa: E402
 import schema_rules  # noqa: E402
 import shared_mappings  # noqa: E402
 import sql_export  # noqa: E402
@@ -320,6 +321,36 @@ class Handler(BaseHTTPRequestHandler):
             # stays organized by form) can splice each one into the right
             # form-block(s) as a literal row instead of only a summary banner.
             result["linkAdditionsByForm"] = create_template.compute_link_additions_by_form(form_templates)
+            # Migration Readiness for this upload -- deliberately decoupled
+            # from the main wizard's own db.py-backed rollup (Michael's
+            # call, 2026-08-17: Create Template stays out of the mapping
+            # flow, same as it's always been). Built from every form's own
+            # real rows only, never the synthesized join/PK additions above
+            # (those are template scaffolding, not a customer-confirmed
+            # fact), and regardless of checkbox selections -- same "not
+            # optional" precedent as linkAdditions itself.
+            mapped_pairs = {
+                (row["tableName"], row["columnName"]) for form in form_templates for row in form["rows"]
+            }
+            # Recorded automatically, not gated behind a button -- see
+            # db.save_create_template_upload's own docstring. Then folded
+            # together with every OTHER upload recorded so far (found
+            # necessary 2026-08-17: readiness wasn't "remembering" what an
+            # earlier upload in the same working session already covered --
+            # each upload's own check was fully independent) so this
+            # response reflects everything covered across every upload to
+            # date, not just this one file.
+            db.save_create_template_upload(filename, mapped_pairs)
+            coverage = db.get_create_template_uploads()
+            coverage_by_pair = {(c["table_name"], c["column_name"]): c["file_name"] for c in coverage}
+            scope_tables = sorted({t for t, _ in coverage_by_pair} | {row["tableName"] for form in form_templates for row in form["rows"]})
+            required_fields = readiness.required_fields_for_tables("CaseWorthy", scope_tables)
+            result["readiness"] = {
+                "requiredFields": [
+                    {"table": r["table"], "field": r["field"], "mappedBy": coverage_by_pair.get((r["table"], r["field"]))}
+                    for r in required_fields
+                ]
+            }
         except create_template.CreateTemplateError as e:
             result["formTemplatesError"] = str(e)
         return self._send_json(result)
@@ -388,6 +419,11 @@ class Handler(BaseHTTPRequestHandler):
             return self._send_json(scoped_schema(target_db, parse_modules(query.get("modules"))))
         if parsed.path == "/api/stats":
             return self._send_json(db.get_stats(target_db))
+        if parsed.path == "/api/readiness":
+            source_system = (query.get("sourceSystem") or [""])[0]
+            if not source_system:
+                return self._send_json({"error": "missing sourceSystem"}, 400)
+            return self._send_json(readiness.compute_readiness(target_db, source_system))
         self._serve_static(parsed.path)
 
     def _serve_static(self, path):
@@ -450,6 +486,13 @@ class Handler(BaseHTTPRequestHandler):
             return self._handle_create_template_download("field-definition")
         if path == "/api/create-template/download-staging-excel":
             return self._handle_create_template_download("staging-excel")
+        if path == "/api/create-template/clear-uploads":
+            # Resets Create Template's own coverage ledger (db.py's
+            # create_template_uploads) -- e.g. before testing against a
+            # different, unrelated migration/customer, since that ledger has
+            # no customer identity of its own to scope by. No body needed.
+            db.clear_create_template_uploads()
+            return self._send_json({"ok": True})
         if path == "/api/shutdown":
             return self._handle_shutdown()
 
@@ -467,7 +510,7 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 db.save_mapping(
                     payload["sourceSystem"], payload["fieldName"], payload["table"], payload["field"], target_db,
-                    desc=payload.get("desc", ""),
+                    desc=payload.get("desc", ""), confidence=payload.get("confidence", ""),
                 )
             except KeyError as e:
                 return self._send_json({"error": f"missing field: {e}"}, 400)
@@ -508,6 +551,12 @@ class Handler(BaseHTTPRequestHandler):
                     "value_map", target_db, source_system, field_name, table, field, value_map=value_map,
                 )
             return self._send_json({"ok": True})
+        if path == "/api/migration-scope":
+            source_system = payload.get("sourceSystem", "")
+            if not source_system:
+                return self._send_json({"error": "missing sourceSystem"}, 400)
+            merged = db.save_migration_scope(source_system, modules, target_db)
+            return self._send_json({"ok": True, "modules": merged})
         if path == "/api/rulecheck":
             return self._send_json(
                 schema_rules.check_batch(payload.get("mappings", []), scoped_schema(target_db, modules))

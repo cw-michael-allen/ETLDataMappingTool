@@ -1,5 +1,6 @@
 import datetime
 import getpass
+import json
 import os
 import re
 import sqlite3
@@ -122,6 +123,56 @@ def get_conn():
     # "code=label" mini-language used everywhere else in this codebase.
     if not _has_column(conn, "mappings", "value_map"):
         conn.execute("ALTER TABLE mappings ADD COLUMN value_map TEXT NOT NULL DEFAULT ''")
+    # Same non-destructive ALTER pattern, added for readiness.py's rollup:
+    # the suggestion confidence ("high"/"medium"/"low"/...) is already
+    # computed at suggest time and shown in the UI, just never persisted
+    # before now. confirm_count is NOT a usable stand-in for this -- most
+    # rows confirm exactly once regardless of how confident the original
+    # suggestion was. Legacy rows stay '' ("confidence unknown"), never
+    # backfilled/guessed.
+    if not _has_column(conn, "mappings", "confidence"):
+        conn.execute("ALTER TABLE mappings ADD COLUMN confidence TEXT NOT NULL DEFAULT ''")
+    # A migration's own module/table scope (schema_rules.scope_schema's
+    # `modules`), saved so readiness.py can tell "no gaps in tables you
+    # haven't started yet" apart from "no gaps because you never intended to
+    # cover that table" -- scope_schema/list_modules are otherwise
+    # request-time-only and never persisted. Its own table, not a column on
+    # mappings, since it's one row per (target_db, source_system), not per
+    # field. modules is a JSON-encoded list, same "structured data as TEXT"
+    # convention as mappings.value_map.
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS migration_scope (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            target_db TEXT NOT NULL,
+            source_system TEXT NOT NULL,
+            source_system_norm TEXT NOT NULL,
+            modules TEXT NOT NULL DEFAULT '[]',
+            updated_at TEXT NOT NULL,
+            UNIQUE(target_db, source_system_norm)
+        )"""
+    )
+    # Which uploaded Form XML file last covered each (table, column) --
+    # Create Template's own accumulated coverage ledger (Michael, 2026-08-17:
+    # readiness wasn't "remembering" what an earlier upload in the same
+    # session already covered; each upload's own check was fully
+    # independent). Deliberately its own table, not folded into `mappings`
+    # -- Create Template stays decoupled from the mapping flow (no source-
+    # system identity, no confirm_count/desc/confidence semantics that apply
+    # here). Not scoped by customer/migration either, since Create Template
+    # has no such identity to key it by -- see the "Clear uploaded forms"
+    # control (clear_create_template_uploads) for starting over on an
+    # unrelated form/migration. Most-recent upload wins per (table, column),
+    # same upsert convention as save_mapping.
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS create_template_uploads (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            table_name TEXT NOT NULL,
+            column_name TEXT NOT NULL,
+            file_name TEXT NOT NULL,
+            uploaded_at TEXT NOT NULL,
+            UNIQUE(table_name, column_name)
+        )"""
+    )
     conn.commit()
     return conn
 
@@ -169,11 +220,14 @@ def get_decode_patterns(target_table, target_field, target_db=DEFAULT_TARGET_DAT
         conn.close()
 
 
-def save_mapping(source_system, field_name, target_table, target_field, target_db=DEFAULT_TARGET_DATABASE, desc=""):
+def save_mapping(
+    source_system, field_name, target_table, target_field, target_db=DEFAULT_TARGET_DATABASE, desc="", confidence=""
+):
     conn = get_conn()
     try:
         now = datetime.datetime.now(datetime.timezone.utc).isoformat()
         desc = desc or ""
+        confidence = confidence or ""
         ss_norm, fn_norm = normalize(source_system), normalize(field_name)
         existing = conn.execute(
             "SELECT * FROM mappings WHERE target_db=? AND source_system_norm=? AND field_name_norm=?",
@@ -181,22 +235,22 @@ def save_mapping(source_system, field_name, target_table, target_field, target_d
         ).fetchone()
         if existing and existing["target_table"] == target_table and existing["target_field"] == target_field:
             conn.execute(
-                "UPDATE mappings SET confirm_count = confirm_count + 1, last_confirmed_at=?, desc=? WHERE id=?",
-                (now, desc, existing["id"]),
+                "UPDATE mappings SET confirm_count = confirm_count + 1, last_confirmed_at=?, desc=?, confidence=? WHERE id=?",
+                (now, desc, confidence, existing["id"]),
             )
         elif existing:
             conn.execute(
                 """UPDATE mappings SET target_table=?, target_field=?, confirm_count=1,
-                   last_confirmed_at=?, source_system=?, field_name=?, desc=? WHERE id=?""",
-                (target_table, target_field, now, source_system, field_name, desc, existing["id"]),
+                   last_confirmed_at=?, source_system=?, field_name=?, desc=?, confidence=? WHERE id=?""",
+                (target_table, target_field, now, source_system, field_name, desc, confidence, existing["id"]),
             )
         else:
             conn.execute(
                 """INSERT INTO mappings
                    (target_db, source_system, source_system_norm, field_name, field_name_norm,
-                    target_table, target_field, confirm_count, last_confirmed_at, desc)
-                   VALUES (?,?,?,?,?,?,?,1,?,?)""",
-                (target_db, source_system, ss_norm, field_name, fn_norm, target_table, target_field, now, desc),
+                    target_table, target_field, confirm_count, last_confirmed_at, desc, confidence)
+                   VALUES (?,?,?,?,?,?,?,1,?,?,?)""",
+                (target_db, source_system, ss_norm, field_name, fn_norm, target_table, target_field, now, desc, confidence),
             )
 
         idx_row = conn.execute(
@@ -291,6 +345,118 @@ def clear_pending_sync(sync_ids):
     conn = get_conn()
     try:
         conn.executemany("DELETE FROM pending_sync WHERE sync_id=?", [(sid,) for sid in sync_ids])
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_all_mappings(source_system, target_db=DEFAULT_TARGET_DATABASE):
+    """Every confirmed mapping for one source system, for readiness.py's
+    rollup -- unlike get_mapping (a single exact field), this is the "what
+    has this customer's whole migration mapped so far" view. Ordered by
+    target table/field so a rollup grouping by target table doesn't need
+    its own sort."""
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            """SELECT * FROM mappings WHERE target_db=? AND source_system_norm=?
+               ORDER BY target_table, target_field""",
+            (target_db, normalize(source_system)),
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_migration_scope(source_system, target_db=DEFAULT_TARGET_DATABASE):
+    """The module/table scope saved so far for this migration (see
+    migration_scope's own comment in get_conn), or None if nothing's been
+    saved yet -- readiness.py falls back to the full schema in that case."""
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT * FROM migration_scope WHERE target_db=? AND source_system_norm=?",
+            (target_db, normalize(source_system)),
+        ).fetchone()
+        if not row:
+            return None
+        return {"modules": json.loads(row["modules"]), "updated_at": row["updated_at"]}
+    finally:
+        conn.close()
+
+
+def save_migration_scope(source_system, modules, target_db=DEFAULT_TARGET_DATABASE):
+    """Unions `modules` into whatever's already saved for this migration --
+    never overwrites/shrinks it. A session that only touches a subset of
+    modules shouldn't make readiness.py think the customer's migration got
+    smaller; scope only ever grows, matching this app's general
+    learn/accumulate-over-time ethos (confirm_count, field_index.count).
+    Returns the post-union module list."""
+    conn = get_conn()
+    try:
+        ss_norm = normalize(source_system)
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        existing = conn.execute(
+            "SELECT * FROM migration_scope WHERE target_db=? AND source_system_norm=?",
+            (target_db, ss_norm),
+        ).fetchone()
+        existing_modules = json.loads(existing["modules"]) if existing else []
+        merged = sorted(set(existing_modules) | set(modules or []))
+        if existing:
+            conn.execute(
+                "UPDATE migration_scope SET modules=?, updated_at=? WHERE id=?",
+                (json.dumps(merged), now, existing["id"]),
+            )
+        else:
+            conn.execute(
+                """INSERT INTO migration_scope (target_db, source_system, source_system_norm, modules, updated_at)
+                   VALUES (?,?,?,?,?)""",
+                (target_db, source_system, ss_norm, json.dumps(merged), now),
+            )
+        conn.commit()
+        return merged
+    finally:
+        conn.close()
+
+
+def save_create_template_upload(file_name, mapped_pairs):
+    """Records `file_name` as the source for every (table, column) pair in
+    `mapped_pairs` -- most-recent upload wins per pair, same upsert
+    convention as save_mapping. Called automatically on every successful
+    Create Template parse (poc/app.py), not gated behind a button -- the
+    whole point is passive accumulation across a session's uploads."""
+    conn = get_conn()
+    try:
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        conn.executemany(
+            """INSERT INTO create_template_uploads (table_name, column_name, file_name, uploaded_at)
+               VALUES (?,?,?,?)
+               ON CONFLICT(table_name, column_name) DO UPDATE SET file_name=excluded.file_name, uploaded_at=excluded.uploaded_at""",
+            [(table, column, file_name, now) for table, column in mapped_pairs],
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_create_template_uploads():
+    """Every (table, column) -> which file most recently covered it, across
+    every Create Template upload since the last clear_create_template_uploads()."""
+    conn = get_conn()
+    try:
+        rows = conn.execute("SELECT * FROM create_template_uploads").fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def clear_create_template_uploads():
+    """Resets Create Template's own coverage ledger -- e.g. before starting
+    to test against a different, unrelated migration/customer, since this
+    ledger has no customer identity of its own to scope by."""
+    conn = get_conn()
+    try:
+        conn.execute("DELETE FROM create_template_uploads")
         conn.commit()
     finally:
         conn.close()

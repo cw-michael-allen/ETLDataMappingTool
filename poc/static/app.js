@@ -354,6 +354,7 @@ async function renderStep1() {
       ${moduleBlock}
       <label for="src-sys">Source system name</label>
       <input type="text" id="src-sys" placeholder="e.g. Bonterra Case Manager, Apricot, a homegrown Access database" value="${escapeHtml(state.sourceSystem)}">
+      ${!unavailable ? `<div style="margin-top:6px;"><button type="button" class="ghost" id="view-readiness-link">View Migration Readiness →</button></div>` : ""}
       <div class="target-db-row" style="margin-top:14px;">
         <label style="display:flex;align-items:center;gap:8px;font-weight:600;">
           <input type="checkbox" id="advanced-toggle" ${state.advancedMode ? "checked" : ""} style="width:auto;">
@@ -430,6 +431,22 @@ async function renderStep1() {
   };
   const dialectEl = document.getElementById("dialect");
   if (dialectEl) dialectEl.onchange = (e) => { state.dialect = e.target.value; };
+  // Saving migration_scope is a deliberately explicit act (the "Save
+  // current module scope" button inside the Readiness view itself), never
+  // a silent side effect of navigating Step 1 -- CaseWorthy's default is
+  // every module selected, so auto-saving here on "Next" or on opening
+  // Readiness would immediately turn readiness.py's "no saved scope yet ->
+  // default to the Master Migration Template's own 5 tables" behavior into
+  // "saved, all 28 tables" the first time anyone used the tool without
+  // narrowing modules first -- defeating the point of that default (2026-08-17).
+  const readinessLink = document.getElementById("view-readiness-link");
+  if (readinessLink) readinessLink.onclick = () => {
+    const val = document.getElementById("src-sys").value.trim();
+    if (!val) { alert("Enter the source system name first."); return; }
+    state.sourceSystem = val;
+    state.step = "readiness";
+    renderMigrationReadinessStep();
+  };
   document.getElementById("next-1").onclick = () => {
     if (unavailable) return;
     const val = document.getElementById("src-sys").value.trim();
@@ -625,6 +642,24 @@ async function renderCreateTemplateStep() {
         ? `${escapeHtml(a.table)}.${escapeHtml(a.column)} (its own primary key)`
         : `${escapeHtml(a.table)}.${escapeHtml(a.column)} → ${escapeHtml(a.linkedTo)}`).join(", ")}.</div>`
     : "";
+  // Migration Readiness for this upload -- decoupled from the main wizard's
+  // own db.py-backed rollup (no source-system identity, nothing keyed by
+  // customer); computed by the server regardless of checkbox selections,
+  // same precedent as linkAdditions above. Reflects EVERY upload recorded
+  // so far (db.py's create_template_uploads), not just this one file --
+  // found necessary 2026-08-17: a second upload wasn't "remembering" what
+  // an earlier one in the same session already covered. Each required
+  // field carries mappedBy (the file that covers it) or null (still
+  // missing) -- see renderFormReadinessPanel.
+  const formReadiness = ct.result && ct.result.readiness;
+  const readinessHtml = formReadiness ? `
+    <div class="card" style="margin-top:0;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h4 style="margin:0;">Migration Readiness (all forms uploaded so far)</h4>
+        <button type="button" class="ghost" id="ct-clear-uploads">Clear uploaded forms</button>
+      </div>
+      ${renderFormReadinessPanel(formReadiness.requiredFields)}
+    </div>` : "";
   // Once the structured table renders, the raw tree is only useful for
   // double-checking something the table doesn't explain -- tuck it behind a
   // disclosure instead of showing both at full length. Without a structured
@@ -649,6 +684,7 @@ async function renderCreateTemplateStep() {
         </div>
         ${templatesErrorHtml}
         ${linkAdditionsHtml}
+        ${readinessHtml}
         ${templatesHtml}
         ${rawTreeBlock}
       ` : ""}
@@ -664,8 +700,11 @@ async function renderCreateTemplateStep() {
   const parseBtn = document.getElementById("xml-parse-btn");
   const statusEl = document.getElementById("xml-status");
   fileEl.onchange = () => { parseBtn.disabled = !fileEl.files.length; };
-  parseBtn.onclick = async () => {
-    const file = fileEl.files[0];
+  // Shared by the initial "Preview Structure" click and the "Clear uploaded
+  // forms" button's own refresh (re-parsing the already-loaded file so the
+  // readiness panel reflects the now-empty coverage ledger immediately,
+  // without asking the user to re-pick the file they already chose).
+  async function reparseFile(file) {
     if (!file) return;
     ct.parsing = true;
     ct.error = null;
@@ -695,7 +734,8 @@ async function renderCreateTemplateStep() {
       ct.parsing = false;
       renderCreateTemplateStep();
     }
-  };
+  }
+  parseBtn.onclick = () => reparseFile(fileEl.files[0]);
   // Field-select checkboxes/buttons only exist once a structured result has
   // rendered -- updated in place (not a full re-render) so ticking one box
   // doesn't reset scroll position or repaint the whole (potentially large)
@@ -752,6 +792,14 @@ async function renderCreateTemplateStep() {
   if (downloadStagingBtn) downloadStagingBtn.onclick = () => downloadCreateTemplateFile(
     "download-staging-excel", "Staging_Excel.xlsx", selectionsPayload(),
   );
+  const clearUploadsBtn = document.getElementById("ct-clear-uploads");
+  if (clearUploadsBtn) clearUploadsBtn.onclick = async () => {
+    if (!confirm("Clear the accumulated coverage from every form uploaded so far? This can't be undone.")) return;
+    await api("/api/create-template/clear-uploads", { method: "POST" });
+    // Re-parse the already-loaded file so the readiness panel immediately
+    // reflects the now-empty ledger, without asking the user to re-pick it.
+    await reparseFile(ct.file);
+  };
   document.getElementById("ct-back").onclick = () => {
     state.targetDatabase = "CaseWorthy";
     localStorage.setItem(TARGET_DB_STORAGE_KEY, state.targetDatabase);
@@ -1002,7 +1050,7 @@ function renderStep3Results() {
       await api("/api/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetDatabase: state.targetDatabase, sourceSystem: state.sourceSystem, fieldName: s.source, table: s.confirmedTable, field: s.confirmedField, desc: s.desc || "" }),
+        body: JSON.stringify({ targetDatabase: state.targetDatabase, sourceSystem: state.sourceSystem, fieldName: s.source, table: s.confirmedTable, field: s.confirmedField, desc: s.desc || "", confidence: s.suggestion.confidence || "" }),
       });
       s.confirmed = true;
       s.flagged = false;
@@ -1262,6 +1310,115 @@ function renderReadinessPanel(check) {
     return `<div class="readiness-panel"><div class="readiness-clean">✓ No rule violations detected against ${dbLabel()}'s import requirements.</div></div>`;
   }
   return `<div class="readiness-panel">${groups.join("")}</div>`;
+}
+
+// Create Template's own per-upload readiness check (poc/app.py's
+// _handle_create_template_parse_xml + readiness.py's required_fields_for_tables)
+// -- each entry carries mappedBy (the uploaded file that covers it) or null
+// (still missing). Distinct from renderReadinessPanel above: that one only
+// ever shows what's missing (check_batch never reports what's already
+// satisfied), but showing the covering file name for a satisfied field is
+// the whole point of this panel.
+function renderFormReadinessPanel(requiredFields) {
+  if (!requiredFields.length) {
+    return `<div class="readiness-panel"><div class="readiness-clean">✓ No required fields to track yet -- upload a form to see its requirements.</div></div>`;
+  }
+  const missing = requiredFields.filter(r => !r.mappedBy);
+  const covered = requiredFields.filter(r => r.mappedBy);
+  const missingBlock = missing.length ? `
+    <div class="readiness-group">
+      <h4>Required target fields with no mapping yet</h4>
+      <ul>${missing.map(r => `<li>${tableDisplayName(r.table)} → ${escapeHtml(r.field)}</li>`).join("")}</ul>
+    </div>` : `<div class="readiness-clean">✓ Every required field tracked so far is covered by an uploaded form.</div>`;
+  const coveredBlock = covered.length ? `
+    <div class="readiness-group">
+      <h4>Required target fields already covered</h4>
+      <ul>${covered.map(r => `<li>${tableDisplayName(r.table)} → ${escapeHtml(r.field)} <span style="color:var(--surface-text-muted);">— from ${escapeHtml(r.mappedBy)}</span></li>`).join("")}</ul>
+    </div>` : "";
+  return `<div class="readiness-panel">${missingBlock}${coveredBlock}</div>`;
+}
+
+// Aggregates coverage/confidence/gaps across EVERY mapping persisted so far
+// for this source system (readiness.py's compute_readiness), not just what's
+// on screen right now -- reached from Step 1, not a numbered wizard step
+// (state.step = "readiness" mirrors the non-numeric "3.5" sentinel already
+// used for the value-match sub-step). Computed fresh from db.py on every
+// visit, same as everything else in this app -- nothing here is cached.
+async function renderMigrationReadinessStep() {
+  const sourceSystem = state.sourceSystem;
+  app.innerHTML = `
+    ${renderHeader()}
+    <div class="card">
+      <h3>Migration Readiness — ${escapeHtml(sourceSystem)}</h3>
+      <div class="loading">Checking everything mapped so far against ${dbLabel()}'s import requirements…</div>
+    </div>
+  `;
+  refreshLibStat();
+
+  const q = new URLSearchParams({ targetDatabase: state.targetDatabase, sourceSystem });
+  const result = await api(`/api/readiness?${q.toString()}`);
+
+  const confBuckets = ["high", "medium", "low", "learned", "none", "unknown"];
+  const confPills = confBuckets
+    .filter(b => result.confidenceCounts[b] > 0)
+    .map(b => `<span class="pill ${b}">${result.confidenceCounts[b]} ${b === "unknown" ? "unknown" : b.charAt(0).toUpperCase() + b.slice(1)}</span>`)
+    .join(" ");
+
+  const coverageLine = result.coveragePercent == null
+    ? `No fields exist yet for the modules in scope — nothing to measure coverage against.`
+    : `<strong>${result.coveragePercent}%</strong> of ${result.totalInScopeFieldCount} in-scope target fields mapped (${result.mappedFieldCount} confirmed mapping${result.mappedFieldCount === 1 ? "" : "s"} total).`;
+
+  // scopeSource: "saved" (an explicit migration_scope exists), "masterTemplateDefault"
+  // (CaseWorthy, no saved scope yet -- defaults to the Master Migration
+  // Template's own tables, not all 28), or "fullSchema" (ServTracker, or a
+  // CaseWorthy install with no Master Template loaded -- see readiness.py).
+  const scopeNote = result.scopeSource === "saved"
+    ? `Scoped to: ${result.scopeModules.map(escapeHtml).join(", ")}.`
+    : result.scopeSource === "masterTemplateDefault"
+    ? `No saved module scope yet — showing gaps against the Master Migration Template's own tables: ${result.scopeModules.map(escapeHtml).join(", ")}. Use "Save current module scope" below once you know exactly which ${groupNounPlural()} this migration covers.`
+    : `No saved module scope yet — showing gaps against ${dbLabel()}'s full schema. Use "Save current module scope" below once you know which ${groupNounPlural()} this migration covers.`;
+
+  const unstarted = result.unstartedModules.length
+    ? `<div class="db-warning"><strong>Not started yet:</strong> ${result.unstartedModules.map(escapeHtml).join(", ")} — in scope, but nothing has been mapped there.</div>`
+    : "";
+
+  app.innerHTML = `
+    ${renderHeader()}
+    <div class="card">
+      <h3>Migration Readiness — ${escapeHtml(sourceSystem)}</h3>
+      <div style="color:var(--surface-text-muted);font-size:13px;margin-bottom:6px;">${scopeNote}</div>
+      <div style="margin:10px 0;">${coverageLine}</div>
+      <div style="margin-bottom:14px;">${confPills || '<span style="color:var(--surface-text-muted);font-size:13px;">No confirmed mappings yet.</span>'}</div>
+      ${unstarted}
+      ${renderReadinessPanel(result)}
+      <div class="step-nav">
+        <button class="secondary" id="back-readiness">← Back</button>
+        <button class="secondary" id="save-scope-readiness">Save current module scope</button>
+      </div>
+    </div>
+    ${renderFooter()}
+  `;
+  refreshLibStat();
+
+  document.getElementById("back-readiness").onclick = () => { state.step = 1; renderStep1(); };
+  document.getElementById("save-scope-readiness").onclick = async () => {
+    const mods = effectiveModules();
+    if (!mods.length) { alert("No modules selected on Step 1 to save yet."); return; }
+    await api("/api/migration-scope", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ targetDatabase: state.targetDatabase, sourceSystem, modules: mods }),
+    });
+    renderMigrationReadinessStep();
+  };
+}
+
+// activeDb() already carries groupNoun ("tab"/"module") from schema_rules'
+// own TARGET_DB_META -- this just reads it with a safe fallback rather than
+// importing a whole extra concept for one word of copy.
+function groupNounPlural() {
+  const meta = activeDb();
+  return (meta.groupNoun ? meta.groupNoun + "s" : "modules");
 }
 
 function renderSqlExportSection(exportResult) {

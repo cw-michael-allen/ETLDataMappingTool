@@ -168,6 +168,10 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .pill.low { background: #FDEAE3; color: var(--cw-orange); }
 .pill.none { background: #EEE; color: #777; }
 .pill.learned { background: #E4E9F5; color: var(--cw-blue); }
+/* Confirmed before the confidence column existed (readiness.py) -- distinct
+   from .none (a real "no confident match" suggestion outcome), so it's never
+   mistaken for a low-quality match rather than just an untracked one. */
+.pill.unknown { background: #F3F3F3; color: #999; }
 .suggestion-card { border: 1px solid var(--surface-border); border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; }
 .suggestion-card .src { font-weight: 700; color: var(--surface-text); }
 .suggestion-card .target { font-family: var(--font-heading); font-weight: 600; color: var(--surface-heading); margin: 6px 0; }
