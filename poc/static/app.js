@@ -152,7 +152,7 @@ function renderHeader() {
     </div>
   ` : state.step === 1 ? `
     <div class="welcome-panel">
-      <p>Welcome! This tool helps you figure out where your data belongs. As you migrate to ${meta.label}, it maps fields from your old source system to the right destination fields in your new one.</p>
+      <p>Welcome to DataCompass. As you migrate to ${meta.label}, it maps every field from your old source system to its exact destination in your new one — so you always know where your data belongs.</p>
       <h4>How It Works</h4>
       <ol>
         <li>Enter a field name from your existing source system.</li>
@@ -178,12 +178,42 @@ function renderHeader() {
     ${renderThemeToggle()}
     <div class="header-row">
       <div>
-        <img class="brand-logo" src="${meta.logo}" alt="${meta.label}">
+        ${renderBrandLockup()}
         <div class="eyebrow">${isCreateTemplate ? "CaseWorthy • Create Template" : `${meta.label} • ETL Onboarding`}</div>
         <h1>${isCreateTemplate ? "Create Template" : "Field Mapping Assistant"}</h1>
       </div>
     </div>
     ${helpBlock}
+  `;
+}
+
+// DataCompass's own brand lockup -- replaces the per-target-database PNG
+// logo (CaseWorthy/ServTracker) that used to render here. Which database
+// you're mapping INTO is still communicated -- by the eyebrow text right
+// below (e.g. "ServTracker • ETL Onboarding") and the Target Database
+// dropdown itself -- just not by a second, competing logo image; showing
+// both CaseWorthy's own logo AND DataCompass's own mark in the same header
+// read as two brands competing for the same slot rather than one tool
+// with a clear identity. Every color routes through --accent-*/--cw-gold
+// (see styles.css's accent-token comment) instead of the raw brand hues,
+// so the mark and wordmark both stay legible in dark mode -- the raw blue
+// ring measured 1.64:1 against this app's dark page background, nowhere
+// close to visible.
+function renderBrandLockup() {
+  return `
+    <div class="dc-lockup">
+      <svg class="dc-mark" viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="20" cy="20" r="17" fill="none" stroke="var(--accent-blue)" stroke-width="2.5"/>
+        <polygon points="20,7 24,20 20,33 16,20" fill="var(--accent-blue)"/>
+        <polygon points="20,7 24,20 20,20" fill="var(--cw-gold)"/>
+        <circle cx="20" cy="20" r="2.6" fill="var(--surface-card)" stroke="var(--accent-blue)" stroke-width="1.6"/>
+      </svg>
+      <div class="dc-wordmark">
+        <span class="dc-name">DataCompass</span>
+        <span class="dc-by">by CaseWorthy</span>
+        <span class="dc-tagline">Find your way in the data.</span>
+      </div>
+    </div>
   `;
 }
 
@@ -197,7 +227,7 @@ function renderFooter(extra, showLibStat = true) {
     : "";
   return `
     <footer>
-      ${extra || "Internal POC · CaseWorthy Technical Consulting"}
+      ${extra || "DataCompass by CaseWorthy · Internal POC · Technical Consulting"}
       ${libStat}
     </footer>`;
 }
@@ -720,7 +750,7 @@ async function renderCreateTemplateStep() {
         <span></span>
       </div>
     </div>
-    ${renderFooter("Internal POC · CaseWorthy Technical Consulting", false)}
+    ${renderFooter("DataCompass by CaseWorthy · Internal POC · Technical Consulting", false)}
   `;
 
   const fileEl = document.getElementById("xml-file");
@@ -1045,7 +1075,7 @@ function renderReadinessMiniPanel() {
     : `<strong>${result.coveragePercent}%</strong> of ${result.totalInScopeFieldCount} in-scope target fields mapped (${result.mappedFieldCount} confirmed).`;
   const missingCount = result.requiredMissing.length;
   const missingNote = missingCount
-    ? `<span style="color:var(--cw-orange);">${missingCount} required field${missingCount === 1 ? "" : "s"} still missing.</span>`
+    ? `<span style="color:var(--accent-orange);">${missingCount} required field${missingCount === 1 ? "" : "s"} still missing.</span>`
     : `<span style="color:var(--surface-text-muted);">No required-field gaps in scope.</span>`;
   return `
     <div class="card" id="mapping-readiness-mini" style="margin-top:0;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
@@ -1097,7 +1127,7 @@ function renderStep3Results() {
       <div class="suggestion-card" data-idx="${i}">
         <div class="src">${escapeHtml(s.source)}${s.desc ? ` <span style="font-weight:400;color:var(--surface-text-muted);">— ${escapeHtml(s.desc)}</span>` : ""}</div>
         ${s.sourceValues ? `<div class="decode">Known source values: ${escapeHtml(s.sourceValues)}</div>` : ""}
-        ${hasMatch ? `<div class="target">${escapeHtml(shownTarget)} → ${escapeHtml(s.confirmedField)}</div>` : `<div class="target" style="color:var(--cw-orange);">No confident match</div>`}
+        ${hasMatch ? `<div class="target">${escapeHtml(shownTarget)} → ${escapeHtml(s.confirmedField)}</div>` : `<div class="target" style="color:var(--accent-orange);">No confident match</div>`}
         <span class="pill ${pillClass}">${pillLabel}</span>
         <div class="reason" style="margin-top:6px;">${escapeHtml(s.suggestion.reasoning || "")}</div>
         ${decode}${note}${requiredNote}${linkNote}${mergeNote}
@@ -1704,7 +1734,7 @@ async function renderStep4() {
       </div>
     </div>
     ${renderSqlExportSection(exportResult)}
-    ${renderFooter("Internal POC · CaseWorthy Technical Consulting — not for use with real client data")}
+    ${renderFooter("DataCompass by CaseWorthy · Internal POC · not for use with real client data")}
   `;
   refreshLibStat();
   document.getElementById("back-4").onclick = () => { state.step = 3; renderStep3Results(); };

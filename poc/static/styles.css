@@ -14,6 +14,12 @@
   --cw-green-dark: #0B7A6C;
   --cw-purple: #7265AF;
   --cw-orange: #DA623E;
+  /* No official "orange-light" exists in CaseWorthy's UI-state spec the way
+     blue/teal/green each have one -- derived here the same way (base blended
+     ~35% toward white) since dark mode needs it too (see --accent-orange
+     below): raw --cw-orange as small text measures ~4.1:1 against this
+     app's dark card surface, under the 4.5:1 AA floor. */
+  --cw-orange-light: #E79982;
   --cw-nav-dark: #24282B;
   --cw-text-input: #4A4A4A;
   --cw-text-placeholder: #CED1D4;
@@ -40,6 +46,26 @@
   --surface-heading: var(--cw-blue);
   --surface-input-bg: #FFFFFF;
   --surface-hover-tint: #EEF2FA;
+
+  /* Accent indirection layer (2026-08-21): every place in this file that
+     colors TEXT or a thin icon stroke with a brand accent goes through one
+     of these instead of the raw --cw-* value directly. In light mode they
+     just equal the base color -- zero visual change. In dark mode they
+     resolve to the lighter UI-state tint (already part of CaseWorthy's own
+     spec for blue/teal/green; --cw-orange-light is the one derived
+     exception, see its own comment above), because the base shades were
+     tuned for use on white and measure badly against this app's dark
+     surfaces -- raw blue text/icon-strokes measured 1.37-1.64:1 against
+     the dark page/card, nowhere close to the 3:1 floor even for icons and
+     borders, let alone the 4.5:1 floor for text. Never used for a FILLED
+     background (button.primary's blue fill, or any of the small fixed-
+     light-tint pill/badge backgrounds like .pill.high) -- those already
+     carry their own always-light surface and were never the bug. */
+  --accent-blue: var(--cw-blue);
+  --accent-teal: var(--cw-teal);
+  --accent-teal-strong: var(--cw-teal-dark);
+  --accent-green: var(--cw-green);
+  --accent-orange: var(--cw-orange);
 }
 
 :root[data-theme="dark"] {
@@ -51,6 +77,11 @@
   --surface-heading: #FFFFFF;
   --surface-input-bg: #2E3336;
   --surface-hover-tint: #2A3F55;
+  --accent-blue: var(--cw-blue-hover);
+  --accent-teal: var(--cw-teal-light);
+  --accent-teal-strong: var(--cw-teal-light);
+  --accent-green: var(--cw-green-light);
+  --accent-orange: var(--cw-orange-light);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -63,6 +94,11 @@
     --surface-heading: #FFFFFF;
     --surface-input-bg: #2E3336;
     --surface-hover-tint: #2A3F55;
+    --accent-blue: var(--cw-blue-hover);
+    --accent-teal: var(--cw-teal-light);
+    --accent-teal-strong: var(--cw-teal-light);
+    --accent-green: var(--cw-green-light);
+    --accent-orange: var(--cw-orange-light);
   }
 }
 
@@ -78,22 +114,23 @@ body {
 h1, h2, h3 { font-family: var(--font-heading); color: var(--surface-heading); margin: 0 0 4px 0; }
 .eyebrow {
   font-family: var(--font-heading); font-weight: 600; font-size: 12px;
-  letter-spacing: 0.08em; text-transform: uppercase; color: var(--cw-teal); margin-bottom: 6px;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-teal); margin-bottom: 6px;
 }
 .card {
   background: var(--surface-card); border: 1px solid var(--surface-border); border-radius: 10px;
   padding: 20px 24px; margin-bottom: 16px;
 }
+/* DataCompass's own brand lockup -- see app.js's renderBrandLockup() for
+   why this replaced the old per-target-database <img class="brand-logo">
+   entirely rather than sitting alongside it. */
+.dc-lockup { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.dc-mark { width: 46px; height: 46px; flex-shrink: 0; }
+.dc-wordmark { display: flex; flex-direction: column; line-height: 1.2; }
+.dc-wordmark .dc-name { font-family: var(--font-heading); font-weight: 700; font-size: 20px; color: var(--surface-heading); }
+.dc-wordmark .dc-by { font-family: var(--font-heading); font-weight: 500; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--surface-text-muted); }
+.dc-wordmark .dc-tagline { font-family: var(--font-heading); font-weight: 500; font-size: 12px; font-style: italic; color: var(--surface-text-muted); margin-top: 1px; }
+
 .header-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
-.brand-logo {
-  /* max-width caps ServTracker's wordmark, which is proportionally much
-     wider than CaseWorthy's -- height-only sizing let it balloon out far
-     larger than CaseWorthy at the same 104px height. 390px is CaseWorthy's
-     own natural rendered width at that height, so this doesn't change
-     CaseWorthy's size at all, only reins ServTracker in to match it. */
-  height: auto; max-height: 104px; width: auto; max-width: min(390px, 100%);
-  display: block; margin-bottom: 8px;
-}
 .theme-toggle {
   position: fixed; top: 16px; right: 16px; z-index: 10;
   background: var(--surface-card); color: var(--surface-text); border: 1px solid var(--surface-border);
@@ -112,7 +149,7 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--surface-heading); ma
   display: flex; justify-content: center; align-items: baseline; gap: 4px;
   margin-top: 6px; font-family: var(--font-heading);
 }
-.lib-stat .num { font-size: 13px; font-weight: 700; color: var(--cw-teal-dark); }
+.lib-stat .num { font-size: 13px; font-weight: 700; color: var(--accent-teal-strong); }
 .lib-stat .lbl { font-size: 10px; color: var(--surface-text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
 .safety-note {
   background: #FFF8E1; border: 1px solid var(--cw-gold); border-radius: 8px;
@@ -149,9 +186,9 @@ button {
 }
 button.primary { background: var(--cw-blue); color: #fff; }
 button.primary:hover { background: var(--cw-blue-active); }
-button.secondary { background: var(--surface-card); color: var(--cw-blue); border: 1px solid var(--cw-blue); }
+button.secondary { background: var(--surface-card); color: var(--accent-blue); border: 1px solid var(--accent-blue); }
 button.secondary:hover { background: var(--surface-hover-tint); }
-button.ghost { background: none; color: var(--cw-orange); border: 1px solid var(--cw-orange); padding: 6px 10px; font-size: 12px; }
+button.ghost { background: none; color: var(--accent-orange); border: 1px solid var(--accent-orange); padding: 6px 10px; font-size: 12px; }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 .field-row { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
 .field-row input { flex: 1; }
@@ -176,8 +213,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .suggestion-card .src { font-weight: 700; color: var(--surface-text); }
 .suggestion-card .target { font-family: var(--font-heading); font-weight: 600; color: var(--surface-heading); margin: 6px 0; }
 .suggestion-card .reason { font-size: 13px; color: var(--surface-text-muted); margin-bottom: 8px; }
-.suggestion-card .decode { font-size: 12px; color: var(--cw-teal); margin-bottom: 8px; }
-.suggestion-card .decode-hint { font-size: 12px; color: var(--cw-orange); margin-bottom: 8px; }
+.suggestion-card .decode { font-size: 12px; color: var(--accent-teal); margin-bottom: 8px; }
+.suggestion-card .decode-hint { font-size: 12px; color: var(--accent-orange); margin-bottom: 8px; }
 .suggestion-card .actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 /* Native <details> disclosure, same pattern as Create Template's own
    "Show raw XML structure" -- collapsed by default (browser handles
@@ -204,14 +241,14 @@ table.summary th { text-align: left; background: var(--surface-hover-tint); colo
 table.summary td { padding: 8px 10px; border-bottom: 1px solid var(--surface-border); color: var(--surface-text); }
 .flagged-row td { background: #FDEAE3; color: var(--cw-black); }
 .step-nav { display: flex; justify-content: space-between; margin-top: 18px; }
-.loading { color: var(--cw-teal); font-size: 13px; font-style: italic; }
+.loading { color: var(--accent-teal); font-size: 13px; font-style: italic; }
 .empty { color: var(--surface-text-muted); font-size: 13px; padding: 12px 0; }
 footer { text-align: center; font-size: 11px; color: var(--surface-text-muted); margin-top: 24px; }
 .readiness-panel { margin-bottom: 16px; }
 .readiness-group { margin-bottom: 12px; }
-.readiness-group h4 { margin: 0 0 6px 0; font-size: 13px; color: var(--cw-orange); font-family: var(--font-heading); }
+.readiness-group h4 { margin: 0 0 6px 0; font-size: 13px; color: var(--accent-orange); font-family: var(--font-heading); }
 .readiness-group ul { margin: 0; padding-left: 20px; font-size: 13px; color: var(--surface-text); }
-.readiness-clean { color: var(--cw-green); font-size: 13px; font-weight: 600; }
+.readiness-clean { color: var(--accent-green); font-size: 13px; font-weight: 600; }
 
 /* Module/tab picker (both databases now -- CaseWorthy's tabs and
    ServTracker's modules, see schema_rules.TARGET_DB_META). Uses the same
@@ -246,12 +283,12 @@ footer { text-align: center; font-size: 11px; color: var(--surface-text-muted); 
 .module-item:hover { background: var(--surface-hover-tint); }
 .module-item input { grid-area: cb; width: auto; margin: 0; }
 .module-name { grid-area: name; font-size: 13px; color: var(--surface-text); font-weight: 600; }
-.module-name em { font-weight: 400; font-style: normal; color: var(--cw-teal); font-size: 12px; }
+.module-name em { font-weight: 400; font-style: normal; color: var(--accent-teal); font-size: 12px; }
 .module-meta { grid-area: meta; font-size: 11px; color: var(--surface-text-muted); }
 .module-item.locked { cursor: default; opacity: 0.9; }
 .module-item.locked:hover { background: none; }
 .module-summary { font-size: 12px; color: var(--surface-text-muted); margin-top: 8px; }
-.module-warn { color: var(--cw-orange); font-weight: 600; }
+.module-warn { color: var(--accent-orange); font-weight: 600; }
 .link-key-note {
   margin-top: 10px;
   padding: 10px 12px;
@@ -303,10 +340,10 @@ footer { text-align: center; font-size: 11px; color: var(--surface-text-muted); 
   font-size: 12px; line-height: 1.7; list-style: none; margin: 0; padding-left: 18px;
 }
 .xml-tree { padding-left: 0; }
-.xml-tag { color: var(--cw-teal); font-weight: 600; }
+.xml-tag { color: var(--accent-teal); font-weight: 600; }
 .xml-attrs { color: var(--surface-text-muted); }
 .xml-text { color: var(--surface-heading); }
-.xml-truncated { color: var(--cw-orange); font-style: italic; padding-left: 18px; }
+.xml-truncated { color: var(--accent-orange); font-style: italic; padding-left: 18px; }
 .xml-raw-details { margin-top: 16px; }
 .xml-raw-details summary { cursor: pointer; font-size: 12px; color: var(--surface-text-muted); }
 
@@ -326,8 +363,8 @@ footer { text-align: center; font-size: 11px; color: var(--surface-text-muted); 
 .field-def-table td.ft-comments { white-space: pre-line; min-width: 220px; }
 .field-def-table td.empty { text-align: center; color: var(--surface-text-muted); white-space: normal; }
 .field-def-table td.ft-select-cell { text-align: center; width: 1%; }
-.ft-unresolved { color: var(--cw-orange); font-weight: 600; }
-.ft-linked { color: var(--cw-teal); font-weight: 600; }
+.ft-unresolved { color: var(--accent-orange); font-weight: 600; }
+.ft-linked { color: var(--accent-teal); font-weight: 600; }
 /* A numeric target field entered through a free-text form control with no
    numeric validation configured at all (create_template.py's
    _validation_issue) -- title attribute on the cell itself carries the
@@ -345,6 +382,6 @@ footer { text-align: center; font-size: 11px; color: var(--surface-text-muted); 
 /* A long decode list (renderCommentsCell) collapsed in place within its own
    Comments cell -- explicit [open]-scoped visibility, not the browser's own
    native <details> collapse, same reasoning as .override-details above. */
-.comment-details summary { cursor: pointer; color: var(--cw-teal); font-weight: 600; }
+.comment-details summary { cursor: pointer; color: var(--accent-teal); font-weight: 600; }
 .comment-details:not([open]) .comment-full { display: none; }
 .comment-details[open] .comment-full { display: block; margin-top: 4px; }
